@@ -1,0 +1,21 @@
+# OS junk
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Local secrets (Supabase keys etc. — never commit these)
+.env
+.env.*
+*.local
+
+# Deps (future-proofing)
+node_modules/

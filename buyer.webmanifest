@@ -1,0 +1,16 @@
+{
+  "name": "Kobe Mweusi — Buyer",
+  "short_name": "Kobe Mweusi",
+  "description": "Pay safely for what you buy online. Your money stays in escrow until you confirm delivery.",
+  "id": "kobe-buyer",
+  "start_url": "buyer.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0e1011",
+  "theme_color": "#0e1011",
+  "lang": "en",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
