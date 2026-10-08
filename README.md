@@ -16,6 +16,9 @@ Kobe takes a 1% fee from each side. Currency: TSh. Payments: M-Pesa, Tigo Pesa (
 | `sw.js` | Shared service worker: offline shell, SKIP_WAITING updates, push plumbing |
 | `buyer.webmanifest` + `icon.svg` | PWA install metadata |
 | `_headers` | Cloudflare Pages headers (no-cache for sw.js/manifest + security headers) |
+| `kobe-qr.js` | Shared high-error-correction QR generator with the Kobe mark |
+| `jsQR.js` + `LICENSE-jsQR.txt` | Local QR decoder and its MIT license |
+| `kobe-camera.js` | Shared camera scanner used by buyer and seller apps |
 
 ## Run locally
 
@@ -45,3 +48,13 @@ Camera QR scanning, push and install only work over HTTPS (or localhost).
 - [ ] Custom domain (placeholder in seller.html `LIVE_BASE`)
 
 **Rule:** money-moving operations must never simulate success — they return `{ok:false}` until a secure backend exists.
+
+## Handoff QR rules
+
+- Each order gets separate buyer and seller QR codes. Production codes are opaque, order-specific, single-use, and expire.
+- All app QR codes include the Kobe Mweusi center mark and use high error correction. The mark is branding only; scanner authorization still comes from server verification.
+- The buyer who paid for an order may scan that order's seller QR. Only the seller assigned to that order may scan its buyer QR.
+- An authenticated, authorized Kobe Mweusi system agent may scan either code. Other accounts must be rejected, even if they have a copy of a QR.
+- The server verifies the signed-in scanner, order membership, code expiry and use, and escrow status. Browser checks are not authorization.
+- A scan records handoff only. The buyer explicitly confirms release; an agent may resolve a dispute through the audited support workflow.
+- The current QR screens and generated codes are preview UI only. Do not treat their QR values or scan results as secure until server verification is connected.

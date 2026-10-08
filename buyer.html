@@ -1487,31 +1487,31 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;bor
     <section id="screen-handoff" class="screen">
       <button class="back-link" onclick="appBack('tracking')"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4l-6 6 6 6"/></svg>Back to Tracking</button>
       <div class="qr-box" id="handoff-qr-box"></div>
-      <p class="handoff-caption">Your Release QR is now available.</p>
-      <p class="handoff-sub" id="handoff-lock-text">This code is identity-locked to @kobe1 — only they can redeem it.</p>
+      <p class="handoff-caption">Your buyer QR is ready for handoff.</p>
+      <p class="handoff-sub" id="handoff-lock-text">Only the seller assigned to this order or an authorized Kobe Mweusi agent may scan your code. The server must verify their account.</p>
       <div class="handoff-grid">
         <div class="handoff-btn" onclick="showScreen('verifyHandoff')">
           <div class="hb-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/></svg></div>
-          <div class="hb-label">Scan Printed Code</div>
-          <div class="hb-desc">Scan the paper QR inside your shipped box</div>
+          <div class="hb-label">Scan Seller's QR</div>
+          <div class="hb-desc">As the payer, scan the seller's code for this order</div>
         </div>
         <div class="handoff-btn" onclick="showQrBrightMode(false)">
           <div class="hb-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="3"/><path d="M10 2v2M10 16v2M18 10h-2M4 10H2M15.5 4.5l-1.4 1.4M5.9 14.1l-1.4 1.4M15.5 15.5l-1.4-1.4M5.9 5.9L4.5 4.5"/></svg></div>
-          <div class="hb-label">Show QR Code</div>
-          <div class="hb-desc">Let the seller scan your screen in person</div>
+          <div class="hb-label">Show Buyer QR</div>
+          <div class="hb-desc">The assigned seller scans your code at handoff</div>
         </div>
         <div class="handoff-btn" onclick="showScreen('verifyHandoff')">
           <div class="hb-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7V4h3M13 4h3v3M16 13v3h-3M7 16H4v-3"/></svg></div>
-          <div class="hb-label">Scan Seller's Code</div>
-          <div class="hb-desc">Fallback if the seller's camera isn't working</div>
+          <div class="hb-label">Scan Seller's QR in Person</div>
+          <div class="hb-desc">Use this if the seller cannot scan your buyer code</div>
         </div>
         <div class="handoff-btn" onclick="showQrBrightMode(true)">
           <div class="hb-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="14" height="10" rx="2"/><path d="M3 8h14"/></svg></div>
           <div class="hb-label">Hub Agent Scan</div>
-          <div class="hb-desc">Optimized for a Kobe Mweusi hub terminal</div>
+          <div class="hb-desc">An authorized Kobe Mweusi agent may scan your code</div>
         </div>
       </div>
-      <p style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:18px;">The camera reads printed, digital, or agent-generated codes. This QR is permanent — it never expires.</p>
+      <p style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:18px;">Preview only: production codes must be order-specific, single-use, and expire. Scanning alone never releases funds.</p>
     </section>
 
     <!-- VERIFY HANDOFF (SCANNER) SCREEN -->
@@ -1813,7 +1813,7 @@ As agreed with the seller..." oninput="updateOrderDescriptionState(this)"></text
 
     <!-- SCAN SCREEN -->
     <section id="screen-scan" class="screen">
-      <header class="page-head"><div><h1 data-en="Scan to release" data-sw="Skani kuachilia">Scan to release</h1><p>Point your camera at the seller's QR code</p></div></header>
+      <header class="page-head"><div><h1 data-en="Scan seller QR" data-sw="Skani QR ya muuzaji">Scan seller QR</h1><p>Only the buyer who paid for this order or an authorized Kobe Mweusi agent may scan it.</p></div></header>
       <div class="scan-wrap">
         <div class="scan-frame" id="scan-frame">
           <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
@@ -1821,10 +1821,10 @@ As agreed with the seller..." oninput="updateOrderDescriptionState(this)"></text
         </div>
         <div class="scan-status" id="scan-status"></div>
         <button type="button" class="scan-btn" id="scan-btn" onclick="KobeScanner.start('scan')">Allow camera</button>
-        <p class="scan-hint">This releases escrow to the seller once their code matches your order — it only works once.</p>
+        <p class="scan-hint">The server must verify this order and your buyer account. After the handoff is verified, you can choose whether to release the escrow.</p>
         <div class="scan-note">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="9" width="12" height="8" rx="1.5"/><path d="M6 9V6a4 4 0 0 1 8 0v3"/></svg>
-          <span>Your QR and the seller's QR are matched to each other — no one else can scan or reuse them.</span>
+          <span>Each code belongs to this order. Only its payer, assigned seller, or an authorized system agent may scan the matching code.</span>
         </div>
         <div class="manual-link" onclick="manualScanEntry()">Enter code manually instead</div>
       </div>
@@ -3179,17 +3179,7 @@ function finishBuyFlow(){
 /* ---- Item Handoff / Verify / Release ---- */
 let handoffSeller = '', handoffAmount = 'TSh 0', handoffTxId = '';
 
-function generateQrSvg(seed){
-  let h = 0; for(let i=0;i<seed.length;i++) h = (h*31 + seed.charCodeAt(i)) >>> 0;
-  const cells = 12; let rects = '';
-  for(let y=0;y<cells;y++){ for(let x=0;x<cells;x++){
-    h = (h*1103515245 + 12345) >>> 0;
-    if((h >> 16) % 2 === 0) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="#111"/>`;
-  }}
-  // finder squares (corners) to look QR-like
-  const finder = (fx,fy) => `<rect x="${fx}" y="${fy}" width="3" height="3" fill="none" stroke="#111" stroke-width="0.4"/><rect x="${fx+1}" y="${fy+1}" width="1" height="1" fill="#111"/>`;
-  return `<svg viewBox="0 0 ${cells} ${cells}" xmlns="http://www.w3.org/2000/svg">${rects}${finder(0,0)}${finder(cells-3,0)}${finder(0,cells-3)}</svg>`;
-}
+function generateQrSvg(seed){return window.KobeQr.svg(seed,'Kobe Mweusi buyer handoff QR')}
 
 function openHandoff(seller, amount, txId){
   handoffSeller = seller; handoffAmount = amount; handoffTxId = txId;
@@ -3608,14 +3598,11 @@ const KobeApi = {
     return generateQrSvg(txId);
   },
 
-  // Check a scanned code. Demo: accepts any non-empty code, but blocks orders that are in dispute or already released.
-  // Later: server checks the code, the seller identity and that the escrow is active.
-  async verifyHandoffCode({ txId, code, sellerName }){
+  // Preview has no authenticated actors or server-issued codes, so it cannot verify any scan.
+  // Production must check the order, allowed scanner role, code expiry/use, and escrow state server-side.
+  async verifyHandoffCode({ code }){
     if(!code) return { ok: false, reason: 'No code was read.' };
-    const o = this._db.orders.find(x => x.id === code || x.id === txId);
-    if(o && o.status === 'Disputed') return { ok: false, reason: 'This order is in dispute. The funds are frozen until it is resolved.' };
-    if(o && o.status === 'Completed') return { ok: false, reason: 'This order was already released.' };
-    return { ok: true, checks: ['Buyer confirmed receipt', 'QR valid', 'Correct seller', 'Transaction active'] };
+    return { ok: false, reason: 'Handoff verification is unavailable in preview. Sign in and use a server-verified order code.' };
   },
 
   // Save a buyer's review. Later: insert a review row. The server must allow it only for the buyer of a
@@ -3667,86 +3654,18 @@ const KobeScanner = {
     this.stop();
     const cfg = this.screens[name]; if(!cfg) return;
     this.current = name;
+    if(!window.KobeCamera) return;
     if(name === 'verifyHandoff'){
       const cl = document.getElementById('verify-checklist'); if(cl) cl.style.display = 'none';
       const rb = document.getElementById('release-btn'); if(rb) rb.style.display = 'none';
       const ln = document.getElementById('verify-scanline'); if(ln) ln.style.animationPlayState = 'running';
     }
-    const frame = document.getElementById(cfg.frame);
-    if(!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-      this.setStatus(name, 'Camera is not available here. Open the app over HTTPS in a browser that supports the camera, or enter the code manually.', '');
-      return;
-    }
-    this.setStatus(name, 'Requesting camera permission…', '');
-    let stream;
-    try{
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
-    }catch(err){
-      const n = err && err.name;
-      let msg = 'Could not open the camera.';
-      if(n === 'NotAllowedError' || n === 'SecurityError') msg = 'Camera permission was blocked. Allow the camera for this site in your browser settings, then tap the button.';
-      else if(n === 'NotFoundError' || n === 'OverconstrainedError') msg = 'No camera was found on this device.';
-      else if(n === 'NotReadableError') msg = 'The camera is being used by another app. Close it and try again.';
-      this.setStatus(name, msg, 'Try again');
-      return;
-    }
-    // The person may have left the screen while the permission prompt was open.
-    if(this.current !== name){ stream.getTracks().forEach(t => t.stop()); return; }
-    this.stream = stream;
-    const v = document.createElement('video');
-    v.setAttribute('playsinline', ''); v.muted = true; v.autoplay = true;
-    v.srcObject = stream;
-    frame.insertBefore(v, frame.firstChild);
-    this.video = v;
-    try{ await v.play(); }catch(e){}
-    await this.prepareDecoder();
-    this.setStatus(name, 'Point the camera at the QR code.', '');
-    this.loop(name);
-  },
-
-  async prepareDecoder(){
-    if(this.detector) return;
-    if('BarcodeDetector' in window){
-      try{ this.detector = new BarcodeDetector({ formats: ['qr_code'] }); return; }catch(e){}
-    }
-    if(window.jsQR) return;
-    await new Promise(resolve => {
-      const sc = document.createElement('script');
-      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js';
-      sc.onload = resolve; sc.onerror = resolve;
-      document.head.appendChild(sc);
+    await window.KobeCamera.start({
+      frameId: cfg.frame,
+      statusId: cfg.prefix + '-status',
+      buttonId: cfg.prefix + '-btn',
+      onCode: code => this.handleCode(name, code)
     });
-  },
-
-  loop(name){
-    const tick = async () => {
-      if(!this.video || this.current !== name) return;
-      let value = '';
-      try{
-        if(this.video.readyState >= 2){
-          if(this.detector){
-            const codes = await this.detector.detect(this.video);
-            if(codes.length) value = codes[0].rawValue;
-          } else if(window.jsQR){
-            const w = this.video.videoWidth, h = this.video.videoHeight;
-            if(w && h){
-              if(!this.canvas) this.canvas = document.createElement('canvas');
-              this.canvas.width = w; this.canvas.height = h;
-              const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
-              ctx.drawImage(this.video, 0, 0, w, h);
-              const res = jsQR(ctx.getImageData(0, 0, w, h).data, w, h);
-              if(res) value = res.data;
-            }
-          } else {
-            this.setStatus(name, 'QR reader could not load. Check your internet or enter the code manually.', 'Try again');
-            return;
-          }
-        }
-      }catch(e){}
-      if(value){ this.stop(); this.handleCode(name, value); return; }
-      this.timer = setTimeout(tick, 180);
-    };
-    tick();
   },
 
   async handleCode(name, code){
@@ -3761,9 +3680,7 @@ const KobeScanner = {
   },
 
   stop(){
-    clearTimeout(this.timer); this.timer = null;
-    if(this.stream){ this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
-    if(this.video){ this.video.srcObject = null; this.video.remove(); this.video = null; }
+    if(window.KobeCamera) window.KobeCamera.stop();
   }
 };
 document.addEventListener('visibilitychange', () => { if(document.hidden) KobeScanner.stop(); });
@@ -4051,5 +3968,8 @@ if('serviceWorker' in navigator){let boot=!!navigator.serviceWorker.controller,r
 addEventListener('load',()=>{const h=location.hash.replace(/^#/,'');if(/^(order|dispute|screen)\//i.test(h)&&window.kobeOpenLink)setTimeout(()=>kobeOpenLink(h),400)});
 })();
 </script>
+<script src="kobe-qr.js"></script>
+<script src="jsQR.js"></script>
+<script src="kobe-camera.js"></script>
 </body>
 </html>

@@ -3,13 +3,17 @@
    - SKIP_WAITING lets the in-app "A new version is ready" bar apply updates.
    - CACHE_URL pre-caches a page the seller app asks for after load.
    Only same-origin GETs are touched; Google Fonts and other CDNs go straight to the network. */
-const CACHE = 'kobe-mweusi-v1';
+const CACHE = 'kobe-mweusi-v2';
 const SHELL = [
+  'index.html',
   'buyer.html',
   'seller.html',
   'Kobe_Mweusi_homepage_v7_static.html',
   'reset-password.html',
-  'icon.svg'
+  'icon.svg',
+  'kobe-qr.js',
+  'jsQR.js',
+  'kobe-camera.js'
 ];
 
 self.addEventListener('install', event => {
