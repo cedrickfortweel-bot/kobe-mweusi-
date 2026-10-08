@@ -8,6 +8,7 @@ Kobe takes a 1% fee from each side. Currency: TSh. Payments: M-Pesa, Tigo Pesa (
 
 | File | Purpose |
 |---|---|
+| `index.html` | Cloudflare Pages root entry; forwards to the landing page below |
 | `Kobe_Mweusi_homepage_v7_static.html` | Landing page: sign up / sign in (buyer or seller), EN/Swahili |
 | `buyer.html` | Buyer PWA: escrow checkout, wallet top-up, order tracking, handoff QR verify, disputes, chat, receipts |
 | `seller.html` | Seller PWA: orders & receipts, payouts, disputes, products, Live Business, analytics, profile |
@@ -25,7 +26,7 @@ npx wrangler pages dev .
 python -m http.server 8000
 ```
 
-Then open `buyer.html`, `seller.html` or the homepage.
+Then open the root URL for the homepage, or open `buyer.html` and `seller.html` directly.
 Camera QR scanning, push and install only work over HTTPS (or localhost).
 
 ## Deploy (Cloudflare Pages)
