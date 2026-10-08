@@ -397,7 +397,7 @@ function submitForm(e,kind){e.preventDefault();const f=e.target;let first=null;
   const a=f.querySelector('.role-toggle .active');if(a)d[kind==='signin'?'role':'accountType']=a.textContent.toLowerCase();
   if(kind==='signin'&&reset){const b=f.querySelector('.btn-primary');if(window.KobeApi&&typeof KobeApi.resetPassword==='function'){b.disabled=true;Promise.resolve(KobeApi.resetPassword({email:d.email})).then(()=>{st.className='form-status ok';st.textContent='If an account exists for that email, a reset link is on its way.'}).catch(x=>{st.textContent=x.message||'Something went wrong. Try again.'}).finally(()=>b.disabled=false)}else st.textContent='Password reset is not available yet.';return false}
   const fn={buyer:'signUpBuyer',seller:'signUpSeller',signin:'signIn'}[kind],b=f.querySelector('.btn-primary');
-  if(window.KobeApi&&typeof KobeApi[fn]==='function'){b.disabled=true;Promise.resolve(KobeApi[fn](d)).catch(x=>{st.textContent=x.message||'Something went wrong. Try again.'}).finally(()=>b.disabled=false)}
+  if(window.KobeApi&&typeof KobeApi[fn]==='function'){b.disabled=true;Promise.resolve(KobeApi[fn](d)).then(r=>{if(r&&r.confirmationRequired){st.className='form-status ok';st.textContent='Account created. Check your email for the confirmation link before signing in.'}}).catch(x=>{st.textContent=x.message||'Something went wrong. Try again.'}).finally(()=>b.disabled=false)}
   else{st.className='form-status ok';st.textContent='Details look good. This connects when the backend goes live.'}
   return false}
 document.addEventListener('input',e=>{if(e.target.dataset&&e.target.dataset.v){e.target.removeAttribute('aria-invalid');const r=document.getElementById(e.target.id+'-err');if(r)r.textContent=''}});
@@ -407,5 +407,7 @@ const w=q.offsetWidth;let n=0;while(g.scrollWidth<w&&n++<8)g.insertAdjacentHTML(
 const c=g.cloneNode(true);c.setAttribute('aria-hidden','true');t.appendChild(c);t.style.setProperty('--mq-dur',Math.max(16,g.scrollWidth/45)+'s')}
 build();let rw=q.offsetWidth;window.addEventListener('resize',()=>{if(Math.abs(q.offsetWidth-rw)>80){rw=q.offsetWidth;build()}})})();
 </script>
+<script src="supabase-js.js"></script>
+<script src="kobe-supabase.js"></script>
 </body>
 </html>

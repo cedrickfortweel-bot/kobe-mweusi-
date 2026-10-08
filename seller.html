@@ -344,7 +344,14 @@ function pick(inp,k){const f=inp.files[0];if(!f)return;const r=new FileReader();
 function fld(x){if(x.h)return`<h2>${x.h}</h2>`;if(x.note)return`<p class="note">${x.note}</p>`;if(x.tg)return`<div class="list" style="margin-top:12px"><label class="row" style="margin:0"><span class="t"><b>${x.l}</b>${x.s?`<small>${x.s}</small>`:''}</span><input type="checkbox" id="g_${x.k}" ${x.v?'checked':''} ${x.rev?`onchange="$('#w_${x.rev}').style.display=this.checked?'block':'none'"`:''} style="width:22px;height:22px;accent-color:var(--acc)"></label></div>`;const i=x.ta?`<textarea id="g_${x.k}" rows="4" maxlength="300" placeholder="${x.p||''}">${escHtml(x.v||'')}</textarea>`:x.o?`<select id="g_${x.k}"><option value="">Select</option>${x.o.map(o=>`<option>${o}</option>`).join('')}</select>`:`<input id="g_${x.k}" type="${x.t||'text'}" ${x.t=='file'?`accept="${x.acc||'image/*,.pdf'}"`:''} ${x.cam?`capture="${x.cam}"`:''} value="${x.v??''}" placeholder="${x.p||''}">`;return`<div id="w_${x.k}" style="${x.hide?'display:none':''}"><label for="g_${x.k}">${x.l}${x.req?' <span class="rq" aria-hidden="true">*</span>':''}</label>${i}${x.meter?`<div class="pwm" id="m_${x.k}" aria-live="polite"></div>`:''}${x.ta?`<div class="fcnt" id="c_${x.k}"></div>`:''}<div class="ferr" id="e_${x.k}" role="alert"></div></div>`}
 function gform(t,f,save,btn,done,ph){$('#gT').textContent=t;$('#gB').innerHTML=(ph?ph.map(a=>phb(a[0],a[1])).join(''):'')+f.map(fld).join('')+`<div class="err" id="gErr" role="alert"></div><button class="btn p w" style="margin-top:12px" onclick="gsave(this)">${btn||'Save changes'}</button>`;gsv=[f,save,done];gDirty=false;gBusy=false;(ph||[]).forEach(a=>pics[a[0]]=pics[a[0]]||'');pv();go('gf')}
 async function gsave(btn){if(gBusy)return;
-if(/^Personal KYC|^Corporate KYC/.test($('#gT').textContent)){toast('KYC is not submitted: secure document storage and review services are not connected. Do not upload real documents here.');return}
+const kycTitle=$('#gT').textContent;
+if(/^Personal KYC|^Corporate KYC/.test(kycTitle)){
+ if(!window.KobeSupabase)return toast('Secure verification is unavailable. Reload and try again.');
+ const fields={},files={};gsv[0].forEach(x=>{if(x.h||x.note)return;const e=$('#g_'+x.k);if(!e)return;if(e.type==='file'){files[x.k]=e.files&&e.files[0]||null;return}fields[x.k]=e.type==='checkbox'?e.checked:e.value.trim()});
+ const h0=btn?btn.innerHTML:'';gBusy=true;if(btn){btn.disabled=true;btn.innerHTML='<i class="spin"></i>Uploading securely…'}
+ try{const result=await window.KobeSupabase.submitKyc({entity_type:kycTitle==='Personal KYC'?'personal':'corporate',fields,files});kyc=1;ver={type:kycTitle==='Personal KYC'?'Personal':'Corporate',idLast:String(kycTitle==='Personal KYC'?fields.b:fields.rid).replace(/\s/g,'').slice(-4),sub:new Date(result.submitted_at).getTime(),rev:0,app:0,seen:true};store.soc=SOC.filter(x=>fields['s_'+x[0]]).map(x=>x[1]);gBusy=false;gDirty=false;back();toast('Documents uploaded securely. Your application is under review.');return}
+ catch(error){gBusy=false;if(btn){btn.disabled=false;btn.innerHTML=h0}gerr(error.message||'Could not submit verification.');toast(error.message||'Could not submit verification.');return}
+}
 const o={};let first=null;gsv[0].forEach(x=>{if(x.h||x.note)return;const e=$('#g_'+x.k);if(!e)return;o[x.k]=e.type=='checkbox'?e.checked:e.value.trim();if(gval(x.k)&&!first)first=x.k});
 if(first){const e=$('#g_'+first);e&&e.focus();gerr('Fix the fields marked in red.');return}
 gerr('');gBusy=true;const h0=btn?btn.innerHTML:'';if(btn){btn.disabled=true;btn.innerHTML='<i class="spin"></i>Saving…'}
@@ -454,12 +461,10 @@ function secForgot(){gform('Reset transaction PIN',[{note:'We send a 6-digit cod
 function secBio(v){if(!secSt.pin){secView();return toast('Set your PIN first.')}secSt.bio=v;toast(v?'Fingerprint or face turned on (preview)':'Fingerprint or face turned off')}
 function secPass(){gform('Change password',[{k:'old',l:'Current password',t:'password',req:1},{k:'a',l:'New password (8+ characters)',t:'password',req:1,min:8,meter:1},{k:'b',l:'Confirm new password',t:'password',req:1,same:'a'},{note:'Forgot it? Use "Forgot password" on the sign-in page to get a reset link by email. After a change, other devices are signed out and you get an alert.'}],o=>{if(!o.old)return 'Enter your current password.';if((o.a||'').length<8)return 'Use at least 8 characters.';if(o.a===o.old)return 'New password must be different.';if(o.a!==o.b)return 'Passwords do not match.';return 'The secure account service applies password changes. Nothing was changed in this preview.'},'Update password')}
 
-/* ===== Verification screen. Backend/admin sets status via window.kobeSetVerification(n, info): 0 not verified, 1 under review, 2 verified ===== */
+/* Verification state is restored from Supabase and changed only by the staff review function. */
 let ver={type:'',idLast:'',sub:0,rev:0,app:0,seen:false};
-window.kobeSetVerification=(n,info)=>{kyc=n;Object.assign(ver,info||{});render()};
 const vDate=t=>t?new Date(t).toLocaleString([],{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
 const vStep=(l,sub,st)=>`<div class="vs ${st}"><i>${st=='d'?'✓':st=='c'?'●':''}</i><div><b>${l}</b><small>${sub}</small></div><em>${st=='d'?'Done':st=='c'?'Current':'Pending'}</em></div>`;
-function vSim(n){if(n==0){kyc=0;ver={type:'',idLast:'',sub:0,rev:0,app:0,seen:false}}else if(n==1){kyc=1;ver.sub=ver.sub||Date.now()}else{kyc=2;ver.sub=ver.sub||Date.now();ver.rev=Date.now();ver.app=Date.now();ver.seen=false}render()}
 function vDone(){ver.seen=true;vComp();tab('ver')}
 function vComp(){const o=$('#vcomp');if(o)o.classList.toggle('o',kyc==2&&!ver.seen)}
 function vrRender(){const S=kyc==2?['d','d','d','d']:kyc==1?['d','d','c','p']:['c','p','p','p'],pc=kyc==2?100:kyc==1?50:0,lab=kyc==2?'Step 4 of 4 · 100% complete':kyc==1?'Step 3 of 4':'Step 1 of 4';
@@ -853,4 +858,7 @@ addEventListener('load',()=>{const h=location.hash.replace(/^#/,'');if(/^(order|
 </script>
 <script src="jsQR.js"></script>
 <script src="kobe-camera.js"></script>
+<script src="supabase-js.js"></script>
+<script src="kobe-supabase.js"></script>
+<script src="kobe-app-workflows.js"></script>
 </body></html>

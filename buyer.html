@@ -2166,9 +2166,13 @@ function closeLogoutModal(){
   if(modal) modal.classList.remove('show');
   document.body.style.overflow='';
 }
-function confirmLogout(){
+async function confirmLogout(){
   closeLogoutModal();
-  // Preview behavior: return to the home screen; real sign-in requires authentication integration.
+  if(window.kobeLogout){
+    try{ await window.kobeLogout(); }
+    catch(error){ kobeToast(error.message||'Could not sign out. Try again.'); }
+    return;
+  }
   if(typeof showScreen==='function') showScreen('home', document.querySelector('.side-nav a'));
 }
 document.addEventListener('click', function(event){
@@ -2433,10 +2437,7 @@ function startTopupConfirm(){
   if(!amt || amt <= 0){ amtInput.style.borderColor = 'var(--danger)'; ok = false; }
   if(!phone){ phoneInput.style.borderColor = 'var(--danger)'; ok = false; }
   if(!ok) return;
-  document.getElementById('topup-confirm-amount').textContent = formatTZS(amt);
-  document.getElementById('topup-confirm-phone').textContent = phone;
-  goTopupStep(1);
-  topupTimer = setTimeout(()=> completeTopup(amt, phone), 2200);
+  kobeToast('Mobile-money top-up is not connected yet. No USSD request was sent and your balance did not change.');
 }
 function cancelTopupConfirm(){
   clearTimeout(topupTimer);
@@ -3146,12 +3147,7 @@ function selectPayMethod(el, method){
   fillPayment();
 }
 function handlePaymentTap(){
-  const amt = Number(document.getElementById('buy-item-amount').value || 0);
-  const fee = Math.round(amt * 0.01);
-  const total = amt + fee;
-  if(total > balanceValue){ fillPayment(); return; }
-  goBuyStep(5);
-  document.getElementById('bio-amount').textContent = formatTZS(total);
+  kobeToast('Escrow checkout is disabled until AzamPay is connected. No order or payment was created.');
 }
 async function confirmBiometric(){
   const amt = Number(document.getElementById('buy-item-amount').value || 0);
@@ -3971,5 +3967,8 @@ addEventListener('load',()=>{const h=location.hash.replace(/^#/,'');if(/^(order|
 <script src="kobe-qr.js"></script>
 <script src="jsQR.js"></script>
 <script src="kobe-camera.js"></script>
+<script src="supabase-js.js"></script>
+<script src="kobe-supabase.js"></script>
+<script src="kobe-app-workflows.js"></script>
 </body>
 </html>

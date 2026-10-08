@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Kobe Mweusi Admin</title>
+  <style>
+    :root{color-scheme:light;--ink:#17231e;--muted:#65736c;--line:#d8e0db;--paper:#f4f7f4;--white:#fff;--green:#24744f;--red:#a5362e;font-family:Manrope,system-ui,sans-serif;color:var(--ink);background:var(--paper)}
+    *{box-sizing:border-box}body{margin:0}button,input,textarea{font:inherit}header{height:58px;padding:0 24px;background:#17231e;color:#fff;display:flex;align-items:center;justify-content:space-between}header strong{font-family:Georgia,serif;font-size:18px}main{max-width:1000px;margin:32px auto;padding:0 20px}.section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:18px}h1{font-size:24px;margin:0 0 5px}p{color:var(--muted);line-height:1.5;margin:0}.panel{background:var(--white);border:1px solid var(--line);padding:22px;max-width:440px}.field{display:block;margin:14px 0 5px;font-size:13px;font-weight:700}.field+input{width:100%;padding:11px;border:1px solid var(--line);border-radius:5px;background:#fff}.btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 13px;border-radius:5px;font-weight:700;cursor:pointer}.btn:disabled{opacity:.6;cursor:wait}.btn-primary{background:var(--green);color:#fff;border-color:var(--green)}.btn-danger{color:var(--red);border-color:#e1b8b4}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.notice{padding:10px 12px;border-left:3px solid var(--green);background:#eaf2ed;color:var(--ink);margin:14px 0;white-space:pre-wrap}.notice.error{border-color:var(--red);background:#f8ecea}.queue{display:grid;gap:12px}.submission{background:var(--white);border:1px solid var(--line);padding:18px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px}.submission h2{font-size:17px;margin:0 0 4px}.meta{font-size:13px;color:var(--muted);line-height:1.6;overflow-wrap:anywhere}.docs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.docs a{color:var(--green);font-size:13px;font-weight:700}.review-note{width:100%;min-height:64px;padding:9px;border:1px solid var(--line);border-radius:5px;margin-top:10px}.empty{padding:22px;background:#fff;border:1px solid var(--line);color:var(--muted)}[hidden]{display:none!important}@media(max-width:640px){header{padding:0 16px}main{margin:22px auto;padding:0 12px}.submission{grid-template-columns:1fr}.section-head{align-items:start;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <header><strong>Kobe Mweusi · Operations</strong><button id="logout" class="btn" hidden>Sign out</button></header>
+  <main>
+    <section id="login-panel" class="panel">
+      <h1>Staff sign in</h1>
+      <p>Use an account already granted admin or support access.</p>
+      <form id="login-form">
+        <label class="field" for="email">Email</label><input id="email" type="email" autocomplete="username" required>
+        <label class="field" for="password">Password</label><input id="password" type="password" autocomplete="current-password" required>
+        <div class="actions"><button id="login-button" class="btn btn-primary" type="submit">Sign in</button></div>
+      </form>
+    </section>
+    <section id="admin-panel" hidden>
+      <div class="section-head"><div><h1>Seller verification</h1><p id="staff-label"></p></div><button id="refresh" class="btn">Refresh queue</button></div>
+      <div id="notice" class="notice" role="status" hidden></div>
+      <div id="queue" class="queue"></div>
+    </section>
+  </main>
+  <script src="supabase-js.js"></script>
+  <script src="kobe-supabase.js"></script>
+  <script src="kobe-admin.js"></script>
+</body>
+</html>
