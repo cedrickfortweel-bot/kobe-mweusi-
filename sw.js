@@ -47,7 +47,95 @@ self.addEventListener('message', event => {
         .catch(() => {})
     );
   }
+  if (m.type === 'PUSH_RESUBSCRIBE') {
+    // App asked the SW to refresh the push subscription (e.g. new VAPID key).
+    event.waitUntil((async () => {
+      try {
+        const reg = self.registration;
+        if (!reg.pushManager || !('PushManager' in self)) return;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          self.clients.matchAll().then(list => {
+            list.forEach(c => c.postMessage({ type: 'PUSH_RESUBSCRIBE', subscription: sub }));
+          });
+        }
+      } catch (e) { /* push resubscribe is best effort */ }
+    })());
+  }
 });
+
+/* Normalize a notification link to a same-origin URL inside this app, so a
+   crafted or corrupted payload cannot navigate a user off site.
+   Notification data comes from our own VAPID-signed payload today, but it is
+   attacker-influenceable data and the payload also round trips through the
+   push service, which can modify it: RFC 8291 Section 7 makes exactly this
+   point about header and payload fields being untrusted at the client. */
+function safeLink(raw) {
+  const FALLBACK = '/buyer.html';
+  try {
+    const url = new URL(String(raw || FALLBACK), self.location.origin);
+    if (url.origin !== self.location.origin) return FALLBACK;
+    let path = url.pathname;
+    if (path === '/' || path === '') path = FALLBACK;
+    const allowed = ['/buyer.html', '/seller.html', '/reset-password.html', '/admin.html', '/index.html'];
+    if (allowed.indexOf(path) < 0) path = FALLBACK;
+    return path + url.search + url.hash;
+  } catch (e) {
+    return FALLBACK;
+  }
+}
+
+/* Notification clicks open the deep link carried in the push payload
+   (notification data.link) and tell the visible page via OPEN_LINK. */
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const link = safeLink(event.notification.data && event.notification.data.link);
+  const url = new URL(link, self.location.origin).toString();
+  event.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of all) {
+      if ('focus' in c) {
+        c.postMessage({ type: 'OPEN_LINK', link: url });
+        return c.focus();
+      }
+    }
+    if (self.clients.openWindow) return self.clients.openWindow(url);
+  })());
+});
+
+/* Web Push delivery. The push service POSTs an encrypted record; the browser
+   decrypts it and hands us event.data.json() here. Payload shape is
+   { title, body, data: { link, ... }, ts }, produced by the Edge Function in
+   supabase/functions/_shared/push.ts. */
+self.addEventListener('push', event => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (e) {
+    payload = {};
+  }
+
+  const title = typeof payload.title === 'string' && payload.title.trim()
+    ? payload.title.trim()
+    : 'Kobe Mweusi';
+  const body = typeof payload.body === 'string' ? payload.body : '';
+  const link = safeLink(payload.data && payload.data.link);
+
+  const options = {
+    body: body,
+    icon: '/icon.svg',
+    badge: '/icon.svg',
+    tag: (payload.data && payload.data.tag) ? String(payload.data.tag) : undefined,
+    data: { link: link, extra: (payload.data && payload.data.extra) || null },
+    /* Keep a notification relevant until the reader acts on it. */
+    requireInteraction: false,
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
 
 self.addEventListener('fetch', event => {
   const req = event.request;

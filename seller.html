@@ -653,7 +653,7 @@ navigator.serviceWorker.ready.then(r=>{r.active&&r.active.postMessage({type:'CAC
 addEventListener('load',swInit);
 
 /* ===== Profile hook: Supabase calls this after login. The Kobe ID is made by the server; the page only validates and shows it. ===== */
-const KOBE_ID_RE=/^KOBE\d{2,3}[A-HJKMNP-Z]{2}$/;
+const KOBE_ID_RE=/^KM-[0-9A-F]{15}$/i;
 const kobeIdNorm=v=>String(v==null?'':v).toUpperCase().replace(/[^A-Z0-9]/g,'');
 window.kobeIdNorm=kobeIdNorm;
 window.kobeSetProfile=p=>{

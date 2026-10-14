@@ -357,6 +357,365 @@
     }
   };
 
+  /* ================================================================
+     Edge Function adapters. Every money-moving operation (top-up,
+     escrow funding, release, withdrawal) stays an honest refusal
+     until the payment provider is connected. Everything else talks
+     to the real backend. These methods speak the same contract as
+     the app stubs: reads resolve with safe defaults and surface
+     errors through window.kobeError; writes return {ok, reason}.
+     ================================================================ */
+
+  async function invoke(name, body) {
+    const { data, error } = await client.functions.invoke(name, { body });
+    if (error) {
+      let message = error.message || 'Request failed';
+      const context = typeof error.context === 'string' ? error.context : '';
+      for (const candidate of [message, context]) {
+        try {
+          const parsed = JSON.parse(candidate);
+          if (parsed && parsed.error) { message = parsed.error; break; }
+        } catch (e) { /* not JSON */ }
+      }
+      if (/fetch|network|offline|failed to fetch/i.test(message)) {
+        message = 'You are offline. Check your connection and try again.';
+      }
+      throw new Error(message);
+    }
+    return data;
+  }
+
+  function describe(error) {
+    return (error && error.message) || 'Something went wrong. Please try again.';
+  }
+
+  /* Reads: never throw into the UI; show the banner with Retry. */
+  async function guardedRead(name, body, fallback) {
+    try {
+      return await invoke(name, body);
+    } catch (error) {
+      const message = describe(error);
+      if (typeof window.kobeError === 'function') {
+        window.kobeError(message, () => invoke(name, body));
+      }
+      return fallback;
+    }
+  }
+
+  /* Writes: resolve with {ok:false, reason} like the app stubs did. */
+  async function guardedWrite(name, body) {
+    try {
+      return await invoke(name, body);
+    } catch (error) {
+      return { ok: false, reason: describe(error) };
+    }
+  }
+
+  function dataUrlToBlob(dataUrl) {
+    const [meta, b64] = String(dataUrl).split(',');
+    const mime = (meta.match(/:(.*?);/) || [])[1] || 'image/jpeg';
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+
+  Object.assign(api, {
+    /* -------- orders -------- */
+    async listOrders() {
+      const res = await guardedRead('orders', { action: 'list', role: 'buyer' }, null);
+      return (res && res.orders) || [];
+    },
+    async lookupOrder(ref) {
+      const res = await guardedWrite('orders', { action: 'lookup', ref });
+      return res && res.ok ? res.order : null;
+    },
+    async cancelOrder(ref) {
+      return guardedWrite('orders', { action: 'cancel', ref });
+    },
+
+    /* -------- disputes -------- */
+    async listDisputes() {
+      const res = await guardedRead('disputes', { action: 'list' }, null);
+      return (res && res.disputes) || [];
+    },
+    async getDispute(ref) {
+      const res = await guardedWrite('disputes', { action: 'get', dispute_ref: ref });
+      return res && res.ok ? res.dispute : null;
+    },
+    async fileDispute({ orderId, reason, description, evidence }) {
+      const created = await guardedWrite('disputes', {
+        action: 'open',
+        order_ref: orderId,
+        reason,
+        description,
+      });
+      if (!created || !created.ok) return created || { ok: false, reason: 'Could not open the dispute.' };
+      const disputeId = created.dispute && created.dispute.disputeId;
+      const disputeRef = created.dispute && created.dispute.id;
+      if (evidence && evidence.length && disputeId) {
+        const paths = [];
+        for (const file of evidence) {
+          try {
+            const safe = String((file && file.name) || 'evidence')
+              .replace(/[^a-zA-Z0-9._-]+/g, '-').slice(-80);
+            const path = `${disputeId}/${stateUserId()}/${crypto.randomUUID()}-${safe}`;
+            const blob = file instanceof File ? file : dataUrlToBlob(file);
+            const { error } = await client.storage.from('dispute-evidence').upload(path, blob, {
+              cacheControl: '3600',
+              upsert: false,
+            });
+            if (error) throw new Error(error.message);
+            paths.push(path);
+          } catch (e) { /* one bad file must not block the dispute */ }
+        }
+        if (paths.length) {
+          await invoke('disputes', { action: 'evidence', dispute_ref: disputeRef, paths });
+        }
+      }
+      return { ok: true, dispute: created.dispute };
+    },
+    async addDisputeMessage({ disputeId, text }) {
+      return guardedWrite('disputes', { action: 'reply', dispute_ref: disputeId, text });
+    },
+    async uploadDisputeEvidence(disputeId, files) {
+      const paths = [];
+      for (const file of files || []) {
+        const blob = file instanceof File ? file : dataUrlToBlob(file);
+        const safe = String((file && file.name) || 'evidence')
+          .replace(/[^a-zA-Z0-9._-]+/g, '-').slice(-80);
+        const path = `${disputeId}/${stateUserId()}/${crypto.randomUUID()}-${safe}`;
+        const { error } = await client.storage.from('dispute-evidence').upload(path, blob, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+        if (error) throw new Error(error.message);
+        paths.push(path);
+      }
+      return paths;
+    },
+
+    /* -------- handoff -------- */
+    async handoffIssue(orderRef) {
+      return guardedWrite('handoff', { action: 'issue', order_ref: orderRef });
+    },
+    async verifyHandoffCode({ code }) {
+      return guardedWrite('handoff', { action: 'verify', code });
+    },
+
+    /* -------- chat -------- */
+    async chatThreads() {
+      const res = await guardedRead('chat', { action: 'threads' }, null);
+      return (res && res.threads) || [];
+    },
+    async chatThread(withUserId) {
+      const res = await guardedRead('chat', { action: 'thread', with: withUserId }, null);
+      return res && res.ok ? res : null;
+    },
+    async sendChatMessage({ with: withUserId, text }) {
+      return guardedWrite('chat', { action: 'send', with: withUserId, text });
+    },
+    async markChatRead(withUserId) {
+      return guardedWrite('chat', { action: 'read', with: withUserId });
+    },
+
+    /* -------- reviews -------- */
+    async submitReview({ txId, stars, tags, comment }) {
+      return guardedWrite('reviews', { action: 'submit', order_ref: txId, stars, tags, comment });
+    },
+    async sellerReviews(kobeId) {
+      const res = await guardedRead('reviews', { action: 'seller', kobe_id: kobeId }, null);
+      return res && res.ok ? res : { reviews: [], average: 0, count: 0 };
+    },
+
+    /* -------- wallet / seller -------- */
+    async walletSummary() {
+      const res = await guardedRead('wallet', { action: 'summary' }, null);
+      return res && res.ok ? res : null;
+    },
+    async sellerOverview() {
+      const res = await guardedRead('seller', { action: 'overview' }, null);
+      return res && res.ok ? res.overview : null;
+    },
+    async sellerDirectory(q) {
+      const res = await guardedRead('seller', { action: 'directory', q: q || '' }, null);
+      return (res && res.sellers) || [];
+    },
+    async sellerActivity(before) {
+      const res = await guardedRead('seller', { action: 'activity', before: before || undefined }, null);
+      return (res && res.activity) || [];
+    },
+
+    /* -------- security -------- */
+    async pinSet(pin) {
+      return guardedWrite('security', { action: 'pin-set', new_pin: pin });
+    },
+    async pinChange(oldPin, newPin) {
+      return guardedWrite('security', { action: 'pin-change', old_pin: oldPin, new_pin: newPin });
+    },
+    async pinVerify(pin) {
+      return guardedWrite('security', { action: 'pin-verify', pin });
+    },
+    async pinStatus() {
+      const res = await guardedWrite('security', { action: 'pin-status' });
+      return res && res.ok ? res : { ok: true, hasPin: false };
+    },
+    async passwordChange(oldPassword, newPassword) {
+      return guardedWrite('security', { action: 'password-change', old_password: oldPassword, new_password: newPassword });
+    },
+
+    /* -------- seller profile (full row) -------- */
+    async sellerProfile() {
+      const { data: auth, error: authError } = await client.auth.getUser();
+      fail(authError);
+      if (!auth.user) throw new Error('Sign in as a seller.');
+      const { data, error } = await client
+        .from('seller_profiles')
+        .select('*')
+        .eq('user_id', auth.user.id)
+        .maybeSingle();
+      fail(error);
+      return data;
+    },
+    async saveShopDetails({ shopName, bio, region, publicContact, hours, delivery, socials, avatarPath, coverPath }) {
+      const { data: auth, error: authError } = await client.auth.getUser();
+      fail(authError);
+      if (!auth.user) throw new Error('Sign in as a seller.');
+      const { data: profile, error: profileError } = await client
+        .from('profiles')
+        .select('account_type')
+        .eq('id', auth.user.id)
+        .single();
+      fail(profileError);
+      if (profile.account_type !== 'seller') throw new Error('Sellers only.');
+      const payload = {};
+      if (shopName !== undefined) payload.shop_name = String(shopName).slice(1, 120);
+      if (bio !== undefined) payload.bio = String(bio).slice(0, 500);
+      if (region !== undefined) payload.region = String(region).slice(0, 100);
+      if (publicContact !== undefined) payload.public_contact = publicContact;
+      if (hours !== undefined || delivery !== undefined) {
+        payload.details = { hours: hours || null, delivery: delivery || null };
+      }
+      if (socials !== undefined) payload.socials = socials;
+      if (avatarPath !== undefined) payload.avatar_path = avatarPath;
+      if (coverPath !== undefined) payload.cover_path = coverPath;
+      const { data, error } = await client
+        .from('seller_profiles')
+        .update(payload)
+        .eq('user_id', auth.user.id)
+        .eq('verification_status', 'pending')
+        .select('shop_slug')
+        .maybeSingle();
+      fail(error);
+      return data;
+    },
+    async shopMediaUrl(path) {
+      if (!path) return '';
+      return client.storage.from('shop-media').getPublicUrl(path).data.publicUrl;
+    },
+
+    /* -------- support requests -------- */
+    async supportRequest({ topic, current, proposed, reason }) {
+      const { data: auth, error: authError } = await client.auth.getUser();
+      fail(authError);
+      if (!auth.user) throw new Error('Sign in to send a request.');
+      const { error } = await client.from('support_requests').insert({
+        user_id: auth.user.id,
+        topic: String(topic).slice(0, 100),
+        current_info: current ? String(current).slice(0, 2000) : null,
+        proposed: String(proposed).slice(1, 2000),
+        reason: reason ? String(reason).slice(0, 2000) : null,
+      });
+      fail(error);
+      return { ok: true };
+    },
+
+    /* -------- push -------- */
+    async pushConfig() {
+      return invoke('push', { action: 'config' });
+    },
+    async pushSubscribe(subscription) {
+      return guardedWrite('push', { action: 'subscribe', subscription });
+    },
+    async pushUnsubscribe(endpoint) {
+      return guardedWrite('push', { action: 'unsubscribe', endpoint });
+    },
+
+    /* -------- shop media -------- */
+    async uploadShopMedia(file) {
+      const { data: auth, error: authError } = await client.auth.getUser();
+      fail(authError);
+      if (!auth.user) throw new Error('Sign in to upload images.');
+      const safe = String((file && file.name) || 'image')
+        .replace(/[^a-zA-Z0-9._-]+/g, '-').slice(-80);
+      const path = `${auth.user.id}/${crypto.randomUUID()}-${safe}`;
+      const blob = file instanceof File ? file : dataUrlToBlob(file);
+      const { error } = await client.storage.from('shop-media').upload(path, blob, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+      fail(error);
+      return path;
+    },
+  });
+
+  function stateUserId() {
+    let id = null;
+    try {
+      const session = client.auth.getSession();
+      id = session && session.data && session.data.session ? session.data.session.user.id : null;
+    } catch (e) { /* session not loaded yet */ }
+    return id || 'unknown';
+  }
+
+  /* Push plumbing: the apps expose window.kobePushConfig and expect
+     the backend to call it with the VAPID key and save/remove hooks. */
+  async function setupPush() {
+    try {
+      const config = await api.pushConfig();
+      if (config && config.ok && typeof window.kobePushConfig === 'function') {
+        window.kobePushConfig({
+          vapidPublicKey: config.vapidPublicKey || '',
+          onSubscribe: subscription => api.pushSubscribe(subscription),
+          onUnsubscribe: subscription => api.pushUnsubscribe(subscription && subscription.endpoint),
+        });
+      }
+    } catch (e) { /* push is optional until VAPID keys are set */ }
+  }
+
+  /* Realtime is best-effort: it only delivers events once the tables
+     are added to the Supabase Realtime publication. */
+  function setupRealtime(state) {
+    try {
+      const userId = state.profile.id;
+      const notify = (() => {
+        let timer = 0;
+        return () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('kobe:refresh', { detail: { reason: 'realtime' } }));
+            if (typeof window.kobeRefresh === 'function') window.kobeRefresh('realtime');
+          }, 700);
+        };
+      })();
+      const channel = client.channel('kobe-private-' + userId);
+      channel
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders',
+          filter: `or(buyer_id=eq.${userId},seller_id=eq.${userId})` }, notify)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages',
+          filter: `thread_buyer=eq.${userId}` }, notify)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages',
+          filter: `thread_seller=eq.${userId}` }, notify)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'disputes',
+          filter: `opened_by=eq.${userId}` }, notify)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'wallet_ledger_entries',
+          filter: `user_id=eq.${userId}` }, notify)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_events',
+          filter: `user_id=eq.${userId}` }, notify)
+        .subscribe();
+    } catch (e) { /* realtime is optional */ }
+  }
+
   window.KobeSupabase = {
     client,
     api,
@@ -371,8 +730,11 @@
     listOwnLiveSessions,
     endLiveSession,
     submitKyc,
-    getMyKycStatus
+    getMyKycStatus,
+    invoke,
+    dataUrlToBlob,
   };
+  window.KobeBackend = api;
   window.KobeApi = Object.assign(window.KobeApi || {}, api);
   window.kobeLogout = signOut;
   if (typeof KobeApi !== 'undefined') Object.assign(KobeApi, api);
@@ -391,6 +753,8 @@
       }
       if (expectedRole === 'seller') await ensureSellerProfile();
       window.dispatchEvent(new CustomEvent('kobe:auth-ready', { detail: state }));
+      setupPush();
+      setupRealtime(state);
     }).catch(() => location.replace(appUrl('Kobe_Mweusi_homepage_v7_static.html#signin')));
   } else if (page === 'Kobe_Mweusi_homepage_v7_static.html' || page === '' || page === 'index.html') {
     getSessionProfile().then(state => {
