@@ -60,6 +60,8 @@ var page = location.pathname.split('/').pop();
 
   async function bootSeller(state) {
     if (typeof enterSeller === 'function') enterSeller({ name: (state.profile && state.profile.display_name) || '' });
+    /* Load core profile first so the sidebar name/avatar appear instantly.
+       Defer non-critical data (wallet, activity, live) until after first render. */
     await loadSellerData(state);
     var pin = await api().pinStatus();
     if (pin && pin.hasPin && typeof secSt !== 'undefined') secSt.pin = true;
@@ -70,12 +72,21 @@ var page = location.pathname.split('/').pop();
   async function loadSellerData(state) {
     sellerState = state;
     if (!state || !state.profile) return;
+    /* Core profile + sidebar: load FIRST and render immediately. */
     try { await loadSellerProfile(); } catch (e) { console.warn('profile', e); }
-    try { await loadSellerProducts(); } catch (e) { console.warn('products', e); }
-    try { await loadSellerOrders(); } catch (e) { console.warn('orders', e); }
-    try { await loadSellerDisputes(); } catch (e) { console.warn('disputes', e); }
-    try { await loadSellerWallet(); } catch (e) { console.warn('wallet', e); }
-    try { await loadSellerChats(); } catch (e) { console.warn('chats', e); }
+    if (typeof render === 'function') render();
+    /* Secondary data: load in parallel, each guarded independently. */
+    var secondary = [
+      loadSellerProducts(),
+      loadSellerOrders(),
+      loadSellerDisputes(),
+      loadSellerWallet(),
+      loadSellerChats(),
+    ];
+    var results = await Promise.allSettled(secondary);
+    results.forEach(function(r, i) {
+      if (r.status === 'rejected') console.warn('seller-load', ['products','orders','disputes','wallet','chats'][i], r.reason);
+    });
     try { await loadSellerActivity(); } catch (e) { console.warn('activity', e); }
     try { await loadSellerLive(); } catch (e) { console.warn('live', e); }
     wireSellerButtons();
@@ -84,48 +95,49 @@ var page = location.pathname.split('/').pop();
 
   async function loadSellerProfile() {
     var profile = sellerState.profile;
-    var authUser = (sellerState.session && sellerState.session.user) || (window.KobeSupabase && window.KobeSupabase.client.auth ? null : null);
+    var authUser = null;
     var metaDisplayName = '';
-    try {
-      if (window.KobeSupabase && window.KobeSupabase.client) {
+    if (window.KobeSupabase && window.KobeSupabase.client) {
+      try {
         var authRes = await window.KobeSupabase.client.auth.getUser();
         if (authRes && authRes.data && authRes.data.user) {
           authUser = authRes.data.user;
           metaDisplayName = (authUser.user_metadata && (authUser.user_metadata.full_name || authUser.user_metadata.name || authUser.user_metadata.display_name)) || '';
         }
-      }
-    } catch (e) { /* auth metadata is optional */ }
+      } catch (e) { /* auth metadata is optional */ }
+    }
     user.name = profile.display_name || metaDisplayName || '';
     user.first = user.name.trim().split(/\s+/)[0] || '';
     user.phone = profile.phone_e164 || '';
     user.email = profile.email || (authUser && authUser.email) || '';
 
-    try {
-      var row = await api().sellerProfile();
-      if (row) {
-        shopPaths.avatar = row.avatar_path || '';
-        shopPaths.cover = row.cover_path || '';
-        store.name = row.shop_name || '';
-        store.first = store.name.split(/\s+/)[0] || '';
-        store.kid = row.kobe_id || '';
-        store.desc = row.bio || '';
-        store.loc = row.region || '';
-        store.hours = (row.details && row.details.hours) || '';
-        store.delivery = (row.details && row.details.delivery) || '';
-        store.soc = Object.keys(row.socials || {}).map(function (k) { return SOCIAL_LABELS[k] || k; });
-        store.avatar = row.avatar_path ? await api().shopMediaUrl(row.avatar_path) : '';
-        store.cover = row.cover_path ? await api().shopMediaUrl(row.cover_path) : '';
-      }
-    } catch (e) { console.warn('sellerProfile', e); }
+    /* Run sellerProfile and sellerOverview in parallel — independent calls. */
+    var profileP = api().sellerProfile().catch(function (e) { console.warn('sellerProfile', e); return null; });
+    var overviewP = sellerOverviewCache ? Promise.resolve(sellerOverviewCache) : api().sellerOverview().catch(function (e) { console.warn('sellerOverview', e); return null; });
+    var row = await profileP;
+    var overview = await overviewP;
 
-    try {
-      sellerOverviewCache = await api().sellerOverview();
-      if (sellerOverviewCache) {
-        sellerStats = sellerOverviewCache.stats || {};
-        store.rate = sellerStats.rating ? String(sellerStats.rating) : '—';
-        bal = Number(sellerOverviewCache.wallet.balance);
-      }
-    } catch (e) { console.warn('sellerOverview', e); }
+    if (row) {
+      shopPaths.avatar = row.avatar_path || '';
+      shopPaths.cover = row.cover_path || '';
+      store.name = row.shop_name || '';
+      store.first = store.name.split(/\s+/)[0] || '';
+      store.kid = row.kobe_id || '';
+      store.desc = row.bio || '';
+      store.loc = row.region || '';
+      store.hours = (row.details && row.details.hours) || '';
+      store.delivery = (row.details && row.details.delivery) || '';
+      store.soc = Object.keys(row.socials || {}).map(function (k) { return SOCIAL_LABELS[k] || k; });
+      /* Lazy-load media URLs — don't await them now, resolve later. */
+      if (row.avatar_path) api().shopMediaUrl(row.avatar_path).then(function (u) { store.avatar = u; if (typeof pfUpdate === 'function') pfUpdate(); }).catch(function () {});
+      if (row.cover_path) api().shopMediaUrl(row.cover_path).then(function (u) { store.cover = u; }).catch(function () {});
+    }
+    if (overview) {
+      sellerOverviewCache = overview;
+      sellerStats = overview.stats || {};
+      store.rate = sellerStats.rating ? String(sellerStats.rating) : '—';
+      bal = Number(overview.wallet.balance);
+    }
     if (typeof pfUpdate === 'function') pfUpdate();
   }
 

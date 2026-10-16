@@ -575,7 +575,7 @@ function render2(){ntfPend();vbUpd();vComp();secView();pinBanner();shopCk();ntfB
  vrRender();
 }
 chats.forEach(c=>c.m.forEach((m,i)=>m[2]=m[2]||'10:'+(20+i*6)));let user={name:'',first:'',phone:'',email:''};function enterSeller(u){if(u&&u.name){user.name=String(u.name);user.first=user.name.trim().split(/\s+/)[0];pfUpdate();}else toast('Sign in to load your account name.');}
-async function refreshSellerProfile(){try{if(!window.KobeApi||!KobeApi.getMyProfile)return;const profile=await KobeApi.getMyProfile();if(!profile)return;kobeSetProfile({name:profile.display_name,email:profile.email,phone:profile.phone_e164});}catch(e){console.error('Failed to load seller profile:',e);}}
+let _sellerProfileLoaded=false;async function refreshSellerProfile(){if(_sellerProfileLoaded)return;try{if(!window.KobeApi||!KobeApi.getMyProfile)return;_sellerProfileLoaded=true;const profile=await KobeApi.getMyProfile();if(!profile)return;kobeSetProfile({name:profile.display_name,email:profile.email,phone:profile.phone_e164});}catch(e){console.error('Failed to load seller profile:',e);}}
 show();
 
 /* ===== Complete your shop: checklist on Home + direct-edit screens (verified details stay request-only) ===== */
