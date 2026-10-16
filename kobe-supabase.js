@@ -37,6 +37,11 @@
     const { data, error } = await client.auth.getSession();
     fail(error);
     if (!data.session) throw new Error('Your email is not confirmed yet. Check your inbox for the verification link.');
+    const user = data.session.user;
+    if (!user.email_confirmed_at) {
+      await client.auth.signOut();
+      throw new Error('Your email is not confirmed yet. Check your inbox for the verification link, or request a new one.');
+    }
     const profile = await profileFor(data.session.user.id);
     if (expectedRole && profile.account_type !== expectedRole) {
       await client.auth.signOut();
@@ -67,9 +72,20 @@
   }
 
   async function signIn({ email, pass, role }) {
-    const { error } = await client.auth.signInWithPassword({ email: String(email || '').trim().toLowerCase(), password: pass });
-    fail(error);
+    const { data, error } = await client.auth.signInWithPassword({ email: String(email || '').trim().toLowerCase(), password: pass });
+    if (error) throw error;
+    const user = data.user;
+    if (!user.email_confirmed_at) {
+      await client.auth.signOut();
+      throw new Error('Your email is not confirmed yet. Check your inbox for the verification link, or request a new one.');
+    }
     return enterApp(role);
+  }
+
+  async function resendConfirmationEmail({ email }) {
+    const { error } = await client.auth.resend({ type: 'signup', email: String(email || '').trim().toLowerCase() });
+    fail(error);
+    return { ok: true };
   }
 
   async function signOut() {
@@ -347,14 +363,34 @@
       const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: appUrl('Kobe_Mweusi_homepage_v7_static.html#signin') } });
       fail(error);
     },
+    resendConfirmationEmail,
     resetPassword: async ({ email }) => {
       const { error } = await client.auth.resetPasswordForEmail(String(email || '').trim().toLowerCase(), { redirectTo: appUrl('reset-password.html') });
       fail(error);
     },
-    updatePassword: async password => {
+     updatePassword: async password => {
+       const { error } = await client.auth.updateUser({ password });
+       fail(error);
+     },
+    changePassword: async ({ current, password }) => {
+      const { error: verifyError } = await client.auth.signInWithPassword({
+        email: (await client.auth.getUser()).data.user?.email || '',
+        password: current
+      });
+      if (verifyError) throw new Error('Current password is incorrect.');
       const { error } = await client.auth.updateUser({ password });
       fail(error);
-    }
+    },
+    setTransactionPin: async ({ current, pin }) => {
+      return invoke('security', { action: 'set-pin', current, pin });
+    },
+    signOutAll: async () => {
+      const { error } = await client.auth.signOut({ scope: 'global' });
+      fail(error);
+    },
+    exportData: async () => {
+      return invoke('user', { action: 'export' });
+    },
   };
 
   /* ================================================================
@@ -481,7 +517,8 @@
     async uploadDisputeEvidence(disputeId, files) {
       const paths = [];
       for (const file of files || []) {
-        const blob = file instanceof File ? file : dataUrlToBlob(file);
+        const dataUrl = typeof file === 'string' ? file : (file && file.dataUrl) || null;
+        const blob = file instanceof File ? file : dataUrlToBlob(dataUrl);
         const safe = String((file && file.name) || 'evidence')
           .replace(/[^a-zA-Z0-9._-]+/g, '-').slice(-80);
         const path = `${disputeId}/${stateUserId()}/${crypto.randomUUID()}-${safe}`;
@@ -614,6 +651,61 @@
       return client.storage.from('shop-media').getPublicUrl(path).data.publicUrl;
     },
 
+     /* -------- own profile --------
+        The profiles RLS policy grants update on (display_name, phone_e164)
+        only, so those two are the only columns sent. account_type, id and
+        created_at are untouched and stay server owned. email is read-only
+        from auth.users and included for display only. */
+     async getMyProfile() {
+       const { data: auth, error: authError } = await client.auth.getUser();
+       fail(authError);
+       if (!auth.user) throw new Error('Sign in to view your profile.');
+       const { data, error } = await client
+         .from('profiles')
+         .select('id, account_type, display_name, phone_e164, created_at')
+         .eq('id', auth.user.id)
+         .maybeSingle();
+       fail(error);
+       if (data) return { ...data, email: auth.user.email || auth.user.primary_factors || null };
+       /* A row is created by the signup trigger; a missing one means the
+          account predates it, so build it from the auth user instead of
+          inventing data. */
+       return {
+         id: auth.user.id,
+         account_type: auth.user.user_metadata && auth.user.user_metadata.account_type,
+         display_name: null,
+         phone_e164: null,
+         email: auth.user.email || null,
+         created_at: auth.user.created_at,
+       };
+    },
+    async saveMyProfile({ displayName, phoneE164 }) {
+      const { data: auth, error: authError } = await client.auth.getUser();
+      fail(authError);
+      if (!auth.user) throw new Error('Sign in to edit your profile.');
+
+      const name = String(displayName == null ? '' : displayName).trim();
+      if (name.length < 2 || name.length > 100) throw new Error('Name must be 2 to 100 characters.');
+      if (/[\r\n\t]/.test(name)) throw new Error('Name cannot contain tabs or line breaks.');
+
+      const phone = String(phoneE164 == null ? '' : phoneE164).trim();
+      if (phone && !/^\+[1-9][0-9]{7,14}$/.test(phone)) {
+        throw new Error('Phone must be in international format, for example +255712345678.');
+      }
+
+      const { data, error } = await client
+        .from('profiles')
+        .update({ display_name: name, phone_e164: phone || null })
+        .eq('id', auth.user.id)
+        .select('id, account_type, display_name, phone_e164, created_at')
+        .maybeSingle();
+      fail(error);
+      /* Empty result with no error means RLS hid the row, which for a
+         profile row means the session changed. Never report success. */
+      if (!data) throw new Error('Could not save your profile. Please sign in again.');
+      return data;
+    },
+
     /* -------- support requests -------- */
     async supportRequest({ topic, current, proposed, reason }) {
       const { data: auth, error: authError } = await client.auth.getUser();
@@ -649,7 +741,8 @@
       const safe = String((file && file.name) || 'image')
         .replace(/[^a-zA-Z0-9._-]+/g, '-').slice(-80);
       const path = `${auth.user.id}/${crypto.randomUUID()}-${safe}`;
-      const blob = file instanceof File ? file : dataUrlToBlob(file);
+      const dataUrl = typeof file === 'string' ? file : (file && file.dataUrl) || null;
+      const blob = file instanceof File ? file : dataUrlToBlob(dataUrl);
       const { error } = await client.storage.from('shop-media').upload(path, blob, {
         cacheControl: '3600',
         upsert: false,

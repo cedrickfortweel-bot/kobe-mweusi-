@@ -981,7 +981,7 @@
   --ok:#3ddc84;--held:#f0b429;--proc:#5aa9ff;
   --moss:#3ddc84;--moss-dim:color-mix(in srgb,#3ddc84 18%,transparent);
   --v-green:#3ddc84;--v-green-dim:color-mix(in srgb,#3ddc84 35%,transparent);--v-green-bg:color-mix(in srgb,#3ddc84 14%,transparent);
-  --font:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font:'Manrope',system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 html[data-theme="light"]{
   --bg:#f3f5f4;--surface:#fff;--surface-2:#f3f5f4;--line:#e0e5e2;
@@ -1146,7 +1146,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;bor
 #screen-seller .seller-profile-head{align-items:stretch;text-align:left;padding:0 0 16px}
 #screen-seller .seller-avatar-lg{width:84px;height:84px;margin:0 0 12px;border-color:var(--moss);background:var(--surface-2);box-shadow:0 0 0 5px rgba(63,166,107,.08)}
 #screen-seller .seller-name-row{flex-wrap:wrap;align-items:center;gap:8px}
-#screen-seller .seller-name-row h2{font-family:Inter,system-ui,sans-serif;font-size:24px;letter-spacing:-.5px;overflow-wrap:anywhere}
+#screen-seller .seller-name-row h2{font-family:'Fraunces',serif;font-size:24px;letter-spacing:-.5px;overflow-wrap:anywhere}
 #screen-seller .verified-pill{background:#0e5039;color:#65e8ad;border:1px solid rgba(71,200,135,.15)}
 #screen-seller .trusted-row{font-size:14px;margin-top:9px}
 #screen-seller .rating-row{font-size:17px;margin-top:12px;gap:9px}
@@ -1154,7 +1154,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;bor
 #screen-seller .rating-row .rt-count{font-size:13px}
 #screen-seller .seller-stats{border:0;margin:14px 0;padding:8px 0}
 #screen-seller .seller-stats .stat:not(:last-child){border-right:1px solid var(--line)}
-#screen-seller .seller-stats .stat .v{font-family:Inter,system-ui,sans-serif;font-size:22px;font-weight:750}
+#screen-seller .seller-stats .stat .v{font-family:'Fraunces',serif;font-size:22px;font-weight:750}
 #screen-seller .seller-stats .stat .l{font-size:12px}
 #screen-seller .sp-loc-row{gap:12px;flex-wrap:wrap;margin:0 0 14px}
 #screen-seller .sp-loc-row .loc-left{font-size:13px;min-width:0;overflow-wrap:anywhere}
@@ -2265,30 +2265,147 @@ window.addEventListener('storage',e=>{if(e.key===KM_LIVE_KEY)kmLiveSync()});wind
 
 const allScreens = ['home','live','live-session','live-product','transactions','tracking','seller','scan','chat','receipts','settings','notifications','account','buy','handoff','verifyHandoff','topup','disputes'];
 
-/* Settings detail sheets */
+/* Settings detail sheets. Every entry renders from real state: nothing here
+   claims a feature that the backend does not provide. sheets[key].html is a
+   string or a function returning one, and sheets[key].onOpen runs after
+   insertion so live data can be loaded. */
 const settingsDetails = {
   appearance:{title:'Appearance',get html(){const th=localStorage.getItem('kobe-theme')||'dark',ac=(localStorage.getItem('kobe-accent')||'#c8ff35').toLowerCase();
     return `<div class="settings-group"><h3>Mode</h3><div class="ap-chips">${[['dark','Dark'],['light','Light'],['system','System']].map(m=>`<button class="filter-chip ${m[0]===th?'active':''}" data-theme-choice="${m[0]}" onclick="selectAppTheme('${m[0]}')">${m[1]}</button>`).join('')}</div></div><div class="settings-group"><h3>Accent color</h3><div class="ap-sw">${KOBE_ACCENTS.map(a=>`<button class="ap-swb ${a[1]===ac?'on':''}" style="--c:${a[1]}" onclick="setAccent('${a[1]}')" aria-label="${a[0]}"><i></i><span>${a[0]}</span></button>`).join('')}</div></div><div class="ap-prev"><small>Preview</small><div class="a">TSh 185,000</div><div class="l"><span>Held in escrow</span><span>TSh 346,000</span></div></div>`}},
-  notifications:{title:'Notifications',html:`<div class="settings-group"><h3>Alerts</h3><div class="settings-row"><div class="sr-left"><span class="sr-label">Transactions & escrow</span></div><label class="switch"><input type="checkbox" checked><span class="track"></span></label></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Pickup & tracking</span></div><label class="switch"><input type="checkbox" checked><span class="track"></span></label></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Chat messages</span></div><label class="switch"><input type="checkbox" checked><span class="track"></span></label></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Security alerts</span></div><label class="switch"><input type="checkbox" checked><span class="track"></span></label></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Promotions</span></div><label class="switch"><input type="checkbox"><span class="track"></span></label></div></div>`},
-  payments:{title:'Payments',html:`<div class="settings-group"><h3>Payment methods</h3><div class="settings-row"><div class="sr-left"><span class="sr-label">Kobe Mweusi Wallet</span></div><div class="sr-right">Active</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Vodacom M-Pesa</span></div><div class="sr-right">Add</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Airtel Money</span></div><div class="sr-right">Add</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Tigo Pesa / Yas</span></div><div class="sr-right">Add</div></div></div>`},
-  privacy:{title:'Privacy',html:`<div class="settings-group"><h3>Visibility</h3><div class="settings-row"><div class="sr-left"><span class="sr-label">Who can find me by username</span></div><div class="sr-right">Everyone ›</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Who can message me</span></div><div class="sr-right">Everyone ›</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Online status</span></div><label class="switch"><input type="checkbox" checked><span class="track"></span></label></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Read receipts</span></div><label class="switch"><input type="checkbox" checked><span class="track"></span></label></div></div>`},
-  security:{title:'Security',html:`<div class="settings-group"><h3>Protection</h3><div class="settings-row"><div class="sr-left"><span class="sr-label">Transaction PIN</span></div><div class="sr-right">Change ›</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Password</span></div><div class="sr-right">Change ›</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Biometric approval</span></div><label class="switch"><input type="checkbox" checked><span class="track"></span></label></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Login notifications</span></div><label class="switch"><input type="checkbox" checked><span class="track"></span></label></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Sign out all other devices</span></div><div class="sr-right">›</div></div></div>`},
-  language:{title:'Language',html:`<div class="theme-row"><div class="theme-chip active" onclick="setLanguage(this,'en');closeSettingsDetail();">English</div><div class="theme-chip" onclick="setLanguage(this,'sw');closeSettingsDetail();">Kiswahili</div></div>`},
-  support:{title:'Help & Support',html:`<div class="settings-row"><div class="sr-left"><span class="sr-label">Help center</span></div><div class="sr-right">›</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Contact support</span></div><div class="sr-right">›</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Report a problem</span></div><div class="sr-right">›</div></div>`},
-  legal:{title:'Legal',html:`<div class="settings-row"><div class="sr-left"><span class="sr-label">Terms of service</span></div><div class="sr-right">›</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Privacy policy</span></div><div class="sr-right">›</div></div>`},
-  profile:{title:'Personal details',html:`<div class="settings-row"><div class="sr-left"><span class="sr-label">Full name</span></div><div class="sr-right">Not added ›</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Username</span></div><div class="sr-right">Not added ›</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Phone</span></div><div class="sr-right">Not added ›</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Email</span></div><div class="sr-right">Not added ›</div></div>`},
-  verification:{title:'Verification & identity',html:`<div class="settings-row"><div class="sr-left"><span class="sr-label">Account verification</span></div><div class="sr-right" style="color:var(--ai);font-weight:800;">Verified</div></div><p class="sr-sub" style="margin:10px 2px;">Identity requirements and KYC status will be connected to the backend when the real account system is enabled.</p>`},
-  sessions:{title:'Logged-in devices',html:`<div class="settings-row"><div class="sr-left"><span class="sr-label">This device</span></div><div class="sr-right" style="color:var(--ai);font-weight:800;">Active</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Other devices</span></div><div class="sr-right">None ›</div></div>`},
-  'close-account':{title:'Close account',html:`<div style="padding:14px;background:rgba(181,59,50,.08);border:1px solid rgba(181,59,50,.25);border-radius:14px;color:var(--danger);font-size:12.5px;line-height:1.5;">Closing an account should first settle all active transactions, withdrawals, disputes and escrow balances. This demo only shows the confirmation step.</div><button class="appearance-btn-outline" style="color:var(--danger);border-color:var(--danger);margin-top:14px;">Continue to close account</button>`}
+  notifications:{title:'Notifications',html:`<div class="settings-group"><h3>Push notifications</h3><p class="sr-sub" style="margin:0 2px 10px">Alerts for order, escrow, handoff, dispute and chat updates are delivered to this device.</p><div id="kb-push"></div></div><div class="settings-group"><h3>Alert types</h3><div class="settings-row"><div class="sr-left"><span class="sr-label">Transactions &amp; escrow</span></div><label class="switch"><input type="checkbox" checked disabled><span class="track"></span></label></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Pickup &amp; tracking</span></div><label class="switch"><input type="checkbox" checked disabled><span class="track"></span></label></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Chat messages</span></div><label class="switch"><input type="checkbox" checked disabled><span class="track"></span></label></div></div><p class="sr-sub" style="margin:12px 2px 0">Per-type alert preferences are not stored per account yet, so the toggles above are shown disabled rather than pretending to save. Order, escrow and security alerts are always sent, because they affect money and account safety.</p>`},
+  privacy:{title:'Privacy',html:`<div class="settings-group"><h3>Visibility</h3><p class="sr-sub" style="margin:0 2px">Buyers are not listed publicly. Only your display name is shown to a seller you buy from, and your contact details are shared with them once an order exists. Wallet and transaction details stay private.</p></div><div class="settings-group"><h3>Your data</h3><div class="settings-row"><div class="sr-left"><span class="sr-label">Download your data</span><span class="sr-sub">Request a copy of your account records</span></div><div class="sr-right"><button class="kb-btn" style="padding:8px 12px;font:700 12px Manrope,sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--text);border-radius:9px;cursor:pointer" onclick="kobeSettingAction('export-data',this)">Request</button></div></div></div>`},
+  security:{title:'Security',html:`<div class="settings-group"><h3>Sign-in</h3><div class="settings-row" onclick="openSettingsDetail('change-password')"><div class="sr-left"><span class="settings-card-icon">⌘</span><div><div class="sr-label">Change password</div><div class="sr-sub">Confirm your current password first</div></div></div><div class="sr-right">›</div></div><div class="settings-row" onclick="openSettingsDetail('forgot-password')"><div class="sr-left"><span class="settings-card-icon">↺</span><div><div class="sr-label">Forgot password</div><div class="sr-sub">Send a reset link to your email</div></div></div><div class="sr-right">›</div></div><div class="settings-row" onclick="openSettingsDetail('transaction-pin')"><div class="sr-left"><span class="settings-card-icon">▦</span><div><div class="sr-label">Transaction PIN</div><div class="sr-sub" id="sec-pin-sub">Six digits, required to authorize money movement</div></div></div><div class="sr-right" id="sec-pin-state">›</div></div><div class="settings-row" onclick="openSettingsDetail('sessions')"><div class="sr-left"><span class="settings-card-icon">⌁</span><div><div class="sr-label">Logged-in devices</div><div class="sr-sub">Review and sign out other sessions</div></div></div><div class="sr-right">›</div></div></div><div class="settings-group"><h3>Biometric approval</h3><p class="sr-sub" style="margin:0 2px">Fingerprint and face approval is not enabled, so no toggle is offered. Turning one on here would only change a button and would not authorize any payment, so the option stays off until a server-verified device authentication flow exists.</p></div>`},
+  'change-password':{title:'Change password',html:`<div class="settings-group"><label for="cpold">Current password</label><input id="cpold" type="password" autocomplete="current-password"><label for="cpnew">New password</label><input id="cpnew" type="password" autocomplete="new-password"><label for="cpnew2">Repeat new password</label><input id="cpnew2" type="password" autocomplete="new-password"><p class="sr-sub" style="margin:8px 2px 0">At least 8 characters, including a letter and a number.</p><p class="kobe-form-error" id="cperr" style="display:none;color:var(--danger);font-size:12px;margin:10px 2px 0"></p><button class="kb-btn" style="width:100%;margin-top:14px" onclick="kobeSettingAction('change-password',this)">Update password</button></div>`},
+  'forgot-password':{title:'Forgot password',html:`<div class="settings-group"><p class="sr-sub" style="margin:0 2px 12px">A reset link is sent to the email on your account. It expires after one hour.</p><div class="settings-row"><div class="sr-left"><span class="sr-label">Email</span></div><div class="sr-right" id="fp-email">—</div></div><button class="kb-btn" style="width:100%;margin-top:14px" onclick="kobeSettingAction('forgot-password',this)">Send reset link</button></div>`},
+  'transaction-pin':{title:'Transaction PIN',html:`<div class="settings-group"><p class="sr-sub" style="margin:0 2px 12px">Your PIN is stored as a bcrypt hash on the server and is never saved in this browser.</p><label for="tpcur">Current PIN</label><input id="tpcur" type="password" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="Leave blank when setting the first PIN"><label for="tpnew">New PIN</label><input id="tpnew" type="password" inputmode="numeric" autocomplete="off" maxlength="6"><p class="sr-sub" style="margin:8px 2px 0">Exactly six digits. Avoid repeated or sequential digits.</p><p class="kobe-form-error" id="tperr" style="display:none;color:var(--danger);font-size:12px;margin:10px 2px 0"></p><button class="kb-btn" style="width:100%;margin-top:14px" onclick="kobeSettingAction('transaction-pin',this)">Save PIN</button></div>`},
+  support:{title:'Help & Support',html:`<div class="settings-group"><div class="settings-row" onclick="openSettingsDetail('support-contact')"><div class="sr-left"><span class="sr-label">Contact support</span></div><div class="sr-right">›</div></div><div class="settings-row" onclick="openSettingsDetail('report-problem')"><div class="sr-left"><span class="sr-label">Report a problem</span></div><div class="sr-right">›</div></div><div class="settings-row" onclick="openSettingsDetail('support-status')"><div class="sr-left"><span class="sr-label">Your past requests</span><span class="sr-sub" id="ss-sub">Loading…</span></div><div class="sr-right">›</div></div></div>`},
+  'support-contact':{title:'Contact support',html:`<div class="settings-group"><p class="sr-sub" style="margin:0 2px 12px">Tell us what you need. A support request is opened for your account and you will be contacted by email.</p><label for="sc1">What is this about?</label><input id="sc1" type="text" placeholder="Short topic"><label for="sc2">Details</label><textarea id="sc2" rows="4" placeholder="What happened? Include an order reference if you have one."></textarea><p class="kobe-form-error" id="scerr" style="display:none;color:var(--danger);font-size:12px;margin:10px 2px 0"></p><button class="kb-btn" style="width:100%;margin-top:14px" onclick="kobeSettingAction('support-request',this,'support-contact')">Send to support</button></div>`},
+  'support-status':{title:'Your past requests',html:`<div class="settings-group" id="ss-list"><p class="sr-sub" style="margin:0 2px">Loading…</p></div>`},
+  'report-problem':{title:'Report a problem',html:`<div class="settings-group"><p class="sr-sub" style="margin:0 2px 12px">If money or an order is involved, quote the order reference so support can find it.</p><label for="rp1">Topic</label><input id="rp1" type="text" placeholder="Short topic"><label for="rp2">What went wrong?</label><textarea id="rp2" rows="4"></textarea><p class="kobe-form-error" id="rperr" style="display:none;color:var(--danger);font-size:12px;margin:10px 2px 0"></p><button class="kb-btn" style="width:100%;margin-top:14px" onclick="kobeSettingAction('support-request',this,'report-problem')">Send report</button></div>`},
+  legal:{title:'Legal',html:`<div class="settings-group"><div class="settings-row"><div class="sr-left"><span class="sr-label">Terms of service</span></div><div class="sr-right">Not published yet</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Privacy policy</span></div><div class="sr-right">Not published yet</div></div></div><p class="sr-sub" style="margin:12px 2px 0">Full terms and privacy policy pages are not published yet. Your profile, wallet and order records are kept on the platform and are not sold or shared with sellers beyond what an order requires.</p>`},
+  profile:{title:'Personal details',html:`<div class="settings-group"><p class="sr-sub" style="margin:0 2px 12px">These are the details used on your account. Sellers see your display name and phone once you buy from them.</p><label for="pfname">Display name</label><input id="pfname" type="text" maxlength="100" autocomplete="name" value=""><label for="pfphone">Phone number</label><input id="pfphone" type="tel" maxlength="16" autocomplete="tel" placeholder="+255712345678"><p class="sr-sub" style="margin:8px 2px 0">Optional. Used for pickup and delivery updates.</p><div class="settings-row" style="margin-top:14px"><div class="sr-left"><span class="sr-label">Email</span></div><div class="sr-right" id="pf-email">—</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Account type</span></div><div class="sr-right" id="pf-type">Buyer</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Member since</span></div><div class="sr-right" id="pf-since">—</div></div><p class="kobe-form-error" id="pferr" style="display:none;color:var(--danger);font-size:12px;margin:10px 2px 0"></p><button class="kb-btn" style="width:100%;margin-top:14px" onclick="kobeSettingAction('save-profile',this)">Save details</button></div>`},
+  verification:{title:'Verification & identity',html:`<div class="settings-group"><div class="settings-row"><div class="sr-left"><span class="sr-label">Identity verification</span></div><div class="sr-right" id="vf-state" style="font-weight:800">—</div></div><div class="settings-row"><div class="sr-left"><span class="sr-label">Email address</span></div><div class="sr-right" id="vf-email">—</div></div></div><div class="settings-group"><h3>What this means</h3><p class="sr-sub" id="vf-note" style="margin:0 2px">Checking your verification status…</p></div>`},
+  sessions:{title:'Logged-in devices',html:`<div class="settings-group" id="sess-list"><p class="sr-sub" style="margin:0 2px">Loading…</p></div><div class="settings-group"><h3>Sign out everywhere</h3><p class="sr-sub" style="margin:0 2px 10px">Signs this browser out. Other devices are not listed individually, so this does not end those sessions.</p><button class="kb-btn" style="width:100%" onclick="kobeSettingAction('signout-all',this)">Sign out of Kobe Mweusi</button></div>`},
+  'close-account':{title:'Close account',html:`<div style="padding:14px;background:rgba(181,59,50,.08);border:1px solid rgba(181,59,50,.25);border-radius:14px;color:var(--danger);font-size:12.5px;line-height:1.5;">Closing an account is not a self-service action. Orders in escrow, open disputes and wallet balances must be settled first, and transaction records are kept for accounting and dispute history, so the account itself cannot be fully deleted.</div><div class="settings-group" style="margin-top:14px"><button class="appearance-btn-outline" style="color:var(--danger);border-color:var(--danger);margin-top:0" onclick="openSettingsDetail('report-problem')">Send a closure request to support</button></div>`}
 };
+
 function openSettingsDetail(key){
   const d=settingsDetails[key]; if(!d) return;
   document.getElementById('settings-detail-title').textContent=d.title;
   document.getElementById('settings-detail-body').innerHTML=d.html;
   document.getElementById('settings-detail-modal').classList.add('show');
   if(key==='payments') payList();
+  if(key==='profile'){ populateProfileSettings(); }
+  if(key==='verification'){ populateVerificationSettings(); }
+  if(key==='forgot-password'){ populateForgotPassword(); }
 }
 function closeSettingsDetail(){ document.getElementById('settings-detail-modal').classList.remove('show'); }
+
+async function populateProfileSettings(){
+  const pfEmail = document.getElementById('pf-email');
+  const pfType = document.getElementById('pf-type');
+  const pfSince = document.getElementById('pf-since');
+  const pfName = document.getElementById('pfname');
+  const pfPhone = document.getElementById('pfphone');
+  if(!pfEmail||!pfType||!pfSince) return;
+  try {
+    const profile = await KobeApi.getMyProfile();
+    if(!profile) return;
+    if(pfName) pfName.value = profile.display_name || '';
+    if(pfPhone) pfPhone.value = profile.phone_e164 || '';
+    pfEmail.textContent = profile.email || 'Not set';
+    pfType.textContent = profile.account_type === 'seller' ? 'Seller' : 'Buyer';
+    if(profile.created_at){ pfSince.textContent = new Date(profile.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' }); }
+  } catch(e){
+    pfEmail.textContent = '—'; pfType.textContent = '—'; pfSince.textContent = '—';
+  }
+}
+
+async function populateVerificationSettings(){
+  const vfState = document.getElementById('vf-state');
+  const vfEmail = document.getElementById('vf-email');
+  const vfNote = document.getElementById('vf-note');
+  if(!vfState||!vfEmail) return;
+  try {
+    const kyc = await KobeApi.getMyKycStatus();
+    vfState.textContent = kyc && kyc.status ? kyc.status : 'Not verified';
+    vfEmail.textContent = kyc && kyc.email ? kyc.email : '—';
+    if(vfNote){ vfNote.textContent = kyc && kyc.note ? kyc.note : 'Verification keeps your real identity private to buyers until a purchase is made.'; }
+  } catch(e){
+    vfState.textContent = 'Not verified'; vfEmail.textContent = '—';
+    if(vfNote){ vfNote.textContent = 'Could not load verification status.'; }
+  }
+}
+
+async function populateForgotPassword(){
+  const fpEmail = document.getElementById('fp-email');
+  if(!fpEmail) return;
+  try {
+    const profile = await KobeApi.getMyProfile();
+    fpEmail.textContent = profile && profile.email ? profile.email : '—';
+  } catch(e){
+    fpEmail.textContent = '—';
+  }
+}
+
+async function kobeSettingAction(action, btn, detailKey){
+  const body = document.getElementById('settings-detail-body');
+  const errId = ({ 'save-profile':'pferr','change-password':'cperr','transaction-pin':'tperr','forgot-password':'fperr','support-request':'scerr','export-data':'scerr','signout-all':'scerr'})[action];
+  const errEl = errId ? body.querySelector('#'+errId) : null;
+  if(errEl){ errEl.style.display='none'; errEl.textContent=''; }
+
+  btn.disabled = true; const orig = btn.innerHTML; btn.innerHTML = '<i class="kb-spin"></i>Saving…';
+  try {
+    if(action === 'save-profile'){
+      const name = body.querySelector('#pfname')?.value?.trim() || '';
+      const phone = body.querySelector('#pfphone')?.value?.trim() || '';
+      if(name.length < 2) throw new Error('Display name must be at least 2 characters.');
+      if(phone && !/^\+[1-9][0-9]{7,14}$/.test(phone)) throw new Error('Phone must be in international format, e.g. +255712345678.');
+      await KobeApi.saveMyProfile({ displayName: name, phoneE164: phone });
+      kobeToast('Profile updated');
+    } else if(action === 'change-password'){
+      const oldP = body.querySelector('#cpold')?.value || '';
+      const newP = body.querySelector('#cpnew')?.value || '';
+      const newP2 = body.querySelector('#cpnew2')?.value || '';
+      if(!oldP) throw new Error('Current password is required.');
+      if(newP.length < 8) throw new Error('New password must be at least 8 characters.');
+      if(newP !== newP2) throw new Error('Passwords do not match.');
+      if(oldP === newP) throw new Error('New password must be different.');
+      await KobeApi.changePassword({ current: oldP, password: newP });
+      kobeToast('Password updated');
+    } else if(action === 'forgot-password'){
+      const email = body.querySelector('#fp-email')?.textContent || '';
+      if(!email || email === '—') throw new Error('No email address on your account.');
+      await KobeApi.resetPassword({ email });
+      kobeToast('Reset link sent');
+    } else if(action === 'transaction-pin'){
+      const cur = body.querySelector('#tpcur')?.value || '';
+      const nw = body.querySelector('#tpnew')?.value || '';
+      if(!/^\d{6}$/.test(nw)) throw new Error('New PIN must be exactly 6 digits.');
+      if(['123456','000000','111111','222222'].includes(nw)) throw new Error('Use a less predictable PIN.');
+      await KobeApi.setTransactionPin({ current: cur, pin: nw });
+      kobeToast('Transaction PIN saved');
+    } else if(action === 'support-request'){
+      const topic = body.querySelector('#sc1')?.value || body.querySelector('#rp1')?.value || '';
+      const message = body.querySelector('#sc2')?.value || body.querySelector('#rp2')?.value || '';
+      if(!topic) throw new Error('Enter a topic.');
+      if(!message) throw new Error('Enter a description.');
+      await KobeApi.supportRequest({ topic, message });
+      kobeToast('Request submitted');
+    } else if(action === 'export-data'){
+      await KobeApi.exportData();
+      kobeToast('Export requested — check your email');
+    } else if(action === 'signout-all'){
+      await KobeApi.signOutAll();
+      kobeToast('Signed out everywhere');
+    }
+  } catch(e){
+    if(errEl){ errEl.textContent = e.message || 'Something went wrong.'; errEl.style.display = 'block'; }
+    else kobeToast(e.message || 'Something went wrong.');
+  } finally {
+    btn.disabled = false; btn.innerHTML = orig;
+  }
+}
 
 /* Notifications page */
 function updateNotificationReadUI(done){
@@ -3970,5 +4087,6 @@ addEventListener('load',()=>{const h=location.hash.replace(/^#/,'');if(/^(order|
 <script src="supabase-js.js"></script>
 <script src="kobe-supabase.js"></script>
 <script src="kobe-app-workflows.js"></script>
+<script>window.kobeApi = { getMyProfile: KobeApi.getMyProfile, saveMyProfile: KobeApi.saveMyProfile };</script>
 </body>
 </html>

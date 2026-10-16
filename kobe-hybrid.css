@@ -1,0 +1,851 @@
+/*
+  Kobe Mweusi — Hybrid CSS Foundation
+  ------------------------------------------------------------------
+  A single, shared stylesheet that unifies the design tokens, base
+  styles, component primitives and theme system used by buyer.html,
+  seller.html, reset-password.html and the landing page.
+
+  Approach ("hybrid"):
+  1. Canonical design tokens use a --kobe-* namespace.
+  2. A legacy-alias layer maps every old variable name (--bg, --card,
+     --ink, --surface, --text, --shell, --acc, …) to the canonical
+     tokens so neither page breaks when adopting the shared file.
+  3. Shared component classes (.k-btn, .k-card, .k-input, .k-list,
+     .k-pill, .k-chip, .k-switch, .k-modal, .kb-btn, .kb-spin …) are
+     defined once.  Page-specific CSS in each HTML file keeps working
+     and can progressively migrate to the shared primitives.
+  4. Themes are driven by data-theme on <html> with an opt-in
+     body.light class for backward compatibility.
+
+  Load order in every page:
+    <link rel="stylesheet" href="kobe-hybrid.css">
+    <style> /* page-specific overrides */ </style>
+*/
+
+/* ==================================================================
+   1. CANONICAL DESIGN TOKENS (dark theme — the brand default)
+   ================================================================== */
+
+:root {
+  /* — color palette — */
+  --kobe-bg:              #0e1011;   /* page background */
+  --kobe-surface:         #171a1c;   /* card / list background */
+  --kobe-surface-2:       #0e1011;   /* secondary surface (hover, input bg) */
+  --kobe-line:            #282d2f;   /* borders and dividers */
+  --kobe-ink:             #f2f4f3;   /* primary text */
+  --kobe-muted:           #9aa3a0;   /* secondary text */
+
+  --kobe-accent:          #c8ff35;   /* primary action / link color */
+  --kobe-accent-dim:     #8fb31f;   /* hover state for accent */
+  --kobe-on:              #10130e;   /* text rendered on accent */
+
+  --kobe-ai:              #c8ff35;   /* accent-interactive (links, active) */
+  --kobe-moss:            #3ddc84;   /* success / green */
+  --kobe-moss-dim:        color-mix(in srgb, #3ddc84 18%, transparent);
+  --kobe-danger:          #ff8a80;   /* error / destructive */
+  --kobe-held:            #f0b429;   /* warning / amber */
+  --kobe-ok:              #3ddc84;   /* success alt */
+  --kobe-proc:            #5aa9ff;   /* info / blue */
+
+  /* — semantic status colors — */
+  --kobe-status-escrow:   var(--kobe-held);
+  --kobe-status-completed: var(--kobe-ok);
+  --kobe-status-disputed: var(--kobe-danger);
+  --kobe-status-refunded: var(--kobe-proc);
+  --kobe-status-pending:  var(--kobe-held);
+  --kobe-status-failed:   var(--kobe-danger);
+
+  /* — font families — */
+  --kobe-font-body:  'Manrope', system-ui, -apple-system, "Segoe UI", sans-serif;
+  --kobe-font-head:  'Fraunces', 'Manrope', system-ui, -apple-system, sans-serif;
+  --kobe-font-mono:  ui-monospace, 'SF Mono', 'Segoe UI', 'Menlo', monospace;
+
+  /* — fluid type scale (clamps from 360px ↔ 1280px viewport) — */
+  --kobe-text-xs:     clamp(0.625rem, 0.56rem + 0.2vw, 0.75rem);
+  --kobe-text-sm:     clamp(0.75rem,  0.68rem + 0.25vw, 0.875rem);
+  --kobe-text-md:     clamp(0.8125rem, 0.74rem + 0.3vw, 1rem);
+  --kobe-text-base:   clamp(0.875rem, 0.8rem + 0.45vw, 1.0625rem);
+  --kobe-text-lg:     clamp(0.9375rem, 0.85rem + 0.5vw, 1.125rem);
+  --kobe-text-xl:     clamp(1.0625rem, 0.95rem + 0.7vw, 1.375rem);
+  --kobe-text-2xl:    clamp(1.25rem,  1.1rem + 0.9vw, 1.5rem);
+  --kobe-text-3xl:    clamp(1.5rem,   1.3rem + 1.2vw, 2rem);
+  --kobe-text-4xl:    clamp(1.75rem,  1.6rem + 1.6vw, 2.5rem);
+
+  /* — line heights — */
+  --kobe-leading-tight:   1.2;
+  --kobe-leading-snug:    1.35;
+  --kobe-leading-normal:  1.5;
+  --kobe-leading-relaxed: 1.65;
+
+  /* — font weights — */
+  --kobe-weight-regular:   400;
+  --kobe-weight-medium:    500;
+  --kobe-weight-semibold:  600;
+  --kobe-weight-bold:      700;
+  --kobe-weight-extrabold: 800;
+
+  /* — base font (backward compat) — */
+  --kobe-font-size:  var(--kobe-text-base);
+  --kobe-font-line:  var(--kobe-leading-normal);
+  --kobe-font-weight: var(--kobe-weight-regular);
+
+  /* — spacing scale (4 px grid) — */
+  --kobe-space-1:  4px;
+  --kobe-space-2:  8px;
+  --kobe-space-3:  12px;
+  --kobe-space-4:  16px;
+  --kobe-space-5:  20px;
+  --kobe-space-6:  24px;
+  --kobe-space-7:  32px;
+  --kobe-space-8:  40px;
+
+  /* — border radius — */
+  --kobe-radius-s:  8px;
+  --kobe-radius:    12px;
+  --kobe-radius-m:  14px;
+  --kobe-radius-l:  16px;
+  --kobe-radius-xl: 18px;
+  --kobe-radius-pill: 9999px;
+
+  /* — shadows — */
+  --kobe-shadow-card:     0 4px 14px rgba(0,0,0,.20);
+  --kobe-shadow-pop:      0 12px 36px rgba(0,0,0,.45);
+  --kobe-shadow-inset:    inset 0 1px 0 rgba(255,255,255,.05);
+
+  /* — safe-area / PWA — */
+  --kobe-safe-top:  env(safe-area-inset-top, 0px);
+  --kobe-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --kobe-safe-left: env(safe-area-inset-left, 0px);
+  --kobe-safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ==================================================================
+   2. THEME SYSTEM
+   ================================================================== */
+
+/*
+   Three themes are supported via data-theme on <html>:
+   - "dark"   (default — charcoal / teal)
+   - "light"  (clean light)
+   - "emerald" (deep teal surfaces + emerald actions)
+   - "midnight" (cool midnight blue)
+
+   The buyer pages also use body.light in legacy JS, so we keep that
+   working as a fallback alias.
+*/
+
+/* Dark (brand default) — already defined above, repeated for clarity */
+html[data-theme="dark"] {
+  --kobe-bg:              #0e1011;
+  --kobe-surface:         #171a1c;
+  --kobe-surface-2:       #0e1011;
+  --kobe-line:            #282d2f;
+  --kobe-ink:             #f2f4f3;
+  --kobe-muted:           #9aa3a0;
+  --kobe-accent:          #c8ff35;
+  --kobe-accent-dim:     #8fb31f;
+  --kobe-on:              #10130e;
+  --kobe-moss:            #3ddc84;
+  --kobe-danger:          #ff8a80;
+  --kobe-held:            #f0b429;
+  --kobe-proc:            #5aa9ff;
+}
+
+/* Light theme */
+html[data-theme="light"] {
+  --kobe-bg:              #f3f5f4;
+  --kobe-surface:         #ffffff;
+  --kobe-surface-2:       #f3f5f4;
+  --kobe-line:            #e0e5e2;
+  --kobe-ink:             #121615;
+  --kobe-muted:           #64706c;
+  --kobe-accent:          #c8ff35;
+  --kobe-accent-dim:     #8fb31f;
+  --kobe-on:              #10130e;
+  --kobe-moss:            #1a8a4a;
+  --kobe-moss-dim:        color-mix(in srgb, #1a8a4a 14%, transparent);
+  --kobe-danger:          #b3261e;
+  --kobe-held:            #b7791f;
+  --kobe-proc:            #1f6fd1;
+}
+
+/* Emerald theme — deep teal surfaces + emerald actions */
+html[data-theme="emerald"] {
+  --kobe-bg:              #062d24;
+  --kobe-surface:         #0a3a2e;
+  --kobe-surface-2:       #104b3a;
+  --kobe-line:            #23624e;
+  --kobe-ink:             #f7f5e8;
+  --kobe-muted:           #b6c9bf;
+  --kobe-accent:          #47c887;
+  --kobe-accent-dim:     #2a8a56;
+  --kobe-on:              #04130d;
+  --kobe-moss:            #47c887;
+  --kobe-moss-dim:        color-mix(in srgb, #47c887 18%, transparent);
+  --kobe-danger:          #f07b68;
+  --kobe-held:            #e7b94e;
+  --kobe-proc:            #65b8ff;
+  background-image:
+    radial-gradient(ellipse at 80% -10%, rgba(71,200,135,.12), transparent 42%),
+    radial-gradient(ellipse at 10% 8%, rgba(231,185,78,.07), transparent 42%);
+}
+
+/* Midnight theme — cool blue-greens */
+html[data-theme="midnight"] {
+  --kobe-bg:              #080b12;
+  --kobe-surface:         #101522;
+  --kobe-surface-2:       #171d2b;
+  --kobe-line:            #2b3445;
+  --kobe-ink:             #f7f3e6;
+  --kobe-muted:           #aab2bf;
+  --kobe-accent:          #e7b94e;
+  --kobe-accent-dim:     #a97924;
+  --kobe-on:              #0a0d12;
+  --kobe-moss:            #3baa78;
+  --kobe-moss-dim:        color-mix(in srgb, #3baa78 18%, transparent);
+  --kobe-danger:          #e06b5d;
+  --kobe-held:            #f0b429;
+  --kobe-proc:            #65b8ff;
+  background-image:
+    radial-gradient(ellipse at 80% -10%, rgba(231,185,78,.08), transparent 42%),
+    radial-gradient(ellipse at 10% 8%, rgba(59,170,120,.05), transparent 42%);
+}
+
+/* Legacy backward-compat: body.light class (seller-style) */
+body.light,
+html[data-theme="light"] body {
+  --kobe-bg:              #f3f5f4;
+  --kobe-surface:         #ffffff;
+  --kobe-surface-2:       #f3f5f4;
+  --kobe-line:            #e0e5e2;
+  --kobe-ink:             #121615;
+  --kobe-muted:           #64706c;
+  --kobe-danger:          #b3261e;
+  --kobe-ok:              #1a8a4a;
+  --kobe-held:            #b7791f;
+  --kobe-proc:            #1f6fd1;
+}
+
+/* ==================================================================
+   3. LEGACY VARIABLE ALIASES
+   ================================================================== */
+
+/*
+   Maps every pre-existing variable name to the canonical --kobe-*
+   token.  This block must appear AFTER the theme blocks above so that
+   theme overrides cascade correctly.  Pages can gradually migrate
+   their CSS from --bg/--ink/--acc to --kobe-bg/--kobe-ink/--kobe-accent
+   without breakage.
+*/
+
+:root,
+html[data-theme="dark"],
+html[data-theme="light"],
+html[data-theme="emerald"],
+html[data-theme="midnight"],
+body.light {
+  /* seller-style aliases (seller.html) */
+  --bg:               var(--kobe-bg);
+  --card:             var(--kobe-surface);
+  --ink:              var(--kobe-ink);
+  --mut:              var(--kobe-muted);
+  --line:             var(--kobe-line);
+  --acc:              var(--kobe-accent);
+  --on:               var(--kobe-on);
+  --ai:               var(--kobe-ai);
+  --held:             var(--kobe-held);
+  --ok:               var(--kobe-ok);
+  --proc:             var(--kobe-proc);
+  --bad:              var(--kobe-danger);
+
+  /* buyer-style aliases (buyer.html + homepage + reset-password) */
+  --surface:          var(--kobe-surface);
+  --surface-2:        var(--kobe-surface-2);
+  --text:             var(--kobe-ink);
+  --text-muted:       var(--kobe-muted);
+  --shell:            var(--kobe-accent);
+  --shell-dim:        var(--kobe-accent-dim);
+  --moss:             var(--kobe-moss);
+  --moss-dim:         var(--kobe-moss-dim);
+  --danger:           var(--kobe-danger);
+
+  /* buyer-specific green variables */
+  --v-green:          var(--kobe-moss);
+  --v-green-dim:      var(--kobe-moss-dim);
+  --v-green-bg:       color-mix(in srgb, var(--kobe-moss) 12%, var(--kobe-surface));
+
+  /* accent color variable used by the color picker (seller) */
+  --c:                var(--kobe-accent);
+  --nc:               var(--kobe-ai);
+}
+
+/* ==================================================================
+   4. BASE STYLES & RESET
+   ================================================================== */
+
+*, *::before, *::after { box-sizing: inherit; }
+html { box-sizing: border-box; height: 100%; scroll-padding-top: var(--kobe-safe-top); }
+html[data-theme=""], html:not([data-theme]) { /* ensure default dark applies even if attribute is empty */
+  color-scheme: dark;
+}
+html[data-theme="light"] { color-scheme: light; }
+html[data-theme="dark"], html[data-theme="emerald"], html[data-theme="midnight"] {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  min-height: 100dvh;
+  background: var(--kobe-bg);
+  color: var(--kobe-ink);
+  font: var(--kobe-font-weight) var(--kobe-font-size)/var(--kobe-font-line) var(--kobe-font-body);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure all descendant text inherits the body font stack */
+body * { font-family: inherit; }
+
+/* Images and media */
+img, video, svg { display: block; max-width: 100%; height: auto; }
+
+/* Links */
+a { color: var(--kobe-ai); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Buttons and inputs reset */
+button, input, textarea, select {
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+}
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* Focus ring — consistent, accessible, keyboard-only */
+:focus-visible {
+  outline: 2px solid var(--kobe-accent);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Global touch targets */
+[touch-action],
+[onclick],
+button,
+input,
+select,
+a,
+.k-btn {
+  touch-action: manipulation;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==================================================================
+   5. SHARED COMPONENT PRIMITIVES
+   ================================================================== */
+
+/*
+   Component classes use a .k- prefix to avoid clashes with existing
+   page classes.  .kb- prefix is used for utility classes injected by
+   inline JS (already used in buyer.html).
+*/
+
+/* ----- Layout ----- */
+.k-app       { display: flex; min-height: 100vh; }
+.k-main      { flex: 1; min-width: 0; }
+.k-container { max-width: var(--kobe-container-w, 640px); margin: 0 auto; padding: 0 var(--kobe-safe-left, 16px); }
+.k-section   { padding: var(--kobe-space-6) 0; }
+.k-stack     { display: flex; flex-direction: column; gap: var(--kobe-space-4); }
+
+/* ----- Cards ----- */
+.k-card {
+  background: var(--kobe-surface);
+  border: 1px solid var(--kobe-line);
+  border-radius: var(--kobe-radius-xl);
+  padding: var(--kobe-space-4);
+  box-shadow: var(--kobe-shadow-card);
+}
+.k-card-sm { border-radius: var(--kobe-radius-l); padding: var(--kobe-space-3); }
+.k-card-lg { border-radius: var(--kobe-radius-xl); padding: var(--kobe-space-6); }
+.k-card-flat {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+.k-card.elevated {
+  box-shadow: var(--kobe-shadow-pop);
+  background: linear-gradient(145deg, var(--kobe-surface), var(--kobe-bg));
+}
+
+/* ----- Lists ----- */
+.k-list {
+  background: var(--kobe-surface);
+  border: 1px solid var(--kobe-line);
+  border-radius: var(--kobe-radius-xl);
+  overflow: hidden;
+}
+.k-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--kobe-space-3);
+  padding: var(--kobe-space-4) var(--kobe-space-4);
+  border-bottom: 1px solid var(--kobe-line);
+  text-decoration: none;
+  color: inherit;
+  transition: background .15s ease, transform .1s ease;
+}
+.k-list-item:last-child { border-bottom: 0; }
+.k-list-item:hover  { background: var(--kobe-surface-2); }
+.k-list-item:active { transform: scale(.98); }
+.k-list-item .k-icon { width: 38px; height: 38px; border-radius: var(--kobe-radius); background: var(--kobe-surface-2); display: grid; place-items: center; flex-shrink: 0; }
+.k-list-item .k-meta { flex: 1; min-width: 0; }
+.k-list-item .k-label { font-size: 14px; font-weight: 600; }
+.k-list-item .k-sub  { font-size: 12px; color: var(--kobe-muted); margin-top: 2px; }
+.k-list-item .k-chev { color: var(--kobe-muted); font-size: 20px; flex-shrink: 0; }
+
+/* ----- Buttons ----- */
+.k-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--kobe-space-2);
+  min-height: 46px;
+  padding: 11px 18px;
+  border-radius: var(--kobe-radius);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform .1s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.k-btn:active { transform: scale(.98); }
+.k-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.k-btn-primary {
+  background: var(--kobe-accent);
+  color: var(--kobe-on);
+  border: 1px solid var(--kobe-accent);
+}
+.k-btn-primary:hover { background: var(--kobe-accent-dim); border-color: var(--kobe-accent-dim); }
+
+.k-btn-outline {
+  background: transparent;
+  border: 1px solid var(--kobe-line);
+  color: var(--kobe-ink);
+}
+.k-btn-outline:hover { background: var(--kobe-surface-2); }
+
+.k-btn-danger {
+  background: var(--kobe-danger);
+  color: #fff;
+  border: 1px solid var(--kobe-danger);
+}
+.k-btn-danger:hover { filter: brightness(1.05); }
+
+.k-btn-ghost {
+  background: transparent;
+  border: 0;
+  color: var(--kobe-ai);
+  font-weight: 700;
+}
+
+.k-btn .k-btn-icon { display: grid; place-items: center; }
+.k-btn-sm { padding: 7px 13px; font-size: 13px; min-height: 36px; }
+.k-btn-lg { padding: 14px 22px; font-size: 16px; }
+
+.k-btn-block { width: 100%; }
+
+/* Action row — two buttons side by side */
+.k-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--kobe-space-3); }
+@media (max-width: 480px) { .k-actions { grid-template-columns: 1fr; } }
+
+/* ----- Forms ----- */
+.k-form-group { margin-bottom: var(--kobe-space-5); }
+.k-form-group:last-child { margin-bottom: 0; }
+
+.k-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--kobe-ink);
+  margin: 0 0 var(--kobe-space-2);
+}
+.k-form-group { margin-bottom: var(--kobe-space-5); }
+.k-form-group:last-child { margin-bottom: 0; }
+
+.k-input {
+  width: 100%;
+  background: var(--kobe-surface);
+  border: 1px solid var(--kobe-line);
+  border-radius: var(--kobe-radius);
+  padding: 13px 14px;
+  color: var(--kobe-ink);
+  font-size: 15px;
+  font-family: var(--kobe-font-body);
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.k-input:focus-visible {
+  border-color: var(--kobe-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--kobe-accent) 20%, transparent);
+}
+.k-input.bad,
+.k-input[aria-invalid="true"] { border-color: var(--kobe-danger) !important; }
+
+.k-textarea {
+  min-height: 92px;
+  resize: vertical;
+  width: 100%;
+  background: var(--kobe-surface);
+  border: 1px solid var(--kobe-line);
+  border-radius: var(--kobe-radius);
+  padding: 12px 13px;
+  color: var(--kobe-ink);
+  font-size: 15px;
+  font-family: var(--kobe-font-body);
+  outline: none;
+}
+.k-textarea:focus-visible {
+  border-color: var(--kobe-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--kobe-accent) 20%, transparent);
+}
+
+/* ----- Pills ----- */
+.k-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: var(--kobe-radius-pill);
+  white-space: nowrap;
+}
+.k-pill.escrow { background: color-mix(in srgb, var(--kobe-held) 16%, transparent); color: var(--kobe-held); }
+.k-pill.ok     { background: color-mix(in srgb, var(--kobe-ok) 16%, transparent);     color: var(--kobe-ok); }
+.k-pill.bad    { background: color-mix(in srgb, var(--kobe-danger) 16%, transparent);  color: var(--kobe-danger); }
+.k-pill.proc   { background: color-mix(in srgb, var(--kobe-proc) 14%, transparent);    color: var(--kobe-proc); }
+.k-pill.h      { color: var(--kobe-muted); }
+.k-pill.f      { color: var(--kobe-danger); }
+
+/* ----- Chips (filter / choice) ----- */
+.k-chip,
+.k-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--kobe-radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--kobe-surface);
+  border: 1px solid var(--kobe-line);
+  color: var(--kobe-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.k-chip:hover,
+.k-filter-chip:hover { background: var(--kobe-surface-2); color: var(--kobe-ink); }
+.k-chip.active,
+.k-filter-chip.active {
+  background: var(--kobe-accent);
+  color: var(--kobe-on);
+  border-color: var(--kobe-accent);
+}
+
+/* ----- Switch (toggle) ----- */
+.k-switch {
+  position: relative;
+  width: 40px;
+  height: 23px;
+  flex-shrink: 0;
+}
+.k-switch input { opacity: 0; width: 0; height: 0; }
+.k-switch .track {
+  position: absolute;
+  inset: 0;
+  background: var(--kobe-line);
+  border-radius: var(--kobe-radius-pill);
+}
+.k-switch .track::before {
+  content: "";
+  position: absolute;
+  width: 17px; height: 17px;
+  left: 3px; top: 3px;
+  background: var(--kobe-ink);
+  border-radius: var(--kobe-radius-pill);
+  transition: transform .2s ease, background .2s ease;
+}
+.k-switch input:checked + .track { background: var(--kobe-accent); }
+.k-switch input:checked + .track::before {
+  transform: translateX(17px);
+  background: var(--kobe-on);
+}
+
+/* ----- Avatar / initials ----- */
+.k-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--kobe-radius-pill);
+  background: var(--kobe-accent);
+  color: var(--kobe-on);
+  font-weight: 700;
+  font-size: 14px;
+  font-family: var(--kobe-font-head);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.k-avatar.img { border-radius: var(--kobe-radius-l); }
+.k-avatar.sm { width: 28px; height: 28px; font-size: 11px; }
+.k-avatar.md { width: 38px; height: 38px; font-size: 13px; }
+.k-avatar.lg { width: 52px; height: 52px; font-size: 16px; }
+.k-avatar.xl { width: 70px; height: 70px; font-size: 22px; }
+.k-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ----- Modal / overlay ----- */
+.k-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: calc(var(--kobe-safe-bottom) + 16px);
+  z-index: 120;
+}
+.k-modal-overlay.show { display: flex; }
+.k-modal-sheet {
+  width: min(560px, 100%);
+  max-height: min(760px, 90vh);
+  overflow-y: auto;
+  background: var(--kobe-surface);
+  border: 1px solid var(--kobe-line);
+  border-radius: 22px 22px 0 0;
+  padding: 20px;
+  box-shadow: var(--kobe-shadow-pop);
+}
+@media (min-width: 640px) {
+  .k-modal-overlay { align-items: center; }
+  .k-modal-sheet { border-radius: 22px; }
+}
+
+/* ----- Toast ----- */
+.k-toast {
+  position: fixed;
+  left: 50%; bottom: calc(24px + var(--kobe-safe-bottom, 0px));
+  transform: translate(-50%, 16px);
+  opacity: 0;
+  background: var(--kobe-ink);
+  color: var(--kobe-bg);
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 650;
+  transition: opacity .2s ease, transform .2s ease;
+  pointer-events: none;
+  z-index: 9000;
+  max-width: 90vw;
+}
+.k-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ----- Spinner ----- */
+.k-spin {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: kobe-spin .7s linear infinite;
+  vertical-align: middle;
+}
+@keyframes kobe-spin { to { transform: rotate(360deg); } }
+
+/* ----- Skeleton loader ----- */
+.k-skel {
+  height: 14px;
+  border-radius: 8px;
+  margin-top: 10px;
+  background: linear-gradient(90deg, var(--kobe-line) 25%, var(--kobe-surface) 50%, var(--kobe-line) 75%);
+  background-size: 200% 100%;
+  animation: kobe-skel 1.2s infinite;
+}
+@keyframes kobe-skel { to { background-position: -200% 0; } }
+
+/* ----- Divider / rule ----- */
+.k-divider { height: 1px; border: 0; background: var(--kobe-line); width: 100%; }
+.k-divider-text {
+  display: flex; align-items: center; gap: var(--kobe-space-2);
+  font-size: 11px; color: var(--kobe-muted); text-transform: uppercase;
+  letter-spacing: .06em; margin: var(--kobe-space-5) 0;
+}
+.k-divider-text::before, .k-divider-text::after {
+  content: ""; flex: 1; height: 1px; background: var(--kobe-line);
+}
+
+/* ----- Empty state ----- */
+.k-empty {
+  text-align: center;
+  padding: var(--kobe-space-7) var(--kobe-space-4);
+  color: var(--kobe-muted);
+  font-size: 13px;
+}
+.k-empty .k-empty-icon {
+  width: 44px; height: 44px; margin: 0 auto var(--kobe-space-4);
+  border-radius: 50%; background: var(--kobe-surface-2);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--kobe-muted);
+}
+
+/* ----- Error / note text ----- */
+.k-note  { font-size: 12px; color: var(--kobe-muted); margin: var(--kobe-space-3) 0; }
+.k-error { color: var(--kobe-danger); font-size: 12px; min-height: 18px; margin-top: 6px; }
+
+/* ----- Money / amounts ----- */
+.k-amount { font-family: var(--kobe-font-head); font-weight: 700; font-size: 26px; letter-spacing: -.03em; }
+.k-amount.escrow { color: var(--kobe-held); font-size: 18px; }
+
+/* ==================================================================
+   6. UTILITY CLASSES (kb- prefix — used by inline JS)
+   ================================================================== */
+
+.kb-btn {
+  border: 1px solid var(--kobe-line);
+  background: var(--kobe-surface-2);
+  color: var(--kobe-ink);
+  border-radius: var(--kobe-radius);
+  padding: 8px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+  font-family: var(--kobe-font-body);
+}
+.kb-btn:hover { background: var(--kobe-surface); }
+.kb-btn.primary { background: var(--kobe-accent); color: var(--kobe-on); border-color: var(--kobe-accent); }
+.kb-btn.danger { background: var(--kobe-danger); color: #fff; }
+.kb-btn.ghost { background: transparent; color: var(--kobe-ai); border: 0; padding: 0; }
+
+.kb-spin {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: kobe-spin .7s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.kb-skel {
+  height: 64px;
+  border-radius: var(--kobe-radius);
+  margin: 10px 0;
+  background: linear-gradient(90deg, var(--kobe-surface-2), var(--kobe-line), var(--kobe-surface-2));
+  background-size: 200% 100%;
+  animation: kobe-skel 1.2s linear infinite;
+}
+
+.kb-net {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10000;
+  display: none; align-items: center; justify-content: center; gap: 12px;
+  padding: calc(8px + var(--kobe-safe-top, 0px)) 14px 8px;
+  font-size: 13px; font-weight: 600; color: #fff;
+  background: var(--kobe-danger);
+}
+.kb-net.err   { background: var(--kobe-danger); }
+.kb-net.upd   { background: var(--kobe-proc); }
+.kb-net button {
+  border: 1px solid rgba(255,255,255,.3);
+  background: transparent; color: #fff;
+  border-radius: 999px; padding: 4px 12px; font: inherit; cursor: pointer;
+}
+
+/* ===== Status badge helpers ===== */
+.k-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.k-badge.escrow { background: color-mix(in srgb, var(--kobe-held) 16%, transparent); color: var(--kobe-held); }
+.k-badge.ok     { background: color-mix(in srgb, var(--kobe-ok) 16%, transparent);     color: var(--kobe-ok); }
+.k-badge.danger { background: color-mix(in srgb, var(--kobe-danger) 16%, transparent);  color: var(--kobe-danger); }
+.k-badge.proc   { background: color-mix(in srgb, var(--kobe-proc) 14%, transparent);    color: var(--kobe-proc); }
+
+/* ----- Typography / headings — responsive and consistent across pages ----- */
+.k-text-xs   { font-size: var(--kobe-text-xs); }
+.k-text-sm   { font-size: var(--kobe-text-sm); }
+.k-text-md   { font-size: var(--kobe-text-md); }
+.k-text-lg   { font-size: var(--kobe-text-lg); }
+.k-text-xl   { font-size: var(--kobe-text-xl); }
+
+.k-heading-1 { font: 800 var(--kobe-text-4xl) / var(--kobe-leading-tight) var(--kobe-font-head); letter-spacing: -.02em; }
+.k-heading-2 { font: 700 var(--kobe-text-3xl) / var(--kobe-leading-tight) var(--kobe-font-head); letter-spacing: -.01em; }
+.k-heading-3 { font: 700 var(--kobe-text-2xl) / var(--kobe-leading-snug) var(--kobe-font-head); }
+.k-heading-4 { font: 600 var(--kobe-text-xl) / var(--kobe-leading-snug) var(--kobe-font-head); }
+.k-heading-5 { font: 600 var(--kobe-text-lg) / var(--kobe-leading-normal) var(--kobe-font-head); }
+.k-heading-6 { font: 700 var(--kobe-text-base) / var(--kobe-leading-normal) var(--kobe-font-head); text-transform: uppercase; letter-spacing: .03em; }
+
+/* Money / amounts — consistent with the existing k-amount pattern */
+.k-amount { font-family: var(--kobe-font-head); font-weight: var(--kobe-weight-extrabold); font-size: var(--kobe-text-3xl); letter-spacing: -.03em; }
+.k-amount.escrow { color: var(--kobe-held); font-size: var(--kobe-text-2xl); }
+
+/* ==================================================================
+   7. RESPONSIVE BREAKPOINTS
+   ================================================================== */
+
+@media (max-width: 480px) {
+  :root {
+    --kobe-space-6: 20px;
+    --kobe-space-7: 28px;
+  }
+  .k-actions { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .k-container { padding: 0 var(--kobe-safe-left, 14px); }
+}
+
+@media (min-width: 1024px) {
+  .k-container { max-width: 880px; }
+}
+
+/* Safe-area padding helper for fixed bottom elements */
+.k-safe-bottom {
+  padding-bottom: calc(var(--kobe-space-4) + var(--kobe-safe-bottom, 0px));
+}
+.k-safe-top {
+  padding-top: calc(var(--kobe-space-4) + var(--kobe-safe-top, 0px));
+}

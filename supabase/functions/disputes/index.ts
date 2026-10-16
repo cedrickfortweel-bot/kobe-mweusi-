@@ -249,8 +249,10 @@ export default async function handler(request: Request) {
 
       const ref = String(body.dispute_ref || "").trim().toUpperCase();
       const text = String(body.text || "").trim();
+      const paths = Array.isArray(body.evidence_paths) ? body.evidence_paths.map(String) : [];
       if (!DISPUTE_REF.test(ref)) throw new ApiError(400, "Enter a valid dispute reference");
       if (text.length < 1 || text.length > 2000) throw new ApiError(400, "Message must be 1 to 2000 characters");
+      if (paths.length > 6) throw new ApiError(400, "Attach at most 6 evidence files");
 
       const row = await loadDispute(service, ref, auth.user.id, staff);
       if (row.status === "resolved") throw new ApiError(409, "This dispute is resolved");
@@ -259,6 +261,25 @@ export default async function handler(request: Request) {
       const { data: orderRow } = await service.from("orders").select("buyer_id, seller_id").eq("id", order).maybeSingle();
       const isSeller = orderRow && orderRow.seller_id === auth.user.id;
       const otherParty = orderRow ? (isSeller ? orderRow.buyer_id : orderRow.seller_id) : null;
+
+      const prefix = row.id + "/";
+      for (const path of paths) {
+        if (!path.startsWith(prefix) || path.length > 300 || path.includes("..")) {
+          throw new ApiError(400, "Invalid evidence path");
+        }
+      }
+      const { data: knownRows } = await service
+        .from("dispute_evidence")
+        .select("storage_path")
+        .eq("dispute_id", row.id);
+      const known = new Set((knownRows || []).map((e: any) => e.storage_path));
+      const fresh = paths.filter((p: string) => !known.has(p));
+      if (fresh.length) {
+        const { error: insertError } = await service.from("dispute_evidence").insert(
+          fresh.map((p: string) => ({ dispute_id: row.id, sender_id: auth.user.id, storage_path: p }))
+        );
+        if (insertError) throw insertError;
+      }
 
       const { data: message, error: messageError } = await service.from("dispute_messages").insert({
         dispute_id: row.id,
