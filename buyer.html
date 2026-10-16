@@ -2896,6 +2896,7 @@ function renderChatList(){
   threadsEl.innerHTML='';
   if(!window.KobeApi || typeof KobeApi.chatThreads!=='function'){
     threadsEl.innerHTML='';
+    emptyEl.innerHTML='<div class="empty-state-title">Not connected</div><div class="empty-state-sub">Chat requires a backend connection. Sign in to load your conversations.</div>';
     emptyEl.style.display='flex';
     return;
   }
