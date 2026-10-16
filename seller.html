@@ -274,7 +274,7 @@ function actRow(a){return `<div class="row"${a.id?` data-aid="${escHtml(a.id)}"`
 let of='All',af='All';
 function chipsHtml(list,cur,fn){return list.map(x=>`<button class="chip ${x==cur?'on':''}" onclick="${fn}('${x}')">${x}</button>`).join('')}
 function setO(x){of=x;render()}function setA(x){af=x;render()}
-function render(){render2();pfUpdate();
+function render(){if(stack[stack.length-1]==='msg'&&!chatLoaded)loadChatIfUnlocked();render2();pfUpdate();
  const held=orders.filter(o=>o.s=='In escrow'||o.s=='Disputed').reduce((s,o)=>s+o.amt,0);
  $('#bal').textContent=shown?T(bal):'TSh ••••••';$('#held').textContent=shown?T(held):'••••••';
  $('#hEsc').innerHTML=orders.filter(o=>o.s=='In escrow').map(ordRow).join('')||'<div class="empty">No orders waiting for delivery.</div>';
@@ -315,7 +315,7 @@ function qrSvg(o){const value=typeof o=='string'?o:scode(o);try{return window.Ko
 function shareR(id){const o=orders.find(x=>x.id==id),t='Kobe Mweusi receipt '+o.id+' · '+T(o.amt)+' · '+SL[o.s][0];if(navigator.share)navigator.share({title:'Kobe Mweusi Receipt',text:t}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(t);toast('Receipt details copied')}}
 function printR(id){const w=window.open('','_blank','width=600,height=800');if(!w){toast('Allow pop-ups to print the receipt');return}w.document.write(rhtml(orders.find(x=>x.id==id)));w.document.close();w.focus();setTimeout(()=>w.print(),250)}
 function dlR(id){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rhtml(orders.find(x=>x.id==id))],{type:'text/html'}));a.download='receipt-'+id+'.html';a.click();toast('Receipt downloaded')}
-function msgBuyer(n){let i=chats.findIndex(c=>c.w==n);if(i<0){chats.push({w:n,u:0,m:[]});i=chats.length-1}ci=i;go('chat');setTimeout(()=>$('#stage').scrollTop=1e6)}
+function msgBuyer(n,uid){let i=chats.findIndex(c=>c.uid==uid||c.w==n);if(i<0){chats.push({w:n,u:0,m:[],uid:uid||''});i=chats.length-1}ci=i;go('chat');setTimeout(()=>$('#stage').scrollTop=1e6);if(uid&&window.KobeApi)KobeApi.chatThread(uid).then(r=>{if(r&&r.ok&&r.messages){const c=chats[ci];c.m=r.messages.map(m=>[(m.sender_id===uid?'b':'s'),m.text,new Date(m.at||m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})]);render()}})}
 const recRow=o=>{const t=o.s=='In escrow'?o.who+' paid '+T(o.amt)+' into escrow':o.s=='Completed'?T(o.amt-kf(o.amt))+' released to you':o.s=='Disputed'?o.who+' reported a problem':'Refunded to '+o.who;return `<button class="row" onclick="openOrd('${o.id}')"><span class="ico">${SL[o.s][2]}</span><span class="t"><b>${escHtml(t)}</b><small>${escHtml(o.item)} · ${escHtml(o.dt)}</small></span>${sp(o)}</button>`};
 const drow=d=>{const o=orders.find(x=>x.id==d.oid),h=Math.max(0,Math.ceil((d.dl-Date.now())/36e5));return `<button class="row" onclick="openDsp('${d.id}')"><span class="ico">⚠</span><span class="t"><b>${escHtml(d.reason)} · ${escHtml(o.who)}</b><small>${d.oid} · ${d.replied?'You replied':'Reply within '+cdHtml(d.dl)}</small></span><span class="pill f">Disputed</span></button>`};
 let curD=null;function openDsp(id){curD=id;go('dsp')}
@@ -336,7 +336,20 @@ function setMode(m){mode=m;paint();render()}function setAc(c){ac=c;paint();rende
 try{const l=JSON.parse(localStorage.getItem('km-look-v2'));if(l){mode=l[0];ac=l[1]}}catch(e){}
 paint();
 const UA=navigator.userAgent,isIOS=/iphone|ipad|ipod/i.test(UA),isAnd=/android/i.test(UA),inApp=/FBAN|FBAV|Instagram|TikTok|musical_ly|Snapchat|WhatsApp|; wv\)/i.test(UA);let kLoad=false,kErr=null,kRetrying=false,kOff=!navigator.onLine,kUpd=null,kInst=null;const kPush={on:false,cfg:null};const notifs=[];let prods=[],live=null,ci=0,ap='7 days',kyc=0,gsv=null,
-chats=[];let liveHistory=[];try{liveHistory=JSON.parse(localStorage.getItem('km-live-history-preview')||'[]')}catch(e){liveHistory=[]}let chatFilter='';
+chats=[];let liveHistory=[];try{liveHistory=JSON.parse(localStorage.getItem('km-live-history-preview')||'[]')}catch(e){liveHistory=[]}let chatFilter='';let chatLoaded=false;
+async function loadChatThreads(){
+  if(!window.KobeApi||typeof KobeApi.chatThreads!=='function')return;
+  try{
+    const threads=await KobeApi.chatThreads();
+    for(const t of threads){
+      const existing=chats.find(c=>c.uid===t.withUserId);
+      if(existing){existing.w=t.withName||existing.w;existing.u=t.unread||0;existing.lastBody=t.lastBody||'';existing.lastAt=t.lastAt;}
+      else chats.push({w:t.withName||'?',u:t.unread||0,m:[],uid:t.withUserId,lastBody:t.lastBody||'',lastAt:t.lastAt});
+    }
+  }catch(e){console.error('Chat thread load failed:',e)}
+  chatLoaded=true;render()
+}
+function loadChatIfUnlocked(){if(!chatLoaded&&window.KobeApi){chatLoaded=true;loadChatThreads()}}
 const num=v=>+String(v).replace(/[^\d]/g,'')||0;
 let pics={};const phb=(k,l)=>`<label>${l}</label><div class="ph" id="pv_${k}"></div><div style="display:flex;gap:8px"><label class="chip" style="margin:0;cursor:pointer">Choose photo<input type="file" accept="image/*" hidden onchange="pick(this,'${k}')"></label><label class="chip" style="margin:0;cursor:pointer">Use camera<input type="file" accept="image/*" capture="${k=='avatar'?'user':'environment'}" hidden onchange="pick(this,'${k}')"></label><button class="chip" onclick="pics['${k}']='';pv()">Remove</button></div>`;
 function pv(){Object.keys(pics).forEach(k=>{const e=$('#pv_'+k);if(e)e.innerHTML=pics[k]?`<img src="${pics[k]}" alt="">`:'📷'})}
@@ -401,9 +414,15 @@ $('#presentProducts').innerHTML=`<div style="grid-column:1/-1;display:flex;gap:2
 function openPresentation(){const p=$('#presentation');$('#presentTitle').textContent=store.name||'Your business storefront';p.classList.add('o');lPres();try{if(p.requestFullscreen)p.requestFullscreen().catch(()=>{})}catch(e){}}
 setInterval(ltick,1000);lbell();addEventListener('storage',e=>{if(e.key!=='km-live-active-preview')return;try{const z=JSON.parse(e.newValue||'null'),pt=liveNotes[0]?liveNotes[0].t:0;live=z&&z.live?z.live:null;liveNotes=(z&&z.liveNotes)||[];liveUnread+=liveNotes.filter(x=>x.t>pt).length;if(live)live.products.forEach(p=>{if(prods[p.i])prods[p.i].s=p.s});lbell();render();lPres()}catch(_){}});
 
-function openChat(i){ci=i;chats[i].u=0;go('chat');setTimeout(()=>$('#stage').scrollTop=1e6)}
-function sendM(){toast('Messages cannot be sent until the messaging service is connected.');return;const e=$('#cIn'),v=e.value.trim();if(!v)return;chats[ci].m.push(['s',v,new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})]);e.value='';render();setTimeout(()=>$('#stage').scrollTop=1e6)}
-function setP(x){ap=x;render()}
+function openChat(i){ci=i;chats[i].u=0;go('chat');setTimeout(()=>$('#stage').scrollTop=1e6);const c=chats[i];if(c.uid&&window.KobeApi)KobeApi.chatThread(c.uid).then(r=>{if(r&&r.ok&&r.messages){c.m=r.messages.map(m=>[(m.sender_id===c.uid?'b':'s'),m.text,new Date(m.at||m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})]);render()}})}
+async function sendM(){const e=$('#cIn'),v=e.value.trim();if(!v)return;const c=chats[ci];if(!c)return;
+  if(window.KobeApi&&c.uid){
+    try{
+      const res=await KobeApi.sendChatMessage({with:c.uid,text:v});
+      if(res&&res.ok){e.value='';if(c.uid&&window.KobeApi)KobeApi.chatThread(c.uid).then(r=>{if(r&&r.ok&&r.messages){c.m=r.messages.map(m=>[(m.sender_id===c.uid?'b':'s'),m.text,new Date(m.at||m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})]);render()}}).catch(()=>{});return;}
+    }catch(err){console.error('sendChatMessage failed:',err)}
+  }
+  chats[ci].m.push(['s',v,new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})]);e.value='';render();setTimeout(()=>$('#stage').scrollTop=1e6)}function setP(x){ap=x;render()}
 function filterChats(){const i=$('#chatSearch');if(!i)return;const c=$('#chatClr'),sp=$('#chatSpin'),r=$('#chatRecent');if(c)c.style.display=i.value?'block':'none';if(r)r.style.display=i.value?'none':'';if(sp)sp.style.display='inline-block';clearTimeout(chatT);chatT=setTimeout(()=>{chatFilter=(i.value||'').trim().toLowerCase();if(sp)sp.style.display='none';chatRecentAdd(chatFilter);render()},250)}
 function chatClear(){const i=$('#chatSearch');if(!i)return;clearTimeout(chatT);i.value='';chatFilter='';const c=$('#chatClr'),sp=$('#chatSpin');if(c)c.style.display='none';if(sp)sp.style.display='none';render();i.focus()}
 function chatRecentAdd(t){if(!t||t.length<2)return;const l=kLS.get('km-recent-chat',[]).filter(x=>!(x.startsWith(t)||t.startsWith(x)));l.unshift(t);kLS.set('km-recent-chat',l.slice(0,5))}
@@ -480,7 +499,7 @@ function render2(){ntfPend();vbUpd();vComp();secView();pinBanner();shopCk();ntfB
  $('#prodB').innerHTML=`<button class="btn p w" onclick="pedit(-1)">＋ Add product</button><h2>Catalogue</h2>${prods.length?'': '<div class="empty">No products added yet. Tap Add product to get started.</div>'}<div class="pg">${prods.map((p,i)=>`<button class="pc" onclick="pedit(${i})"><div class="im">${p.img?`<img src="${p.img}" alt="">`:p.e}</div><div class="in"><b>${p.n}</b><small>${p.s} in stock</small><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><b style="font-size:13px">${T(p.p)}</b>${p.v?'':'<span class="pill h">Hidden</span>'}</div></div></button>`).join('')}</div>`;
  $('#thB').innerHTML=`<h2 style="margin-top:6px">Mode</h2><div class="chips">${['dark','light'].map(m=>`<button class="chip ${m==mode?'on':''}" onclick="setMode('${m}')">${m=='dark'?'Dark':'Light'}</button>`).join('')}</div><h2>Accent color</h2><div class="sw">${AC.map(a=>`<button class="swb ${a[1]==ac?'on':''}" style="--c:${a[1]}" onclick="setAc('${a[1]}')" aria-label="${a[0]}"><i></i><span>${a[0]}</span></button>`).join('')}</div><div class="wallet" style="margin-top:18px"><small>Preview</small><div class="amt">TSh —</div><div class="locked"><span>Locked in escrow</span><span>TSh —</span></div></div>`;
  liveView();
- $('#msgB').innerHTML=chats.map((c,i)=>({c,i})).filter(x=>!chatFilter||(x.c.w+' '+x.c.m.map(m=>m[1]).join(' ')).toLowerCase().includes(chatFilter)).map(({c,i})=>`<button class="row" onclick="openChat(${i})"><span class="ico">${(c.w||'B')[0]}</span><span class="t"><b>${escHtml(c.w)}</b><small>${c.m.length?escHtml(c.m[c.m.length-1][1]):'No messages yet'}</small></span>${c.u?`<span class="pill">${c.u}</span>`:''}</button>`).join('')||'<div class="empty">No buyers or conversations match that search.</div>';
+   const chatLoading=!chatLoaded&&window.KobeApi;$('#msgB').innerHTML=chatLoading?'<div class="list" style="padding:24px"><div class="spin sm"></div><span style="margin-left:8px;color:var(--mut)">Loading conversations…</span></div>':ats.map((c,i)=>({c,i})).filter(x=>!chatFilter||(x.c.w+' '+x.c.m.map(m=>m[1]).join(' ')).toLowerCase().includes(chatFilter)).map(({c,i})=>`<button class="row" onclick="openChat(${i})"><span class="ico">${(c.w||'B')[0]}</span><span class="t"><b>${escHtml(c.w)}</b><small>${c.m.length?escHtml(c.m[c.m.length-1][1]):'No messages yet'}</small></span>${c.u?`<span class="pill">${c.u}</span>`:''}</button>`).join('')||'<div class="empty">No buyers or conversations match that search.</div>';
  const c=chats[ci];$('#cT').textContent=c?c.w:'Messages';$('#cM').innerHTML=c?('<div class="dy"><span>Conversation</span></div>'+c.m.map(m=>`<div class="bub ${m[0]}">${escHtml(m[1])}<i>${escHtml(m[2]||'')}</i></div>`).join('')):'<div class="empty">No conversations yet.</div>'; 
  renderAnalytics();
 
