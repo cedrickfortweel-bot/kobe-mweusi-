@@ -84,33 +84,48 @@ var page = location.pathname.split('/').pop();
 
   async function loadSellerProfile() {
     var profile = sellerState.profile;
-    user.name = profile.display_name || '';
-    user.first = user.name.split(/\s+/)[0] || '';
+    var authUser = (sellerState.session && sellerState.session.user) || (window.KobeSupabase && window.KobeSupabase.client.auth ? null : null);
+    var metaDisplayName = '';
+    try {
+      if (window.KobeSupabase && window.KobeSupabase.client) {
+        var authRes = await window.KobeSupabase.client.auth.getUser();
+        if (authRes && authRes.data && authRes.data.user) {
+          authUser = authRes.data.user;
+          metaDisplayName = (authUser.user_metadata && (authUser.user_metadata.full_name || authUser.user_metadata.name || authUser.user_metadata.display_name)) || '';
+        }
+      }
+    } catch (e) { /* auth metadata is optional */ }
+    user.name = profile.display_name || metaDisplayName || '';
+    user.first = user.name.trim().split(/\s+/)[0] || '';
     user.phone = profile.phone_e164 || '';
-    user.email = profile.email || '';
+    user.email = profile.email || (authUser && authUser.email) || '';
 
-    var row = await api().sellerProfile();
-    if (row) {
-      shopPaths.avatar = row.avatar_path || '';
-      shopPaths.cover = row.cover_path || '';
-      store.name = row.shop_name || '';
-      store.first = store.name.split(/\s+/)[0] || '';
-      store.kid = row.kobe_id || '';
-      store.desc = row.bio || '';
-      store.loc = row.region || '';
-      store.hours = (row.details && row.details.hours) || '';
-      store.delivery = (row.details && row.details.delivery) || '';
-      store.soc = Object.keys(row.socials || {}).map(function (k) { return SOCIAL_LABELS[k] || k; });
-      store.avatar = row.avatar_path ? await api().shopMediaUrl(row.avatar_path) : '';
-      store.cover = row.cover_path ? await api().shopMediaUrl(row.cover_path) : '';
-    }
+    try {
+      var row = await api().sellerProfile();
+      if (row) {
+        shopPaths.avatar = row.avatar_path || '';
+        shopPaths.cover = row.cover_path || '';
+        store.name = row.shop_name || '';
+        store.first = store.name.split(/\s+/)[0] || '';
+        store.kid = row.kobe_id || '';
+        store.desc = row.bio || '';
+        store.loc = row.region || '';
+        store.hours = (row.details && row.details.hours) || '';
+        store.delivery = (row.details && row.details.delivery) || '';
+        store.soc = Object.keys(row.socials || {}).map(function (k) { return SOCIAL_LABELS[k] || k; });
+        store.avatar = row.avatar_path ? await api().shopMediaUrl(row.avatar_path) : '';
+        store.cover = row.cover_path ? await api().shopMediaUrl(row.cover_path) : '';
+      }
+    } catch (e) { console.warn('sellerProfile', e); }
 
-    sellerOverviewCache = await api().sellerOverview();
-    if (sellerOverviewCache) {
-      sellerStats = sellerOverviewCache.stats || {};
-      store.rate = sellerStats.rating ? String(sellerStats.rating) : '—';
-      bal = Number(sellerOverviewCache.wallet.balance);
-    }
+    try {
+      sellerOverviewCache = await api().sellerOverview();
+      if (sellerOverviewCache) {
+        sellerStats = sellerOverviewCache.stats || {};
+        store.rate = sellerStats.rating ? String(sellerStats.rating) : '—';
+        bal = Number(sellerOverviewCache.wallet.balance);
+      }
+    } catch (e) { console.warn('sellerOverview', e); }
     if (typeof pfUpdate === 'function') pfUpdate();
   }
 
