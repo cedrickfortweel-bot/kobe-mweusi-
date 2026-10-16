@@ -414,45 +414,31 @@
         } catch (e) { /* not JSON */ }
       }
       if (/fetch|network|offline|failed to fetch/i.test(message)) {
-        message = 'You are offline. Check your connection and try again.';
+        message = 'Backend service is not available. Please try again later.';
       }
       if (/edge function/i.test(message)) {
-        message = `Backend function "${name}" is not reachable. Sign in or try again later.`;
+        message = 'Backend service is not available. Please try again later.';
       }
       throw new Error(message);
     }
     return data;
   }
 
-  function describe(error) {
-    return (error && error.message) || 'Something went wrong. Please try again.';
-  }
-
-  /* Money/scfow Edge Functions where technical errors stay in the UI so
-     the user knows funds are impacted. All other functions fail silently
-     to avoid alarming banners for non-critical reads/writes. */
-  const MONEY_FUNCTIONS = new Set(['wallet','orders','payment-initiate','payment-callback','payment-status','payment-reconcile','security']);
-
-  /* Reads: never throw into the UI; show the banner with Retry. */
   async function guardedRead(name, body, fallback) {
     try {
       return await invoke(name, body);
     } catch (error) {
-      const message = describe(error);
-      if (MONEY_FUNCTIONS.has(name) && typeof window.kobeError === 'function') {
-        window.kobeError(message, () => invoke(name, body));
-      }
       return fallback;
     }
   }
 
   /* Writes: resolve with {ok:false, reason} like the app stubs did.
-     Money functions keep the real reason; others get a generic message. */
+     All errors return a user-friendly reason; no technical errors leak. */
   async function guardedWrite(name, body) {
     try {
       return await invoke(name, body);
     } catch (error) {
-      return { ok: false, reason: describe(error), silent: !MONEY_FUNCTIONS.has(name) };
+      return { ok: false, reason: 'Backend service is not available right now. Please try again later.' };
     }
   }
 
