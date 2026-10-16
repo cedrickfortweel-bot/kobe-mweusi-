@@ -137,10 +137,18 @@ export default async function handler(request: Request) {
       if (error) throw error;
 
       const name = await counterpartyName(service, withId, callerIsSeller);
+      const { data: thread } = await service
+        .from("chat_threads")
+        .select("buyer_seen_at, seller_seen_at")
+        .eq("buyer_id", buyerId)
+        .eq("seller_id", sellerId)
+        .maybeSingle();
       return json({
         ok: true,
         withUserId: withId,
         withName: name,
+        sellerSeenAt: thread?.seller_seen_at || null,
+        buyerSeenAt: thread?.buyer_seen_at || null,
         messages: (messages || []).map((m: any) => ({
           id: m.id,
           senderId: m.sender_id,

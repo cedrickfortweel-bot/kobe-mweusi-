@@ -3532,6 +3532,7 @@ function openChatThread(userId, name, initial){
       thStatus.textContent = '● Online';
     }
   }
+  if(threadUserId) subscribeToThread(threadUserId);
   const layout = document.getElementById('chat-layout');
   layout.classList.add('thread-open');
   document.getElementById('thread-back').style.display = 'inline-flex';
@@ -3551,6 +3552,50 @@ function openChatThread(userId, name, initial){
 }
 function closeThread(){
   document.getElementById('chat-layout').classList.remove('thread-open');
+  if(chatRealtimeChannel) { try{ window.supabase?.removeChannel(chatRealtimeChannel); }catch(e){} chatRealtimeChannel=null; }
+}
+function subscribeToThread(userId){
+  if(!window.supabase || !userId) return;
+  if(chatRealtimeChannel) { try{ window.supabase.removeChannel(chatRealtimeChannel); }catch(e){} }
+  chatRealtimeChannel = window.supabase.channel('chat:'+userId, {
+    config:{ presence:{ key: window.currentUser?.id || 'anon' } }
+  });
+  chatRealtimeChannel.on('presence.state', (e)=>{
+    const sellerOnline = Object.values(e.state).some(p=>p.user_id !== window.currentUser?.id);
+    setChatStatus(sellerOnline ? 'online' : 'offline');
+  });
+  chatRealtimeChannel.on('presence.join', ()=>{
+    setChatStatus('online');
+    checkReadReceipt();
+  });
+  chatRealtimeChannel.on('presence.leave', ()=>{
+    setChatStatus('offline');
+  });
+  chatRealtimeChannel.on('broadcast', {event:'typing'}, (e)=>{
+    if(e.payload.sender !== window.currentUser?.id) setChatStatus('typing');
+    setTimeout(()=>checkReadReceipt(), 3000);
+  });
+  chatRealtimeChannel.on('postgres_changes', {event:'UPDATE',schema:'public',table:'chat_threads'}, (payload)=>{
+    if(!payload.new) return;
+    const theirSeenAt = window.currentUser?.is_seller
+      ? payload.new.buyer_seen_at
+      : payload.new.seller_seen_at;
+    if(theirSeenAt && (!chatReadAt || new Date(theirSeenAt) > new Date(chatReadAt || 0))) {
+      chatReadAt = theirSeenAt;
+      markLastDelivered();
+    }
+  });
+  chatRealtimeChannel.subscribe((status)=>{
+    if(status==='subscribed'){
+      chatRealtimeChannel.track({user_id: window.currentUser?.id, online:true});
+      setInterval(()=>{ chatRealtimeChannel?.track({user_id: window.currentUser?.id, online:true}); }, 20000);
+    }
+  });
+}
+function checkReadReceipt(){
+  if(chatRealtimeChannel && threadUserId){
+    chatRealtimeChannel.track({user_id: window.currentUser?.id, online:true});
+  }
 }
 function openSellerFromChat(seller, userId){
   if(!seller) return;
@@ -3568,21 +3613,68 @@ function addToThreadsCache(userId, name, initial, verified, rating){
     chatThreadsCache.push({withUserId:userId, withName:name, withInitial:initial, verified:verified, rating:rating});
   }
 }
+let chatStatus = 'offline';
+let chatDeliveredAt = null;
+let chatReadAt = null;
+function setChatStatus(s){
+  chatStatus = s;
+  const el = document.getElementById('th-status');
+  if (!el) return;
+  if (s === 'online') {
+    el.innerHTML = '<span class="chat-online-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--moss);margin-right:5px"></span><span style="color:var(--moss);font-size:var(--kobe-text-xs);font-weight:var(--kobe-weight-bold)">Online</span>';
+  } else if (s === 'typing') {
+    el.innerHTML = '<span style="color:var(--text-muted);font-size:var(--kobe-text-xs);font-style:italic">Typing…</span>';
+  } else if (s === 'seen') {
+    el.innerHTML = '<span style="color:var(--text-muted);font-size:var(--kobe-text-xs)">Seen ' + formatSeenTime() + '</span>';
+  } else {
+    el.innerHTML = '<span style="color:var(--text-muted);font-size:var(--kobe-text-xs)">Offline</span>';
+  }
+}
+function formatSeenTime(){
+  if (!chatReadAt) return '';
+  const d = new Date(chatReadAt);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return diff + ' min ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return d.toLocaleDateString([], {month:'short',day:'numeric'});
+}
 async function sendChatMessage(){
   const input=document.getElementById('chat-message-input');
   const body=document.getElementById('thread-body');
   const text=(input && input.value || '').trim();
   if(!input || !body || !text) return;
   const seller=threadName || 'Seller';
+  const tempId = 'temp_' + Date.now();
+
   if(window.KobeApi && threadUserId){
+    const row=document.createElement('div'); row.className='bubble-row me'; row.dataset.tempId=tempId;
+    const bubble=document.createElement('div'); bubble.className='bubble me';
+    const msg=document.createElement('span'); msg.textContent=text;
+    const meta=document.createElement('div'); meta.className='bubble-meta'; meta.dataset.tempId=tempId;
+    meta.innerHTML='<span class="tick-sent" style="color:var(--text-muted);font-size:var(--kobe-text-xs);font-weight:var(--kobe-weight-bold)">✓</span> <span class="tick-time" style="color:var(--text-muted);opacity:.65">'+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'</span>';
+    bubble.appendChild(msg); bubble.appendChild(meta); row.appendChild(bubble); body.appendChild(row);
+    body.scrollTop=body.scrollHeight;
     try{
       const res=await KobeApi.sendChatMessage({with:threadUserId,text});
       if(res && res.ok){
+        const sentEl = document.querySelector('.bubble-meta[data-temp-id="'+tempId+'"]');
+        if (sentEl) {
+          sentEl.innerHTML = '<span class="tick-delivered" style="color:var(--text-muted);font-size:var(--kobe-text-xs);font-weight:var(--kobe-weight-bold)">✓✓</span> <span class="tick-time" style="color:var(--text-muted);opacity:.65">'+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'</span>';
+          sentEl.dataset.messageId = res.message?.id || '';
+        }
         if(input) input.value='';
         renderChatThread(seller);
         return;
       }
-    }catch(e){ console.error('Chat send failed:',e); }
+    }catch(e){
+      console.error('Chat send failed:',e);
+      const sentEl = document.querySelector('.bubble-meta[data-temp-id="'+tempId+'"]');
+      if (sentEl) sentEl.innerHTML = '<span style="color:var(--danger);font-size:var(--kobe-text-xs);font-weight:var(--kobe-weight-bold)">✗</span>';
+    }
+    if(input) input.value='';
+    return;
   }
   const key='kobe_chat_'+seller.toLowerCase().replace(/[^a-z0-9]+/g,'_');
   let messages=[];
@@ -3598,12 +3690,26 @@ function renderChatThread(name){
   if(window.KobeApi && threadUserId){
     KobeApi.chatThread(threadUserId).then(res=>{
       if(res && res.ok && res.messages){
+        chatReadAt = res.sellerSeenAt || null;
         renderChatMessages(res.messages, seller);
+        if(chatReadAt) markLastDelivered();
+        else setChatStatus('offline');
       } else { renderFallbackMessages(seller); }
     }).catch(()=>{ renderFallbackMessages(seller); });
   } else {
     renderFallbackMessages(seller);
   }
+}
+function markLastDelivered(){
+  if(!chatReadAt) return;
+  const delivered = document.querySelectorAll('.bubble-row.me');
+  delivered.forEach(row=>{
+    const meta = row.querySelector('.bubble-meta');
+    if(!meta) return;
+    const timeEl = meta.querySelector('.tick-time');
+    if(!timeEl) return;
+    meta.innerHTML = '<span class="tick-read" style="color:#22c5eb;font-size:var(--kobe-text-xs);font-weight:var(--kobe-weight-bold)">✓✓</span> ' + timeEl.outerHTML;
+  });
 }
 function renderFallbackMessages(seller){
   const body=document.getElementById('thread-body'); if(!body) return;
@@ -3616,19 +3722,30 @@ function renderFallbackMessages(seller){
 function renderChatMessages(messages, name){
   const body=document.getElementById('thread-body'); if(!body) return;
   body.innerHTML='';
-  if(!messages.length){ body.innerHTML='<p style="color:var(--text-muted);font-size:13px;text-align:center;">No messages yet — say hello to start the conversation.</p>'; return; }
+  if(!messages.length){ body.innerHTML='<p style="color:var(--text-muted);font-size:var(--kobe-text-sm);text-align:center;">No messages yet — say hello to start the conversation.</p>'; return; }
   messages.forEach(m=>{
-    const isMe = m.sender_id ? (m.sender_id === (window.currentUser?.id || '')) : (m.from==='buyer');
+    const senderId = m.sender_id || '';
+    const isMe = senderId ? senderId === (window.currentUser?.id || '') : (m.from==='buyer');
     const row=document.createElement('div'); row.className='bubble-row '+(isMe?'me':'');
+    if(m.id) row.dataset.msgId = m.id;
     const bubble=document.createElement('div'); bubble.className='bubble '+(isMe?'me':'');
     const msg=document.createElement('span'); msg.textContent=m.text;
     const meta=document.createElement('div'); meta.className='bubble-meta';
     const d=new Date(m.at || m.created_at);
-    meta.textContent=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const timeStr = d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    if(isMe){
+      meta.innerHTML='<span class="tick-delivered" style="color:var(--text-muted);font-size:var(--kobe-text-xs);font-weight:var(--kobe-weight-bold)">✓✓</span> <span class="tick-time" style="color:var(--text-muted);opacity:.65">'+timeStr+'</span>';
+      if(chatReadAt && d.getTime() <= new Date(chatReadAt).getTime()) {
+        meta.innerHTML='<span class="tick-read" style="color:#22c5eb;font-size:var(--kobe-text-xs);font-weight:var(--kobe-weight-bold)">✓✓</span> <span class="tick-time" style="color:var(--text-muted);opacity:.65">'+timeStr+'</span>';
+      }
+    } else {
+      meta.textContent = timeStr;
+    }
     bubble.appendChild(msg); bubble.appendChild(meta); row.appendChild(bubble); body.appendChild(row);
   });
   body.scrollTop=body.scrollHeight;
 }
+let chatRealtimeChannel = null;
 let reviewStars=0;
 let reviewTarget=null, reviewTags=[], reviewCloseTimer=null;
 let pendingReview=null;   // set when escrow is released, so the sheet opens after the receipt is closed
