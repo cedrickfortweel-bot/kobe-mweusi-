@@ -3555,13 +3555,13 @@ function closeThread(){
   if(chatRealtimeChannel) { try{ window.supabase?.removeChannel(chatRealtimeChannel); }catch(e){} chatRealtimeChannel=null; }
 }
 function subscribeToThread(userId){
-  if(!window.supabase || !userId) return;
-  if(chatRealtimeChannel) { try{ window.supabase.removeChannel(chatRealtimeChannel); }catch(e){} }
-  chatRealtimeChannel = window.supabase.channel('chat:'+userId, {
-    config:{ presence:{ key: window.currentUser?.id || 'anon' } }
+  if(!window.KobeSupabase || !userId) return;
+  if(chatRealtimeChannel) { try{ window.KobeSupabase.client.removeChannel(chatRealtimeChannel); }catch(e){} }
+  chatRealtimeChannel = window.KobeSupabase.client.channel('presence:seller:'+userId, {
+    config:{ presence:{ key: 'seller_'+userId } }
   });
   chatRealtimeChannel.on('presence.state', (e)=>{
-    const sellerOnline = Object.values(e.state).some(p=>p.user_id !== window.currentUser?.id);
+    const sellerOnline = Object.keys(e.state).length > 0;
     setChatStatus(sellerOnline ? 'online' : 'offline');
   });
   chatRealtimeChannel.on('presence.join', ()=>{
@@ -3587,14 +3587,14 @@ function subscribeToThread(userId){
   });
   chatRealtimeChannel.subscribe((status)=>{
     if(status==='subscribed'){
-      chatRealtimeChannel.track({user_id: window.currentUser?.id, online:true});
-      setInterval(()=>{ chatRealtimeChannel?.track({user_id: window.currentUser?.id, online:true}); }, 20000);
+      chatRealtimeChannel.track({user_id: threadUserId, online:true});
+      setInterval(()=>{ if(chatRealtimeChannel?.state==='joined') chatRealtimeChannel.track({user_id: threadUserId, online:true}); }, 20000);
     }
   });
 }
 function checkReadReceipt(){
-  if(chatRealtimeChannel && threadUserId){
-    chatRealtimeChannel.track({user_id: window.currentUser?.id, online:true});
+  if(chatRealtimeChannel && threadUserId && chatRealtimeChannel.state==='joined'){
+    try{ chatRealtimeChannel.track({user_id: threadUserId, online:true}); }catch(e){}
   }
 }
 function openSellerFromChat(seller, userId){

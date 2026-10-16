@@ -349,7 +349,36 @@ async function loadChatThreads(){
   }catch(e){console.error('Chat thread load failed:',e)}
   chatLoaded=true;render()
 }
-function loadChatIfUnlocked(){if(!chatLoaded&&window.KobeApi){chatLoaded=true;loadChatThreads()}}
+function loadChatIfUnlocked(){if(!chatLoaded&&window.KobeApi){chatLoaded=true;loadChatThreads()}; setupSellerPresence()}
+let sellerPresenceChannel=null;
+function setupSellerPresence(){
+  if(sellerPresenceChannel||!window.KobeSupabase||!window.KobeSupabase.client){return;}
+  const supa=window.KobeSupabase.client;
+  const sellerId=window.currentUser?.id||window.KobeUser?.id;
+  if(!sellerId) return;
+  sellerPresenceChannel=supa.channel('presence:seller:'+sellerId,{
+    config:{presence:{key:'seller_'+sellerId}}
+  });
+  sellerPresenceChannel.on('presence.state',()=>{});
+  sellerPresenceChannel.on('presence.join',()=>{});
+  sellerPresenceChannel.on('presence.leave',()=>{});
+  sellerPresenceChannel.subscribe((status)=>{
+    if(status==='subscribed'){
+      sellerPresenceChannel.track({online:true,user_id:sellerId});
+      setInterval(()=>{if(sellerPresenceChannel?.state==='joined'){sellerPresenceChannel.track({online:true,user_id:sellerId})}else{setupSellerPresence()}},20000);
+    }
+  });
+}
+function joinChatPresence(buyerId){
+  if(!window.KobeSupabase||!window.KobeSupabase.client||!buyerId) return;
+  const supa=window.KobeSupabase.client;
+  const channel=supa.channel('chat:'+buyerId,{
+    config:{presence:{key:'buyer_'+buyerId}}
+  });
+  channel.subscribe();
+  channel.track({online:true,user_id:typeof buyerId==='string'?buyerId:window.currentUser?.id});
+  return channel;
+}
 const num=v=>+String(v).replace(/[^\d]/g,'')||0;
 let pics={};const phb=(k,l)=>`<label>${l}</label><div class="ph" id="pv_${k}"></div><div style="display:flex;gap:8px"><label class="chip" style="margin:0;cursor:pointer">Choose photo<input type="file" accept="image/*" hidden onchange="pick(this,'${k}')"></label><label class="chip" style="margin:0;cursor:pointer">Use camera<input type="file" accept="image/*" capture="${k=='avatar'?'user':'environment'}" hidden onchange="pick(this,'${k}')"></label><button class="chip" onclick="pics['${k}']='';pv()">Remove</button></div>`;
 function pv(){Object.keys(pics).forEach(k=>{const e=$('#pv_'+k);if(e)e.innerHTML=pics[k]?`<img src="${pics[k]}" alt="">`:'📷'})}
