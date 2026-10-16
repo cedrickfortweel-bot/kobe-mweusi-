@@ -129,7 +129,7 @@
   .collapsed .side-profile { justify-content: center; }
   .side-profile .avatar { width: 34px; height: 34px; border-radius: 999px; background: var(--moss-dim); display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 600; font-size: 14px; flex-shrink: 0; }
   .side-profile .name { font-size: 13.5px; font-weight: 700; white-space: nowrap; }
-  .side-profile .role { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; }
+  .side-profile .email { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; }
   .collapsed .side-profile .id-block { display: none; }
   .side-profile { cursor: pointer; border-radius: 12px; transition: background .18s ease; position: relative; }
   .side-profile:hover, .side-profile:focus-visible { background: var(--surface-2, rgba(127,127,127,.08)); outline: none; }
@@ -139,7 +139,7 @@
   @keyframes profilePop { from { opacity:0; transform:translateY(6px) scale(.98); } to { opacity:1; transform:none; } }
   .profile-menu-head { padding: 10px 11px 9px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
   .profile-menu-head .pm-name { font-size: 14px; font-weight: 800; }
-  .profile-menu-head .pm-role { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .profile-menu-head .pm-email { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
   .profile-menu-item { width:100%; border:0; background:transparent; color:var(--text); display:flex; align-items:center; gap:11px; padding:10px 11px; border-radius:10px; cursor:pointer; font:inherit; text-align:left; }
   .profile-menu-item:hover { background: var(--surface-2, rgba(127,127,127,.08)); }
   .profile-menu-item svg { width:18px; height:18px; flex-shrink:0; color:var(--text-muted); }
@@ -1240,12 +1240,12 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;bor
       <div class="avatar" id="side-avatar">U</div>
       <div class="id-block">
         <div class="name">Your Name</div>
-        <div class="role">Buyer</div>
+        <div class="email" id="side-email">your@email.com</div>
       </div>
       <span class="profile-chevron" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 4l6 6-6 6"/></svg></span>
     </button>
     <div class="profile-menu" id="profile-menu" role="menu" aria-hidden="true">
-      <div class="profile-menu-head"><div class="pm-name">Your Name</div><div class="pm-role">Buyer</div></div>
+      <div class="profile-menu-head"><div class="pm-name">Your Name</div><div class="pm-email" id="pm-email">your@email.com</div></div>
       <button class="profile-menu-item" type="button" role="menuitem" onclick="showScreen('account'); closeProfileMenu();">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="3"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.3 4.3l1.4 1.4M14.3 14.3l1.4 1.4M15.7 4.3l-1.4 1.4M5.7 14.3l-1.4 1.4"/></svg>
         <span>Account</span>
@@ -3163,20 +3163,21 @@ async function populateAccountScreen(){
      const subEl=document.querySelector('#screen-account p');
      const walletEl=document.querySelector('#screen-account strong:first-child');
      const sinceEl=document.querySelector('#screen-account strong:last-child');
-     if(!profile) return;
+     const email = profile ? (profile.email || 'No email set') : 'your@email.com';
      if(nameEl) nameEl.textContent = displayName || 'Your Name';
-     if(subEl){
-       const username = profile.display_name ? profile.display_name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') : '';
-       subEl.textContent = (username ? '@'+username : '@yourusername') + ' · Buyer';
-     }
-     if(walletEl) walletEl.textContent = profile.id ? profile.id.slice(0,8).toUpperCase() : '—';
-     if(sinceEl && profile.created_at){
+     if(subEl) subEl.textContent = email;
+     if(walletEl) walletEl.textContent = profile ? (profile.id ? profile.id.slice(0,8).toUpperCase() : '—') : '—';
+     if(sinceEl && profile && profile.created_at){
        sinceEl.textContent = new Date(profile.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' });
      }
      const sideName=document.querySelector('.side-profile .name');
      if(sideName) sideName.textContent = displayName || 'Your Name';
+     const sideEmail=document.getElementById('side-email');
+     if(sideEmail) sideEmail.textContent = email;
      const pmName=document.querySelector('.pm-name');
      if(pmName) pmName.textContent = displayName || 'Your Name';
+     const pmEmail=document.getElementById('pm-email');
+     if(pmEmail) pmEmail.textContent = email;
    } catch(e){
      loadSavedAvatar('U');
      console.error('Failed to load profile:',e);
