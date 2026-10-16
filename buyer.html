@@ -3110,16 +3110,16 @@ function appBack(fallback){
   }
 }
 
-function applyAvatarToUI(dataUrl){
-  const preview = document.getElementById('avatar-preview');
-  const head = document.getElementById('head-avatar');
-  const side = document.getElementById('side-avatar');
-  const big = document.getElementById('account-big-avatar');
-  [preview,head,side,big].forEach(el=>{
-    if(!el) return;
-    el.style.backgroundImage = dataUrl ? `url("${dataUrl}")` : '';
-    el.textContent = dataUrl ? '' : 'U';
-  });
+  function applyAvatarToUI(dataUrl, initials='U'){
+   const preview = document.getElementById('avatar-preview');
+   const head = document.getElementById('head-avatar');
+   const side = document.getElementById('side-avatar');
+   const big = document.getElementById('account-big-avatar');
+   [preview,head,side,big].forEach(el=>{
+     if(!el) return;
+     el.style.backgroundImage = dataUrl ? `url("${dataUrl}")` : '';
+     el.textContent = dataUrl ? '' : initials;
+   });
   const rm = document.getElementById('avatar-remove-row'); if(rm) rm.style.display = dataUrl ? '' : 'none';
 }
 /* Photos are cropped to a centered square and shrunk to 256px, so large phone photos never fill browser storage. */
@@ -3146,34 +3146,42 @@ function removeAvatar(){
   const input=document.getElementById('avatar-input'); if(input) input.value='';
   applyAvatarToUI('');
 }
-function loadSavedAvatar(){
-  let saved=''; try{ saved=localStorage.getItem('km_profile_avatar'); }catch(e){}
-  if(saved) applyAvatarToUI(saved);
-}
+function loadSavedAvatar(initials='U'){
+   let saved=''; try{ saved=localStorage.getItem('km_profile_avatar'); }catch(e){}
+   applyAvatarToUI(saved, initials);
+ }
 async function populateAccountScreen(){
-  loadSavedAvatar();
-  const nameEl=document.querySelector('#screen-account h2');
-  const subEl=document.querySelector('#screen-account p');
-  const walletEl=document.querySelector('#screen-account strong:first-child');
-  const sinceEl=document.querySelector('#screen-account strong:last-child');
-  try {
-    if(window.KobeApi && KobeApi.getMyProfile){
-      const profile = await KobeApi.getMyProfile();
-      if(!profile) return;
-      if(nameEl) nameEl.textContent = profile.display_name || profile.email?.split('@')[0] || 'Your Name';
-      if(subEl){
-        const username = profile.display_name ? profile.display_name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') : '';
-        subEl.textContent = (username ? '@'+username : '@yourusername') + ' · Buyer';
-      }
-      if(walletEl) walletEl.textContent = profile.id ? profile.id.slice(0,8).toUpperCase() : '—';
-      if(sinceEl && profile.created_at){
-        sinceEl.textContent = new Date(profile.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' });
-      }
-    }
-  } catch(e){
-    console.error('Failed to load profile:',e);
-  }
-}
+   try {
+     let profile = null;
+     if(window.KobeApi && KobeApi.getMyProfile){
+       profile = await KobeApi.getMyProfile();
+     }
+     const displayName = profile ? (profile.display_name || profile.email?.split('@')[0]) : null;
+     const initials = displayName ? displayName.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase() : 'U';
+     loadSavedAvatar(initials);
+     const nameEl=document.querySelector('#screen-account h2');
+     const subEl=document.querySelector('#screen-account p');
+     const walletEl=document.querySelector('#screen-account strong:first-child');
+     const sinceEl=document.querySelector('#screen-account strong:last-child');
+     if(!profile) return;
+     if(nameEl) nameEl.textContent = displayName || 'Your Name';
+     if(subEl){
+       const username = profile.display_name ? profile.display_name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') : '';
+       subEl.textContent = (username ? '@'+username : '@yourusername') + ' · Buyer';
+     }
+     if(walletEl) walletEl.textContent = profile.id ? profile.id.slice(0,8).toUpperCase() : '—';
+     if(sinceEl && profile.created_at){
+       sinceEl.textContent = new Date(profile.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' });
+     }
+     const sideName=document.querySelector('.side-profile .name');
+     if(sideName) sideName.textContent = displayName || 'Your Name';
+     const pmName=document.querySelector('.pm-name');
+     if(pmName) pmName.textContent = displayName || 'Your Name';
+   } catch(e){
+     loadSavedAvatar('U');
+     console.error('Failed to load profile:',e);
+   }
+ }
 
 function initKobeHistory(){
   const initial = history.state && history.state.kmScreen;
