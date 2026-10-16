@@ -547,7 +547,10 @@ header.page-head p { color: var(--text-muted); font-size: var(--kobe-text-sm); m
   .chat-list-item.active:before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--shell); }
   .chat-list-item .r-avatar { width:48px; height:48px; font-size:15px; flex-shrink:0; }
   .chat-list-item > div:last-child { flex:1; min-width:0; }
-  .chat-list-item .unread-badge { background:var(--shell); color:var(--on); border-radius:9999px; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; margin-left:auto; }
+  .chat-list-item .unread-badge { background:var(--shell); color:var(--on); border-radius:9999px; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; font-size:var(--kobe-text-xs); font-weight:var(--kobe-weight-bold); flex-shrink:0; margin-left:auto; }
+  .chat-search-seller { cursor:pointer; }
+  .chat-search-seller:hover { background:var(--surface-2); }
+  .chat-verified-badge { display:inline-flex; align-items:center; gap:4px; }
   .chat-list-item .ci-msg { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; }
   .chat-list-item .ci-body { flex:1; min-width:0; }
   .ci-top { display:flex; justify-content:space-between; gap:8px; }
@@ -2914,7 +2917,26 @@ function renderChatList(){
     });
     const searchResult=document.getElementById('chat-search-result');
     if(searchResult) searchChatSellers(document.getElementById('chat-seller-search').value);
-  }).catch(()=>{ emptyEl.style.display='flex'; });
+   }).catch(()=>{ emptyEl.style.display='flex'; });
+   attachChatSearchSellerHandler();
+}
+function attachChatSearchSellerHandler(){
+  const container=document.getElementById('chat-list');
+  if(!container) return;
+  container.removeEventListener('click',handleChatSellerClick);
+  container.addEventListener('click',handleChatSellerClick);
+}
+function handleChatSellerClick(e){
+  const row=e.target.closest('.chat-search-seller[data-sidx]');
+  if(!row) return;
+  const s=sellers[Number(row.dataset.sidx)];
+  if(!s) return;
+  row.remove();
+  document.getElementById('chat-seller-search').value='';
+  document.getElementById('chat-seller-results')?.remove();
+  if(window.KobeApi&&s.uid){ try{ window.KobeApi.markChatRead(s.uid).catch(()=>{}); }catch(e){} }
+  openChatThread(s.uid||null, s.n||s.id, s.i);
+  addToThreadsCache(s.uid, s.n||s.id, s.i, s.v, s.rating);
 }
 function searchChatSellers(query){
   const q=query.trim().toLowerCase();
@@ -2923,20 +2945,63 @@ function searchChatSellers(query){
     const name=row.querySelector('.ci-name')?.textContent.toLowerCase() || '';
     row.style.display=!q || name.includes(q) ? 'flex' : 'none';
   });
-  let result=document.getElementById('chat-search-result');
-  if(q.length>=2 && !result){
-    createChatSearchResult(q);
-  } else if(!q && result){
-    result.remove();
+  const prevResult=document.getElementById('chat-search-result');
+  const prevSellerResults=document.querySelectorAll('.chat-list-item[data-seller-search]');
+  if(prevSellerResults.length) prevSellerResults.forEach(r=>r.remove());
+  if(!q){
+    if(prevResult) prevResult.remove();
+    return;
   }
+  if(q.length>=2){
+    const threadMatch=chatThreadsCache.find(c=>c.withName.toLowerCase().includes(q));
+    if(threadMatch){
+      if(!prevResult) createChatSearchResult(q);
+      return;
+    }
+  }
+  if(q.length>=1){
+    renderSellerSearchResults(q);
+  } else if(!q && prevResult) {
+    prevResult.remove();
+  }
+}
+function renderSellerSearchResults(query){
+  const needle=query.toLowerCase();
+  const matches=sellers.filter(s=>s.v&&(String(s.n||'').toLowerCase().includes(needle)||String(s.id||'').toLowerCase().includes(needle))).slice(0,8);
+  const container=document.getElementById('chat-list');
+  let holder=document.getElementById('chat-seller-results');
+  if(!holder){
+    holder=document.createElement('div');
+    holder.id='chat-seller-results';
+    holder.className='chat-seller-results';
+    container.insertBefore(holder,document.getElementById('chat-empty')||null);
+  }
+  if(!matches.length){
+    holder.innerHTML='<div class="chat-search-no-results" style="padding:12px 18px;font-size:var(--kobe-text-xs);color:var(--text-muted)">No verified sellers found</div>';
+    return;
+  }
+  holder.innerHTML=matches.map(s=>`
+    <div class="chat-list-item chat-search-seller" data-seller-search="1" data-sidx="${sellers.indexOf(s)}">
+      <div class="r-avatar" style="background:${s.col||'var(--shell)'};color:var(--on);font-weight:var(--kobe-weight-bold)">${escapeHtml(s.i)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="ci-top" style="display:flex;align-items:center;gap:6px">
+          <span class="ci-name">${escapeHtml(s.id)}</span>
+          ${s.v?'<span class="chat-verified" style="display:inline-flex;align-items:center;color:var(--moss);font-size:var(--kobe-text-xs);font-weight:var(--kobe-weight-bold)">✓</span>':''}
+        </div>
+        <div class="ci-msg" style="color:var(--text-muted);font-size:var(--kobe-text-xs)">${escapeHtml(s.n||'')} · ★ ${escapeHtml(String(s.rating||''))} · ${escapeHtml(String(s.deals||0))} deals</div>
+      </div>
+      <div class="chat-seller-action" style="margin-left:auto;padding-left:14px;text-align:right">
+        <div style="color:var(--ai);font-size:var(--kobe-text-xs);font-weight:var(--kobe-weight-bold)">Message</div>
+      </div>
+    </div>`).join('');
 }
 function createChatSearchResult(query){
   const row=document.createElement('div');
   row.id='chat-search-result';
   row.className='chat-list-item chat-search-result';
   row.dataset.thread='new';
-  row.innerHTML='<div class="r-avatar" style="background:var(--shell);color:var(--on);font-weight:700">+</div><div style="flex:1;min-width:0"><div class="ci-top"><span class="ci-name">Start chat with "'
-    +escapeHtml(query)+'"</span><span class="ci-time" style="color:var(--moss);font-weight:700">New</span></div><div class="ci-msg" style="color:var(--text-muted)">Tap to begin a new conversation</div></div>';
+  row.innerHTML='<div class="r-avatar" style="background:var(--shell);color:var(--on);font-weight:var(--kobe-weight-bold)">+</div><div style="flex:1;min-width:0"><div class="ci-top"><span class="ci-name">Start chat with "'
+    +escapeHtml(query)+'"</span><span class="ci-time" style="color:var(--moss);font-weight:var(--kobe-weight-bold)">New</span></div><div class="ci-msg" style="color:var(--text-muted)">Tap to begin a new conversation</div></div>';
   row.onclick=function(){ openNewThreadSearch(query); };
   const emptyDoc=document.getElementById('chat-empty');
   if(emptyDoc) document.getElementById('chat-list').insertBefore(row,emptyDoc);
@@ -2946,8 +3011,17 @@ async function openNewThreadSearch(name){
   const result=document.getElementById('chat-search-result');
   if(result) result.remove();
   document.getElementById('chat-seller-search').value='';
+  let holder=document.getElementById('chat-seller-results');
+  if(holder) holder.remove();
   const match=chatThreadsCache.find(c=>c.withName.toLowerCase().includes(name.toLowerCase()));
   if(match){ openChatThread(match.withUserId,match.withName,match.withName.charAt(0).toUpperCase()); return; }
+  const s=sellers.find(sl=>String(sl.id).toLowerCase()===name.toLowerCase()||String(sl.n).toLowerCase()===name.toLowerCase());
+  if(s){
+    if(window.KobeApi&&s.uid){ try{ await KobeApi.markChatRead(s.uid); }catch(e){} }
+    openChatThread(s.uid, s.n||s.id, s.i);
+    addToThreadsCache(s.uid, s.n||s.id, s.i, s.v, s.rating);
+    return;
+  }
   let row=document.querySelector('#chat-list .chat-list-item'+'[data-name="'+escapeHtml(name)+'"]');
   if(!row){
     row=document.createElement('div');
@@ -3443,17 +3517,56 @@ function openChatThread(userId, name, initial){
   threadName = name;
   threadInitial = initial;
   document.querySelectorAll('.chat-list-item').forEach(i=>i.classList.remove('active'));
-  document.getElementById('th-name').textContent = name;
-  document.getElementById('th-avatar').textContent = initial;
+  const thName=document.getElementById('th-name');
+  const thAvatar=document.getElementById('th-avatar');
+  if(thName) thName.textContent = name;
+  if(thAvatar) thAvatar.textContent = initial;
+  const seller=sellers.find(s=>s.uid===userId);
+  const thStatus=document.getElementById('th-status');
+  if(thStatus){
+    if(seller){
+      thStatus.innerHTML = seller.v
+        ? '<span class="chat-verified-badge" style="display:inline-flex;align-items:center;gap:4px;color:var(--moss);font-size:var(--kobe-text-xs);font-weight:var(--kobe-weight-bold)">✓ Verified</span>'
+        : '<span style="color:var(--text-muted);font-size:var(--kobe-text-xs)">Verification pending</span>';
+    } else {
+      thStatus.textContent = '● Online';
+    }
+  }
   const layout = document.getElementById('chat-layout');
   layout.classList.add('thread-open');
   document.getElementById('thread-back').style.display = 'inline-flex';
+  const thAvatarEl=document.getElementById('th-avatar');
+  if(thAvatarEl){
+    thAvatarEl.style.cursor='pointer';
+    thAvatarEl.onclick=function(){openSellerFromChat(seller, userId)};
+  }
+  const thNameEl=document.getElementById('th-name');
+  if(thNameEl){
+    thNameEl.style.cursor='pointer';
+    thNameEl.onclick=function(){openSellerFromChat(seller, userId)};
+  }
   if(window.KobeApi && userId) KobeApi.markChatRead(userId);
   renderChatThread(name);
   const input=document.getElementById('chat-message-input'); if(input) setTimeout(()=>input.focus(),80);
 }
 function closeThread(){
   document.getElementById('chat-layout').classList.remove('thread-open');
+}
+function openSellerFromChat(seller, userId){
+  if(!seller) return;
+  currentSellerUserId = userId;
+  showScreen('seller');
+  setTimeout(()=>{
+    openSeller(seller.i, seller.n, seller.meta||'', seller.v||true, seller.deals||0, seller.about||'', seller.id, seller.rating||'', seller.cancelled||0, seller.disputed||0, userId);
+  }, 50);
+}
+function addToThreadsCache(userId, name, initial, verified, rating){
+  const existing=chatThreadsCache.find(c=>c.withUserId===userId);
+  if(existing){
+    existing.withName=name; existing.withInitial=initial; existing.verified=verified; existing.rating=rating;
+  } else {
+    chatThreadsCache.push({withUserId:userId, withName:name, withInitial:initial, verified:verified, rating:rating});
+  }
 }
 async function sendChatMessage(){
   const input=document.getElementById('chat-message-input');
