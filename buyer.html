@@ -3072,6 +3072,7 @@ function applyScreen(name){
   if(typeof KobeScanner !== 'undefined') KobeScanner.onScreenChange(name);
   if(name==='tracking'||name==='transactions') renderOrders();
   if(name==='disputes'){ renderDisputes(); if(document.getElementById('dispute-detail-view').style.display==='none') closeDisputeDetail(); }
+  if(name==='account'){ populateAccountScreen(); }
 }
 
 function showScreen(name, el, options){
@@ -3147,6 +3148,30 @@ function removeAvatar(){
 function loadSavedAvatar(){
   let saved=''; try{ saved=localStorage.getItem('km_profile_avatar'); }catch(e){}
   if(saved) applyAvatarToUI(saved);
+}
+async function populateAccountScreen(){
+  loadSavedAvatar();
+  const nameEl=document.querySelector('#screen-account h2');
+  const subEl=document.querySelector('#screen-account p');
+  const walletEl=document.querySelector('#screen-account strong:first-child');
+  const sinceEl=document.querySelector('#screen-account strong:last-child');
+  try {
+    if(window.KobeApi && KobeApi.getMyProfile){
+      const profile = await KobeApi.getMyProfile();
+      if(!profile) return;
+      if(nameEl) nameEl.textContent = profile.display_name || profile.email?.split('@')[0] || 'Your Name';
+      if(subEl){
+        const username = profile.display_name ? profile.display_name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') : '';
+        subEl.textContent = (username ? '@'+username : '@yourusername') + ' · Buyer';
+      }
+      if(walletEl) walletEl.textContent = profile.id ? profile.id.slice(0,8).toUpperCase() : '—';
+      if(sinceEl && profile.created_at){
+        sinceEl.textContent = new Date(profile.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' });
+      }
+    }
+  } catch(e){
+    console.error('Failed to load profile:',e);
+  }
 }
 
 function initKobeHistory(){
