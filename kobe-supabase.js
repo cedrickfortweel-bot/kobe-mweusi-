@@ -416,6 +416,9 @@
       if (/fetch|network|offline|failed to fetch/i.test(message)) {
         message = 'You are offline. Check your connection and try again.';
       }
+      if (/edge function/i.test(message)) {
+        message = 'Backend service is not connected. Sign in or try again later.';
+      }
       throw new Error(message);
     }
     return data;
