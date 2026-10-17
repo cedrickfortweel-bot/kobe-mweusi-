@@ -1,0 +1,15 @@
+{
+  "name": "Kobe Mweusi Delivery Agent",
+  "short_name": "Kobe Agent",
+  "description": "Kobe Mweusi delivery handoff workspace.",
+  "id": "agent.html",
+  "start_url": "agent.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "lang": "en",
+  "icons": [
+    { "src": "kobe-turtle-logo.png", "sizes": "768x768", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
