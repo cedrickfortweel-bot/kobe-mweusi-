@@ -2175,13 +2175,19 @@ function closeProfileMenu(){
   if(menu){ menu.classList.remove('show'); menu.setAttribute('aria-hidden','true'); }
   if(profile) profile.setAttribute('aria-expanded','false');
 }
-function openLogoutModal(){ closeProfileMenu(); closeMobileSidebar(); confirmLogout(); }
+function openLogoutModal(){
+  closeProfileMenu();
+  closeMobileSidebar();
+  const modal=document.getElementById('logout-modal-backdrop');
+  if(modal){ modal.classList.add('show'); document.body.style.overflow='hidden'; }
+}
 function closeLogoutModal(){
   const modal=document.getElementById('logout-modal-backdrop');
   if(modal) modal.classList.remove('show');
   document.body.style.overflow='';
 }
 async function confirmLogout(){
+  window.kobeLoggingOut = true;
   closeLogoutModal();
   if(window.kobeLogout){
     try{ await window.kobeLogout(); }
@@ -4316,7 +4322,7 @@ const guard=()=>dirty.buy?'buy':dirty.topup?'topup':'';
 const _ss=window.showScreen;window.showScreen=function(name){const g=guard(),c=history.state&&history.state.kmScreen;if(g&&c===g&&name!==g){if(!ask())return false;dirty[g]=0}return _ss.apply(this,arguments)};
 const _as=window.applyScreen;window.applyScreen=function(name){const g=guard();if(g&&name!==g&&window.event&&window.event.type==='popstate'){if(!ask()){history.forward();return}dirty[g]=0}return _as.apply(this,arguments)};
 const _ot=window.openTopupModal;window.openTopupModal=function(){dirty.topup=0;const r=_ot.apply(this,arguments);return r};
-addEventListener('beforeunload',e=>{if(dirty.dispute||dirty.buy||dirty.topup){e.preventDefault();e.returnValue=''}});
+addEventListener('beforeunload',e=>{if(!window.kobeLoggingOut&&(dirty.dispute||dirty.buy||dirty.topup)){e.preventDefault();e.returnValue=''}});
 
 /* phone alerts in Settings. The screen works now; real alerts need the backend to call kobePushConfig({vapidPublicKey,onSubscribe,onUnsubscribe}) and send the pushes. */
 const push={on:false,cfg:null};

@@ -292,9 +292,9 @@ function pfUpdate(){const initials=((user.name||store.name||'KM').trim().split(/
 function pfMenu(e){if(e)e.stopPropagation();const m=$('#pm');if(m.classList.contains('o')){pfClose();return}const anchor=e&&e.currentTarget?e.currentTarget:$('#pfBtn'),r=anchor.getBoundingClientRect();m.classList.add('o');const mw=Math.min(250,innerWidth-20),mh=m.offsetHeight;let left,top;if(anchor.id==='hAv'){left=Math.max(10,Math.min(innerWidth-mw-10,r.right-mw));top=r.bottom+8;if(top+mh>innerHeight-10)top=Math.max(10,r.top-mh-8)}else{const side=$('#side'),collapsed=innerWidth>760&&side.classList.contains('c');left=collapsed?r.right+8:Math.max(10,Math.min(innerWidth-mw-10,r.left));top=r.bottom+8;if(top+mh>innerHeight-10)top=Math.max(10,r.top-mh-8);if(collapsed&&left+mw>innerWidth-10)left=Math.max(10,r.left-mw-8)}left=Math.max(10,Math.min(left,innerWidth-mw-10));top=Math.max(10,Math.min(top,innerHeight-mh-10));m.style.left=left+'px';m.style.top=top+'px';m.style.right='auto';m.style.bottom='auto';anchor.setAttribute('aria-expanded','true')}
 function pfClose(){const m=$('#pm');m.classList.remove('o');$('#pfBtn').setAttribute('aria-expanded','false');const h=$('#hAv');if(h)h.setAttribute('aria-expanded','false')}
 function pfGo(t){pfClose();tab(t)}
-function loOpen(){pfClose();loGo()}
+function loOpen(){pfClose();$('#lo').classList.add('o')}
 function loClose(){$('#lo').classList.remove('o')}
-function loGo(){loClose();kBroadcast('logout');if(typeof window.kobeLogout==='function')window.kobeLogout();else toast('Sign-out is unavailable: authentication is not connected.');}
+function loGo(){window.kobeLoggingOut=true;loClose();kBroadcast('logout');if(typeof window.kobeLogout==='function')window.kobeLogout();else toast('Sign-out is unavailable: authentication is not connected.');}
 document.addEventListener('click',e=>{if(!e.target.closest('#pm')&&!e.target.closest('#pfBtn')&&!e.target.closest('#hAv'))pfClose()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){pfClose();loClose();closePresentation()}});
 function menu(){const sd=$('#side');if(innerWidth<=760){sd.classList.toggle('o');$('#scrim').classList.toggle('o')}else sd.classList.toggle('c')}
@@ -835,7 +835,7 @@ $('#gB').addEventListener('input',gIn);$('#gB').addEventListener('change',gIn);
 function kLeave(){if(gDirty&&stack[stack.length-1]==='gf'){if(!confirm('You have unsaved changes. Leave without saving?'))return false;gDirty=false}return true}
 function gDirtyGuard(){if(!kLeave()){try{history.pushState({kmSeller:true,screen:'gf'},'','#seller-gf')}catch(e){}return true}return false}
 const _back=back,_tab=tab;back=function(){if(!kLeave())return;_back()};tab=function(id){if(!kLeave())return;_tab(id)};
-addEventListener('beforeunload',e=>{if(gDirty){e.preventDefault();e.returnValue=''}});
+addEventListener('beforeunload',e=>{if(!window.kobeLoggingOut&&gDirty){e.preventDefault();e.returnValue=''}});
 
 /* 7. Other tabs: read/removed notifications follow, and a sign-out is announced */
 function kBroadcast(t){kLS.set('km-sync',{t,at:Date.now(),r:Math.random()})}
