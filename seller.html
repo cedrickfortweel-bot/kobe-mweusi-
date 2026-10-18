@@ -435,7 +435,7 @@ try{const r=await gsv[1](o);if(r){gerr(r);toast(r);if(btn){btn.disabled=false;bt
 if(btn)btn.innerHTML='✓ Saved';gDirty=false;await new Promise(z=>setTimeout(z,450));gBusy=false;back();toast((gsv[2]||'Updated')+' — local preview only; not submitted or synced.');kRefresh('action',true)}
 catch(e){gBusy=false;if(btn){btn.disabled=false;btn.innerHTML=h0}gerr(kErrMsg(e));toast(kErrMsg(e))}}
 function pedit(i){const p=i<0?{n:'',e:'📦',p:'',s:'',v:1}:prods[i];pics.p=p.img||'';gform(i<0?'Add product':'Edit product',[{k:'n',l:'Product name',v:p.n},{k:'p',l:'Price (TSh)',t:'number',v:p.p},{k:'s',l:'Stock available',t:'number',v:p.s},{k:'v',l:'Show to buyers',tg:1,v:p.v}],o=>{if(!o.n)return 'Enter a product name.';if(num(o.p)<1)return 'Enter a price.';const q={n:o.n,e:p.e,img:pics.p,p:num(o.p),s:num(o.s),v:o.v?1:0};i<0?prods.push(q):prods[i]=q},i<0?'Add product':'Save changes',i<0?'Product added to preview':'Product updated in preview',[['p','Product photo']])}
-const LIVE_BASE='https://kobemweusi.app';/* placeholder domain: change when publishing */
+const LIVE_BASE=window.location.origin;
 const liveUrl=()=>LIVE_BASE+'/s/'+encodeURIComponent(store.kid||'your-id')+'/live';
 const rsv=i=>live&&live.resv?live.resv.filter(r=>r.i==i).length:0;
 function openBV(){$('#bv').classList.add('o');bvR()}function closeBV(){$('#bv').classList.remove('o')}
