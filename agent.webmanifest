@@ -1,7 +1,7 @@
 {
-  "name": "Kobe Mweusi Delivery Agent",
+  "name": "Kobe Mweusi Agent Hub",
   "short_name": "Kobe Agent",
-  "description": "Kobe Mweusi delivery handoff workspace.",
+  "description": "Authorized package scanning hub for Kobe Mweusi agents.",
   "id": "agent.html",
   "start_url": "agent.html",
   "scope": "./",

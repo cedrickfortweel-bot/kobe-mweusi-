@@ -1,6 +1,7 @@
-import { json, ApiError, asApiError } from "../_shared/http.ts";
+﻿import { json, ApiError, asApiError } from "../_shared/http.ts";
 import { verifyUser, serviceClient, isStaff } from "../_shared/auth.ts";
 import { consumeRateLimit, subjectHash } from "../_shared/rate.ts";
+import { sendNotifications } from "../_shared/push.ts";
 
 export default async function handler(request: Request) {
   if (request.method === "OPTIONS") return new Response("ok", { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "GET, POST, OPTIONS" } });
@@ -42,12 +43,17 @@ export default async function handler(request: Request) {
       p_review_note: note || null,
     });
     if (error) return json({ error: error.message }, 409);
-    return json({ result: data?.[0] || null });
+    const result = data?.[0] || null;
+    if (result?.seller_id) {
+      const approved = result.status === "approved";
+      await sendNotifications(service, [result.seller_id], approved ? "Seller verification approved" : "Seller verification needs attention", approved ? "Your seller account is approved. Your Kobe ID is " + (result.kobe_id || "now available") + "." : "Your KYC submission needs attention. Open your seller dashboard to review the next steps.", { link: "/seller.html#verification", kobe_id: result.kobe_id || null, decision: result.status });
+    }
+    return json({ result });
   }
 
   if (action !== "list") return json({ error: "Unknown action" }, 400);
   const { data: rows, error: queueError } = await service.from("seller_kyc_submissions")
-    .select("id,seller_id,entity_type,legal_name,business_name,business_type,registration_number,region,id_type,id_last4,tax_id_last4,representative_role,social_links,document_paths,status,submitted_at")
+    .select("id,seller_id,entity_type,legal_name,business_name,business_type,registration_number,region,id_type,id_last4,tax_id_last4,representative_role,social_links,document_paths,status,submitted_at,seller_profiles:seller_id (kobe_id, shop_name)")
     .in("status", ["pending", "under_review"]).order("submitted_at", { ascending: true }).limit(25);
   if (queueError) return json({ error: "Could not load the review queue" }, 500);
 

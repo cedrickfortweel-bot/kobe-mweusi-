@@ -1,4 +1,4 @@
-const CACHE = 'kobe-agent-v1';
+const CACHE = 'kobe-agent-hub-v2';
 const SHELL = ['agent.html','agent.css','agent.webmanifest','agent-sw.js','kobe-turtle-logo.png','jsQR.js','kobe-camera.js'];
 self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE).then(cache => Promise.allSettled(SHELL.map(file => cache.add(new Request(file, { cache:'reload' }))))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())); });

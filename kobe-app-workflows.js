@@ -713,13 +713,33 @@ var page = location.pathname.split('/').pop();
   }
 
   async function loadBuyerData(state) {
-    var wallet = await api().walletSummary();
-    if (wallet) {
+    /* Load identity and wallet together so the buyer sees a useful shell quickly. */
+    var walletPromise = api().walletSummary().catch(function (e) {
+      console.warn('walletSummary', e);
+      return null;
+    });
+    var profilePromise = fillAccount(state).catch(function (e) {
+      console.warn('fillAccount', e);
+    });
+    var wallet = await walletPromise;
+    if (wallet && wallet.wallet) {
       balanceValue = Number(wallet.wallet.balance);
       escrowValue = Number(wallet.wallet.held);
     }
     renderBalances();
-    await Promise.all([renderOrders(), renderDisputes(), loadDirectory(), loadChatThreads(), fillAccount(state)]);
+    await profilePromise;
+
+    /* Orders and disputes are useful on the first screen; secondary discovery data is not. */
+    Promise.all([
+      renderOrders().catch(function (e) { console.warn('renderOrders', e); }),
+      renderDisputes().catch(function (e) { console.warn('renderDisputes', e); })
+    ]);
+
+    /* Do not block the first screen on the full seller directory or chat history. */
+    Promise.all([
+      loadDirectory().catch(function (e) { console.warn('loadDirectory', e); }),
+      loadChatThreads().catch(function (e) { console.warn('loadChatThreads', e); })
+    ]);
   }
 
   async function loadDirectory() {
@@ -762,6 +782,18 @@ var page = location.pathname.split('/').pop();
     if (boxes[1] && profile.created_at) {
       boxes[1].textContent = new Date(profile.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' });
     }
+     /* Keep the persistent sidebar and profile menu in sync immediately after sign-in. */
+     var email = profile.phone_e164 || profile.email || 'kobe buyer';
+     var sideName = document.querySelector('.side-profile .name');
+     if (sideName) sideName.textContent = name;
+     var sideEmail = document.getElementById('side-email');
+     if (sideEmail) sideEmail.textContent = email;
+     var menuName = document.querySelector('.profile-menu .pm-name');
+     if (menuName) menuName.textContent = name;
+     var menuEmail = document.getElementById('pm-email');
+     if (menuEmail) menuEmail.textContent = email;
+     var sideAvatar = document.getElementById('side-avatar');
+     if (sideAvatar) sideAvatar.textContent = (name.trim().charAt(0) || 'K').toUpperCase();
   }
 
   function wireBuyerButtons() {
