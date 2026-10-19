@@ -124,7 +124,8 @@
   .side-profile { display: flex; align-items: center; gap: 10px; padding: 10px 8px; border-top: 1px solid var(--line); margin-top: 8px; overflow: hidden; }
   .collapsed .side-profile { justify-content: center; }
   .side-profile .avatar { width: 34px; height: 34px; border-radius: 999px; background: var(--moss-dim); display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 600; font-size: 14px; flex-shrink: 0; }
-  .side-profile .name { font-size: 13.5px; font-weight: 700; white-space: nowrap; }
+.side-profile .name { font-size: 13.5px; font-weight: 700; white-space: nowrap; }
+.side-profile .name, .profile-menu-head .pm-name { color: #fff; opacity: 1; }
   .side-profile .email { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; }
   .collapsed .side-profile .id-block { display: none; }
   .side-profile { cursor: pointer; border-radius: 12px; transition: background .18s ease; position: relative; }
@@ -165,6 +166,7 @@
 
   header.page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
 header.page-head h1 { font-family: 'Fraunces', serif; font-weight: var(--kobe-weight-semibold); font-size: var(--kobe-text-2xl); margin: 0; }
+header.page-head h1, #screen-account h1, #screen-account h2 { color: #fff !important; opacity: 1 !important; }
 header.page-head p { color: var(--text-muted); font-size: var(--kobe-text-sm); margin: 3px 0 0; }
   .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
   .empty-state-icon { width: 44px; height: 44px; margin: 0 auto 14px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
