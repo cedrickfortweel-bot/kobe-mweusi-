@@ -141,7 +141,7 @@ create policy push_subscriptions_own on public.push_subscriptions for all to aut
   with check (user_id = (select auth.uid()));
 
 /* ---------- transaction PINs (hashed with pgcrypto; service-role only) ---------- */
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 create table public.transaction_pins (
   user_id uuid primary key references public.profiles (id) on delete cascade,

@@ -52,7 +52,7 @@ begin
         execute format('alter publication supabase_realtime add table public.%I', t);
       exception when duplicate_object then
         null;
-      end when;
+      end;
     end if;
   end loop;
 end

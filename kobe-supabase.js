@@ -1,7 +1,7 @@
 (function () {
   const client = window.supabase.createClient(
-    'https://arnbsijvnxnoqybumkys.supabase.co',
-    'sb_publishable_PDZh59CJskfn0O6_Rme8xw_MXoprn0v',
+    'https://spoylutxxxfovcuflyts.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwb3lsdXR4eHhmb3ZjdWZseXRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2OTMzMzAsImV4cCI6MjEwODI2OTMzMH0.PPudMghmfNZUshWyFjTGxidLzX5uzGk_KwMvugQ6GyA',
     { auth: { autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce', persistSession: true } }
   );
 

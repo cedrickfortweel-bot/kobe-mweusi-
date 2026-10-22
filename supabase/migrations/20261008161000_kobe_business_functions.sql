@@ -208,7 +208,7 @@ set search_path = ''
 as $$
 begin
   insert into public.transaction_pins (user_id, pin_hash, changed_at)
-  values (p_user, crypt(p_pin, gen_salt('bf')), now())
+  values (p_user, extensions.crypt(p_pin, extensions.gen_salt('bf')), now())
   on conflict (user_id) do update
     set pin_hash = excluded.pin_hash, changed_at = now();
 end;
@@ -227,7 +227,7 @@ as $$
     select 1
     from public.transaction_pins t
     where t.user_id = p_user
-      and crypt(p_pin, t.pin_hash) = t.pin_hash
+      and extensions.crypt(p_pin, t.pin_hash) = t.pin_hash
   );
 $$;
 revoke all on function public.verify_transaction_pin(uuid, text) from public, anon, authenticated;

@@ -34,7 +34,7 @@
    20261020090100_live_platform_constraints.sql (a later, separate transaction).
 */
 
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 /* ========================================================================== *
  * 1. ENUM WIDENING

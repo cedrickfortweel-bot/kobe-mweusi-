@@ -189,7 +189,7 @@ begin
   update public.notifications
     set read_at = now()
     where user_id = (select auth.uid()) and read_at is null;
-  get diagnostics v_count = row_count;
+  get diagnostics v_count = ROW_COUNT;
   return v_count;
 end;
 $$;
@@ -373,16 +373,18 @@ set search_path = ''
 as $$
 declare
   v_count integer := 0;
+  v_rows integer := 0;
 begin
   delete from public.notification_deliveries
     where status in ('sent', 'failed')
       and updated_at < now() - make_interval(days => greatest(1, coalesce(p_older_than_days, 30)));
-  get diagnostics v_count = row_count;
+  get diagnostics v_count = ROW_COUNT;
 
   delete from public.notifications
     where read_at is not null
       and created_at < now() - make_interval(days => greatest(1, coalesce(p_older_than_days, 30)));
-  get diagnostics v_count = v_count + row_count;
+  get diagnostics v_rows = row_count;
+  v_count := v_count + v_rows;
 
   return v_count;
 end;

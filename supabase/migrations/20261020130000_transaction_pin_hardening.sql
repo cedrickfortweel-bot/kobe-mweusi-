@@ -99,7 +99,7 @@ begin
   end if;
 
   insert into public.transaction_pins (user_id, pin_hash, changed_at)
-  values (p_user, crypt(p_pin, gen_salt('bf')), now())
+  values (p_user, extensions.crypt(p_pin, extensions.gen_salt('bf')), now())
   on conflict (user_id) do update
     set pin_hash = excluded.pin_hash, changed_at = now();
 

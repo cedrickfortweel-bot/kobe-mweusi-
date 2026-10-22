@@ -122,7 +122,7 @@ supabase db push        # applies the migrations that are not yet live
 supabase functions deploy agent admin handoff seller
 ```
 
-The project is already linked: `arnbsijvnxnoqybumkys`.
+The project is already linked: `spoylutxxxfovcuflyts`.
 
 ### 3.7 Secrets
 

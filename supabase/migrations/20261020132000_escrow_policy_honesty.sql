@@ -94,7 +94,7 @@ begin
     (public.escrow_policy('agent_scan_can_release', 'true'::jsonb))::boolean, true);
 
   -- 1. The buyer explicitly confirmed receipt.
-  if coalesce(public.escrow_policy('buyer_confirmation_releases_immediately', 'true'::jsonb))::boolean, true)
+  if coalesce(public.escrow_policy('buyer_confirmation_releases_immediately', 'true'::jsonb)::boolean, true)
      and v_workflow.buyer_confirmed_at is not null then
     return jsonb_build_object('eligible', true, 'reason', 'buyer_confirmed',
       'path', 'explicit_confirmation', 'evaluated_at', v_now);

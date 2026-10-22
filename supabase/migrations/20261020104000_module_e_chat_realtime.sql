@@ -319,15 +319,15 @@ as $$
     from public.chat_threads t
     where t.buyer_id = (select auth.uid()) or t.seller_id = (select auth.uid())
   )
-  select m.thread_buyer, m.thread_seller, m.other,
+  select m.buyer_id as thread_buyer, m.seller_id as thread_seller, m.other,
     coalesce(nullif(sp.shop_name, ''), pr.display_name, 'Kobe user'),
     (select msg.body from public.chat_messages msg
-      where msg.thread_buyer = m.thread_buyer and msg.thread_seller = m.thread_seller
+      where msg.thread_buyer = m.buyer_id and msg.thread_seller = m.seller_id
       order by msg.created_at desc limit 1),
     (select max(msg.created_at) from public.chat_messages msg
-      where msg.thread_buyer = m.thread_buyer and msg.thread_seller = m.thread_seller),
+      where msg.thread_buyer = m.buyer_id and msg.thread_seller = m.seller_id),
     (select count(*)::integer from public.chat_messages msg
-      where msg.thread_buyer = m.thread_buyer and msg.thread_seller = m.thread_seller
+      where msg.thread_buyer = m.buyer_id and msg.thread_seller = m.seller_id
         and msg.sender_id <> (select auth.uid())
         and not exists (
           select 1 from public.message_read_receipts r

@@ -109,6 +109,7 @@ as $$
   join public.profiles bp on bp.id = o.buyer_id
   join public.seller_profiles sp on sp.user_id = o.seller_id
   left join public.escrow_transactions e on e.order_id = o.id
+  cross join q
   where (q.needle is null
          or o.ref ilike '%' || q.needle || '%'
          or o.item_name ilike '%' || q.needle || '%'
