@@ -2121,7 +2121,7 @@ As agreed with the seller..." oninput="updateOrderDescriptionState(this)"></text
     <div class="rm-grid">
       <div class="rm-card"><div class="rm-card-label">Receipt ID</div><div class="rm-card-value" id="rm-receipt-id">—</div></div>
       <div class="rm-card"><div class="rm-card-label">Date</div><div class="rm-card-value" id="rm-date">—</div></div>
-      <div class="rm-card"><div class="rm-card-label">Buyer</div><div class="rm-card-value">—</div></div>
+      <div class="rm-card"><div class="rm-card-label">Buyer</div><div class="rm-card-value" id="rm-buyer">—</div></div>
       <div class="rm-card"><div class="rm-card-label">Seller</div><div class="rm-card-value" id="rm-seller">—</div></div>
     </div>
     <div class="rm-section">
@@ -4295,9 +4295,10 @@ function rateFromReceipt(){
 }
 document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeReviewModal(); });
 function openReceipt(seller, initial, amt, status, date, txId){
-  const id = txId || handoffTxId || ('KM-' + Math.floor(100000 + Math.random()*899999));
-  document.getElementById('rm-seller').textContent = seller;
-  document.getElementById('rm-amt').textContent = amt;
+   const id = txId || handoffTxId || ('KM-' + Math.floor(100000 + Math.random()*899999));
+   document.getElementById('rm-seller').textContent = seller;
+   document.getElementById('rm-buyer').textContent = (document.querySelector('.side-profile .name')?.textContent || 'You').trim() || 'You';
+   document.getElementById('rm-amt').textContent = amt;
   document.getElementById('rm-date').textContent = date;
   document.getElementById('rm-receipt-id').textContent = id;
   document.getElementById('rm-title').textContent = status === 'Refunded' ? 'Refund Issued' : status === 'In escrow' ? 'Held in Escrow' : 'Escrow Released';
