@@ -18,7 +18,7 @@
    Enums    : live_platform (instagram/facebook/whatsapp), dispute_status
               (escalated), order_status (unchanged — verified against the app)
    Functions: assign_kobe_id, protect_seller_locked_fields, prevent_self_verification,
-              prevent_self_role_change, block_ledger_mutation, force_server_fields,
+              block_ledger_mutation, force_server_fields,
               guard_order_changes, guard_live_session, check_order_live_session,
               guard_chat_thread_update, guard_chat_thread_initiator,
               on_chat_message_insert, on_dispute_message_insert
@@ -313,28 +313,7 @@ drop trigger if exists prevent_self_verification on public.seller_profiles;
 create trigger prevent_self_verification
   before insert or update on public.seller_profiles
   for each row execute function public.prevent_self_verification();
-
-/* A user cannot change their own internal role. */
-create or replace function public.prevent_self_role_change()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  if new.role is distinct from old.role then
-    raise exception 'Internal roles are managed by administrators'
-      using errcode = 'P0001';
-  end if;
-  return new;
-end;
-$$;
-revoke all on function public.prevent_self_role_change() from public, anon, authenticated;
-
-drop trigger if exists prevent_self_role_change on public.profiles;
-create trigger prevent_self_role_change
-  before update on public.profiles
-  for each row execute function public.prevent_self_role_change();
+/* Internal roles live in internal_user_roles; nothing to guard on profiles. */
 
 /* The ledger is append-only. */
 create or replace function public.block_ledger_mutation()

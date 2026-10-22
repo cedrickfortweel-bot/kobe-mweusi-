@@ -11,7 +11,7 @@
 
 begin;
 
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 /* ---------- users ---------- */
 do $$
@@ -21,7 +21,7 @@ declare
   v_agent uuid := '33333333-3333-4333-8333-333333333333';
   v_admin uuid := '44444444-4444-4444-8444-444444444444';
   v_support uuid := '55555555-5555-4555-8555-555555555555';
-  v_password text := crypt('kobe-dev-password', gen_salt('bf'));
+  v_password text := extensions.crypt('kobe-dev-password', extensions.gen_salt('bf'));
 begin
   insert into auth.users
     (id, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
