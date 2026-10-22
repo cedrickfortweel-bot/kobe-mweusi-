@@ -1,0 +1,10 @@
+# Ignore node_modules (wrangler doesn't respect .gitignore for Pages deploys)
+node_modules/
+.git/
+supabase/.temp/
+*.log
+cleanup.sql
+cleanup_runner.js
+size_check.js
+kobe-mweusi-admin-console-2-5.html
+seller.html.backup
