@@ -1,0 +1,24 @@
+{
+  "name": "kobe-mweusi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kobe Mweusi — escrow payments for social commerce in Tanzania",
+  "scripts": {
+    "lint:sql": "node supabase/tests/sql_lint.mjs",
+    "lint:sql:selftest": "node supabase/tests/sql_lint_selftest.mjs",
+    "lint:css": "node supabase/tests/css_vars_check.js",
+    "lint:nav": "node supabase/tests/nav_check.js",
+    "lint:encoding": "node supabase/tests/encoding_check.mjs",
+    "lint:qr": "node supabase/tests/qr_check.mjs",
+    "lint:chars": "node supabase/tests/stray_chars_check.mjs",
+    "docs": "node supabase/tests/gen_inventory.mjs",
+    "flow": "node flow_check.js",
+    "api": "node api_surface_check.js",
+    "test": "npm run lint:sql && npm run lint:css && npm run lint:nav && npm run lint:encoding && npm run lint:chars && npm run lint:qr && npm run flow && npm run api",
+    "verify": "npm run lint:sql && npm run lint:sql:selftest && npm run lint:css && npm run lint:nav && npm run lint:encoding && npm run lint:chars && npm run lint:qr && npm run docs && npm run flow && npm run api"
+  },
+  "devDependencies": {
+    "libpg-query": "^17.2.0"
+  },
+  "license": "MIT"
+}

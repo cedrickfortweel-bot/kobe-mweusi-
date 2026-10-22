@@ -1,4 +1,4 @@
-﻿/* Tests for supabase/functions/_shared/push.ts.
+/* Tests for supabase/functions/_shared/push.ts.
 
    Two things are proved here:
 

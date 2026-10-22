@@ -49,6 +49,76 @@ var page = location.pathname.split('/').pop();
   });
 
   /* ==================================================================
+     THE DURABLE NOTIFICATION INBOX
+     ==================================================================
+
+     The bell used to read a localStorage array, so a notification that
+     arrived while the app was closed was lost, and the bell was empty
+     on a new phone. The server now owns the inbox: these records come
+     from public.notifications, which is written by the notification
+     pipeline whenever something happens.
+
+     The app's own kobeNotify is still the single entry point, so the
+     local copy stays a cache and the rendering does not change. */
+  async function loadServerNotifications() {
+    if (!window.KobeSupabase || !window.KobeSupabase.client) return [];
+    try {
+      var { data, error } = await window.KobeSupabase.client
+        .from('my_notifications')
+        .select('id,title,body,link,category,kind,priority,read_at,created_at')
+        .order('created_at', { ascending: false })
+        .limit(60);
+      if (error) throw error;
+      var rows = data || [];
+      rows.forEach(function (row) {
+        if (typeof window.kobeNotify !== 'function') return;
+        window.kobeNotify({
+          id: row.id,
+          title: row.title,
+          body: row.body,
+          link: row.link,
+          cat: row.category,
+          type: row.category,
+          t: new Date(row.created_at).getTime(),
+          r: row.read_at ? 1 : 0
+        });
+      });
+      return rows;
+    } catch (error) {
+      console.warn('notifications', error);
+      return [];
+    }
+  }
+
+  /* Marking the bell as read has to reach the server, or the unread
+     marks come back on the next load. */
+  async function markServerNotificationsRead(ids) {
+    if (!window.KobeSupabase || !window.KobeSupabase.client) return;
+    try {
+      if (ids && ids.length) {
+        for (var i = 0; i < ids.length; i++) {
+          await window.KobeSupabase.client.rpc('mark_notification_read', { p_notification_id: ids[i] });
+        }
+        return;
+      }
+      var { data } = await window.KobeSupabase.client
+        .from('my_notifications')
+        .select('id')
+        .is('read_at', null);
+      var unread = data || [];
+      for (var j = 0; j < unread.length; j++) {
+        await window.KobeSupabase.client.rpc('mark_notification_read', { p_notification_id: unread[j].id });
+      }
+    } catch (error) {
+      console.warn('mark notifications read', error);
+    }
+  }
+
+  window.addEventListener('kobe:auth-ready', function () { loadServerNotifications(); });
+  window.addEventListener('focus', function () { loadServerNotifications(); });
+  window.kobeMarkServerNotificationsRead = markServerNotificationsRead;
+
+  /* ==================================================================
      SELLER
      ================================================================== */
 
@@ -345,20 +415,32 @@ var page = location.pathname.split('/').pop();
         if (result) { result.style.display = 'block'; result.textContent = 'Verifying…'; }
         var res = await invoke('handoff', { action: 'verify', code: code });
         if (!res || !res.ok) {
-          var reason = (res && res.error) || 'This code could not be verified.';
-          if (result) result.textContent = 'Not verified: ' + reason;
+          /* The server says exactly what happened: already scanned, the
+             wrong person, or the handover is already done. Show that,
+             because the seller needs to know whether to try again or
+             stop. */
+          var reason = (res && (res.error || res.reason)) || 'This code could not be verified.';
+          if (result) { result.textContent = 'Not verified: ' + reason; }
           if (status) status.textContent = reason + ' Scan again.';
           toast(reason);
           return;
         }
         if (result) {
+          var released = res.released === true;
           result.innerHTML = '<b>Verified ✔</b><br>Order ' + esc(res.order_ref) +
             '<br>' + esc(res.item_name) + ' → ' + Number(res.quantity || 1) +
             '<br><b>' + fmtTZS(res.amount) + '</b>' +
-            '<br><small>' + esc(res.counterparty) + ' à ' + timeString(res.scanned_at) + '</small>';
+            '<br><small>' + esc(res.counterparty) + ' · ' + timeString(res.scanned_at) + '</small>';
         }
-        if (status) status.textContent = 'Handoff verified. Release happens when the buyer confirms payment.';
-        toast('Handoff verified for ' + res.order_ref);
+        /* Scanning the buyer's code is the delivery confirmation, so the
+           escrow is released there and then. Scanning the seller's code
+           only starts the three-hour window, because that is the buyer
+           engaging, not the goods arriving. */
+        var message = res.released === true
+          ? 'Handoff verified. The escrow has been released to you.'
+          : 'Handoff verified. The buyer has engaged; the escrow releases in three hours unless it is confirmed sooner.';
+        if (status) status.textContent = message;
+        toast(res.released === true ? 'Escrow released for ' + res.order_ref : 'Handoff verified for ' + res.order_ref);
         await loadSellerOrders();
         render();
       },
@@ -514,7 +596,7 @@ var page = location.pathname.split('/').pop();
         'Business description': store.desc, 'Opening hours': store.hours,
         'Delivery details': store.delivery, 'Business location': store.loc,
         'Logo and cover image': shopPaths.avatar || shopPaths.cover || '—',
-        'Public profile': store.name + ' à ' + (store.loc || 'no location'),
+        'Public profile': store.name + ' · ' + (store.loc || 'no location'),
         'Social media link': (store.soc || []).join(', ') || 'none',
         'Support request': '—',
       };
@@ -685,7 +767,6 @@ var page = location.pathname.split('/').pop();
   var directoryCache = [];
   var chatThreadsCache = [];
   var activeChatUserId = null;
-  var handoffTokens = {};
 
   function toBuyerDispute(d) {
     return {
@@ -725,6 +806,20 @@ var page = location.pathname.split('/').pop();
     if (wallet && wallet.wallet) {
       balanceValue = Number(wallet.wallet.balance);
       escrowValue = Number(wallet.wallet.held);
+      /* The buyer's own Wallet ID. It shows in the wallet card and in
+         account settings, and the server only ever returns it to its
+         owner. */
+      var walletId = wallet.wallet.wallet_id || '';
+      var walletIdEl = document.getElementById('wId');
+      if (walletIdEl) walletIdEl.textContent = walletId || 'Wallet ID not assigned yet';
+      var accountWalletId = document.getElementById('accountWalletId');
+      if (accountWalletId) accountWalletId.textContent = walletId || 'Not assigned yet';
+      /* The sandbox test-credit button only exists while the server says
+         the sandbox is on, so it can never appear in production. */
+      var sandboxBtn = document.getElementById('sandbox-credit-btn');
+      var sandboxHint = document.getElementById('sandbox-credit-hint');
+      if (sandboxBtn) sandboxBtn.style.display = wallet.sandbox_available ? 'block' : 'none';
+      if (sandboxHint) sandboxHint.style.display = wallet.sandbox_available ? 'block' : 'none';
     }
     renderBalances();
     await profilePromise;
@@ -776,7 +871,7 @@ var page = location.pathname.split('/').pop();
     var heading = document.querySelector('#screen-account .account-profile-top h2');
     if (heading) heading.textContent = name;
     var sub = document.querySelector('#screen-account .account-profile-top p');
-    if (sub) sub.textContent = (profile.phone_e164 || profile.email || 'kobe buyer') + ' à Buyer';
+    if (sub) sub.textContent = (profile.phone_e164 || profile.email || 'kobe buyer') + ' · Buyer';
     var boxes = document.querySelectorAll('#screen-account .account-id-box strong');
     if (boxes[0]) boxes[0].textContent = 'KM-' + String(profile.id || '').slice(0, 8).toUpperCase();
     if (boxes[1] && profile.created_at) {
@@ -808,23 +903,18 @@ var page = location.pathname.split('/').pop();
     window.openHandoff = async function (seller, amount, txId) {
       handoffSeller = seller; handoffAmount = amount; handoffTxId = txId;
       document.getElementById('handoff-lock-text').textContent =
-        'This code is identity-locked to @' + seller.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 12) + ' ô only they can redeem it.';
+        'This code is identity-locked to @' + seller.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 12) + ' — only they can redeem it.';
       var box = document.getElementById('handoff-qr-box');
-      box.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:20px">Generating your handoff code…</p>';
+      box.innerHTML = '<p style="color:var(--text-muted,var(--mut,#9aa3a0));text-align:center;padding:20px">Generating your handoff code…</p>';
       var res = await KobeApi.handoffIssue(txId);
       if (!res || res.ok === false) {
-        box.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:20px">' +
-          esc((res && res.reason) || 'Handoff codes are only available while money is held in escrow.') + '</p>';
+        box.innerHTML = '<p style="color:var(--text-muted,var(--mut,#9aa3a0));text-align:center;padding:20px">' +
+          esc((res && (res.error || res.reason)) || 'Handoff codes are only available while money is held in escrow.') + '</p>';
         showScreen('handoff');
         return;
       }
-      handoffTokens[txId] = res;
       box.innerHTML = KobeApi.handoffCodeSvg(txId);
       showScreen('handoff');
-    };
-    KobeApi.handoffCodeSvg = function (txId) {
-      var issued = handoffTokens[txId];
-      return generateQrSvg(issued ? issued.buyer_code : txId);
     };
 
     window.renderChatThreads = function () {
@@ -872,13 +962,13 @@ var page = location.pathname.split('/').pop();
         return String(t.withName).toLowerCase() === String(name).toLowerCase();
       });
       if (!thread || !activeChatUserId) {
-        body.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;">No messages yet ô say hello to start the conversation.</p>';
+        body.innerHTML = '<p style="color:var(--text-muted,var(--mut,#9aa3a0));font-size:13px;text-align:center;">No messages yet — say hello to start the conversation.</p>';
         return;
       }
       var data = await KobeApi.chatThread(activeChatUserId);
       body.innerHTML = '';
       if (!data || !data.messages || !data.messages.length) {
-        body.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;">No messages yet ô say hello to start the conversation.</p>';
+        body.innerHTML = '<p style="color:var(--text-muted,var(--mut,#9aa3a0));font-size:13px;text-align:center;">No messages yet — say hello to start the conversation.</p>';
       } else {
         data.messages.forEach(function (m) {
           var row = document.createElement('div');
@@ -935,7 +1025,7 @@ var page = location.pathname.split('/').pop();
         result.id = 'chat-search-result';
         result.type = 'button';
         result.className = 'chat-new-hint';
-        result.style.cssText = 'width:100%;text-align:left;background:transparent;border:0;cursor:pointer;color:var(--ai);';
+        result.style.cssText = 'width:100%;text-align:left;background:transparent;border:0;cursor:pointer;color:var(--ai,var(--shell,#c8ff35));';
         list.appendChild(result);
       }
       result.textContent = 'Start a conversation with ' + match.name;

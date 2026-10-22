@@ -13,9 +13,13 @@ export function json(body: unknown, status = 200): Response {
 
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  /* A machine-readable reason, so the app can react to a specific case
+     rather than only showing the message. */
+  reason?: string;
+  constructor(status: number, message: string, reason?: string) {
     super(message);
     this.status = status;
+    this.reason = reason;
   }
 }
 

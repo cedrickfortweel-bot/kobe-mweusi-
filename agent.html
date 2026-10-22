@@ -7,23 +7,661 @@
 <div id="offline-banner" class="offline-banner is-hidden" role="status" aria-live="polite"><span data-i18n="offline"></span></div>
 <main class="shell">
 <header class="topbar"><a class="brand" href="Kobe_Mweusi_homepage_v7_static.html" aria-label="Kobe Mweusi home"><img src="kobe-turtle-logo.png" alt="Kobe Mweusi turtle logo"><span class="brand-copy"><b>Kobe</b> <strong>Mweusi</strong></span></a><div class="top-actions"><label class="agent-avatar" title="Agent profile avatar"><img id="agent-avatar-image" alt="Agent avatar"><span id="agent-avatar-initial">A</span><input id="agent-avatar-input" type="file" accept="image/png,image/jpeg,image/webp" hidden></label></div></header>
-<section id="auth-view" class="auth-panel" aria-labelledby="auth-title"><div class="eyebrow" data-i18n="agentHub"></div><h1 id="auth-title" data-i18n="signInTitle"></h1><p class="intro" data-i18n="signInHelp"></p><form id="signin-form" class="form-stack" novalidate><label for="worker-id"><span data-i18n="workerId"></span><small data-i18n="workerHint"></small></label><input id="worker-id" type="text" inputmode="text" autocapitalize="characters" autocomplete="username" placeholder="KMW-12XL" maxlength="8" required><label for="password"><span data-i18n="password"></span><small data-i18n="passwordHint"></small></label><input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required><p id="auth-message" class="form-message" role="alert" aria-live="assertive"></p><button class="primary-btn" type="submit" data-i18n="signIn"></button></form><div class="security-note"><strong data-i18n="secureAccess"></strong><span data-i18n="secureAccessHelp"></span></div></section>
+<section id="auth-view" class="auth-panel" aria-labelledby="auth-title"><div class="eyebrow" data-i18n="agentHub"></div><h1 id="auth-title" data-i18n="signInTitle"></h1><p class="intro" data-i18n="signInHelp"></p><form id="signin-form" class="form-stack" novalidate><label for="agent-email"><span data-i18n="agentEmail"></span><small data-i18n="agentEmailHint"></small></label><input id="agent-email" type="email" inputmode="email" autocapitalize="off" autocomplete="username" placeholder="agent@kobemweusi.co" maxlength="120" required><label for="password"><span data-i18n="password"></span><small data-i18n="passwordHint"></small></label><input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required><p id="auth-message" class="form-message" role="alert" aria-live="assertive"></p><button class="primary-btn" type="submit" data-i18n="signIn"></button></form><div class="security-note"><strong data-i18n="secureAccess"></strong><span data-i18n="secureAccessHelp"></span></div></section>
 
-<section id="app-view" class="is-hidden" aria-labelledby="app-title"><div class="welcome-row"><div><div class="eyebrow" data-i18n="agentHub"></div><h1 id="app-title"><span data-i18n="hello"></span>, <span id="agent-name">Agent</span></h1><p id="agent-meta" class="muted"></p></div><button id="signout-btn" class="ghost-btn" type="button" data-i18n="signOut"></button></div><div id="app-message" class="notice is-hidden" role="status" aria-live="polite"></div><div class="hub-grid"><section class="hero-card" aria-labelledby="scan-title"><div class="hero-icon" aria-hidden="true">⌁</div><div><div class="eyebrow" data-i18n="mainAction"></div><h2 id="scan-title" data-i18n="scanReceipt"></h2><p data-i18n="scanReceiptHelp"></p></div><button id="open-scan" class="primary-btn" type="button" data-i18n="startScan"></button><p class="tiny-note" data-i18n="notificationNote"></p></section><section class="status-card" aria-labelledby="status-title"><div class="card-heading"><h2 id="status-title" data-i18n="hubStatus"></h2><span class="online-dot"><i></i><span data-i18n="online"></span></span></div><dl class="status-list"><div><dt data-i18n="region"></dt><dd id="region-value">Dar es Salaam</dd></div><div><dt data-i18n="role"></dt><dd data-i18n="authorizedAgent"></dd></div><div><dt data-i18n="todayScans"></dt><dd id="scan-count">0</dd></div></dl></section></div><div class="content-grid"><section class="list-card" aria-labelledby="history-title"><div class="card-heading"><h2 id="history-title" data-i18n="scanHistory"></h2><button id="clear-history" class="text-btn" type="button" data-i18n="clear"></button></div><div id="history" class="history-list"></div></section><aside class="list-card" aria-labelledby="help-title"><div class="card-heading"><h2 id="help-title" data-i18n="agentTools"></h2></div><div class="tool-list"><button class="tool-row" data-tool="notifications" type="button"><span class="tool-icon">!</span><span><b data-i18n="notifications"></b><small data-i18n="notificationsHelp"></small></span><strong aria-hidden="true">›</strong></button><button class="tool-row" data-tool="security" type="button"><span class="tool-icon">•</span><span><b data-i18n="security"></b><small data-i18n="securityHelp"></small></span><strong aria-hidden="true">›</strong></button><button class="tool-row" data-tool="help" type="button"><span class="tool-icon">?</span><span><b data-i18n="help"></b><small data-i18n="helpHelp"></small></span><strong aria-hidden="true">›</strong></button></div></aside></div><section class="list-card" aria-labelledby="notification-title"><div class="card-heading"><h2 id="notification-title">Notifications</h2><span id="notification-count" class="online-dot">0 new</span></div><div id="agent-notifications" class="history-list"><p class="empty-state">No notifications yet.</p></div></section><p class="preview-disclaimer" data-i18n="previewDisclaimer"></p></section>
+<section id="app-view" class="is-hidden" aria-labelledby="app-title"><div class="welcome-row"><div><div class="eyebrow" data-i18n="agentHub"></div><h1 id="app-title"><span data-i18n="hello"></span>, <span id="agent-name">Agent</span></h1><p id="agent-meta" class="muted"></p></div><button id="signout-btn" class="ghost-btn" type="button" data-i18n="signOut"></button></div><div id="app-message" class="notice is-hidden" role="status" aria-live="polite"></div><div class="hub-grid"><section class="hero-card" aria-labelledby="scan-title"><div class="hero-icon" aria-hidden="true">⌁</div><div><div class="eyebrow" data-i18n="mainAction"></div><h2 id="scan-title" data-i18n="scanReceipt"></h2><p data-i18n="scanReceiptHelp"></p></div><button id="open-scan" class="primary-btn" type="button" data-i18n="startScan"></button><p class="tiny-note" data-i18n="notificationNote"></p></section><section class="status-card" aria-labelledby="status-title"><div class="card-heading"><h2 id="status-title" data-i18n="hubStatus"></h2><span class="online-dot"><i></i><span data-i18n="online"></span></span></div><dl class="status-list"><div><dt data-i18n="region"></dt><dd id="region-value">—</dd></div><div><dt data-i18n="role"></dt><dd id="agent-role">—</dd></div><div><dt data-i18n="todayScans"></dt><dd id="scan-count">0</dd></div></dl></section></div><div class="content-grid"><section class="list-card" aria-labelledby="history-title"><div class="card-heading"><h2 id="history-title" data-i18n="scanHistory"></h2><button id="clear-history" class="text-btn" type="button" data-i18n="refresh"></button></div><div id="history" class="history-list"></div></section><aside class="list-card" aria-labelledby="help-title"><div class="card-heading"><h2 id="help-title" data-i18n="agentTools"></h2></div><div class="tool-list"><button class="tool-row" data-tool="notifications" type="button"><span class="tool-icon">!</span><span><b data-i18n="notifications"></b><small data-i18n="notificationsHelp"></small></span><strong aria-hidden="true">›</strong></button><button class="tool-row" data-tool="security" type="button"><span class="tool-icon">•</span><span><b data-i18n="security"></b><small data-i18n="securityHelp"></small></span><strong aria-hidden="true">›</strong></button><button class="tool-row" data-tool="help" type="button"><span class="tool-icon">?</span><span><b data-i18n="help"></b><small data-i18n="helpHelp"></small></span><strong aria-hidden="true">›</strong></button></div></aside></div><section class="list-card" aria-labelledby="assignments-title"><div class="card-heading"><h2 id="assignments-title" data-i18n="assignments"></h2><span id="assignment-count" class="online-dot">0</span></div><div id="assignments" class="history-list"></div></section><section class="list-card" aria-labelledby="notification-title"><div class="card-heading"><h2 id="notification-title">Notifications</h2><span id="notification-count" class="online-dot">0 new</span></div><div id="agent-notifications" class="history-list"><p class="empty-state">No notifications yet.</p></div></section><p class="preview-disclaimer" data-i18n="disclaimer"></p></section>
 </main>
 <dialog id="scan-dialog" class="scan-dialog" aria-labelledby="scan-dialog-title"><div class="dialog-inner"><div class="dialog-heading"><div><div class="eyebrow" data-i18n="onlineScan"></div><h2 id="scan-dialog-title" data-i18n="scanReceipt"></h2></div><button id="close-scan" class="close-btn" type="button" aria-label="Close">×</button></div><p class="dialog-help" data-i18n="cameraHelp"></p><div id="scan-frame" class="scan-frame"><video id="scan-video" playsinline muted></video><canvas id="scan-canvas" hidden></canvas><div class="scan-corners" aria-hidden="true"></div><p id="camera-placeholder" class="camera-placeholder" data-i18n="cameraReady"></p></div><div class="dialog-actions"><button id="start-camera" class="primary-btn" type="button" data-i18n="startCamera"></button><button id="stop-camera" class="ghost-btn" type="button" data-i18n="stop"></button></div><p id="scan-status" class="form-message" role="status" aria-live="polite"></p><form id="manual-form" class="manual-form"><label for="manual-code" data-i18n="manualCode"></label><div><input id="manual-code" type="text" autocomplete="off" placeholder="KMH1..." maxlength="500"><button class="ghost-btn" type="submit" data-i18n="check"></button><button id="focus-scanner" class="ghost-btn" type="button">Use connected scanner</button></div></form><div id="scan-result" class="result-card is-hidden" role="status" aria-live="polite"></div><button id="report-scan" class="ghost-btn is-hidden" type="button">Report a scan problem</button></div></dialog>
-<script src="jsQR.js"></script><script>
-(()=>{'use strict';
-const L={en:{offline:'You are offline. Reconnect before scanning.',preview:'Agent workspace',agentHub:'Authorized agent hub',signInTitle:'Sign in to scan a package',signInHelp:'Use the worker ID given to you by Kobe Mweusi operations.',workerId:'Agent worker ID',workerHint:'Example: KMW-12XL',password:'Password',passwordHint:'At least 8 characters.',firstLogin:'',signIn:'Sign in',secureAccess:'Secure access',secureAccessHelp:'Only authorized agents should use this hub. Scanning will be online-only.',backToSignIn:'Back to sign in',firstLoginTitle:'First login',changePassword:'Create your private password',changePasswordHelp:'Create your private password before scanning packages.',newPassword:'New password',newPasswordHint:'Use at least 8 characters.',confirmPassword:'Confirm new password',savePassword:'Save password and continue',hello:'Hello',signOut:'Sign out',mainAction:'Main action',scanReceipt:'Scan package receipt',scanReceiptHelp:"Scan the receipt QR on the buyer's package to record the handoff.",startScan:'Start scan',notificationNote:'A successful scan is reported to the seller, buyer and your agent account.',hubStatus:'Hub status',online:'Online',region:'Region',role:'Role',authorizedAgent:'Authorized agent',todayScans:"Today's scans",scanHistory:'Recent scan history',clear:'Clear',agentTools:'Agent tools',notifications:'Notifications',notificationsHelp:'See scan updates sent to your account.',security:'Security',securityHelp:'Change your password or contact admin.',help:'Help and support',helpHelp:'Ask operations about a package scan.',previewDisclaimer:'Demo mode: scan verification and notifications will be connected to the secure backend.',onlineScan:'Online scan',cameraHelp:'Allow camera access and place the package QR inside the frame.',cameraReady:'Camera preview will appear here.',startCamera:'Start camera',stop:'Stop',manualCode:'Or enter receipt code',check:'Check',workerError:'Worker ID must look like KMW-12XL.',passwordError:'Use at least 8 characters.',previewSignedIn:'Agent sign-in complete.',passwordSaved:'Password created. Your agent hub is ready.',invalidPassword:'That password does not match this worker ID.',passwordShort:'Use at least 8 characters.',scannerReady:'Connected scanner ready. Scan the receipt now.',offlineScan:'Reconnect to the internet before scanning.',cameraDenied:'Camera access was denied. Allow camera access or enter the receipt code manually.',cameraUnsupported:'This browser cannot scan with the camera. Enter the receipt code manually.',cameraStarted:'Camera is ready. Hold the package QR inside the frame.',cameraStopped:'Camera stopped.',invalidCode:'Enter or scan a receipt code first.',scanPending:'Code found. Backend verification is pending.',scanRecorded:'Scan recorded in demo mode. Backend will notify the seller, buyer and agent.',noHistory:'No scans recorded yet.',scanLabel:'Package receipt',timeNow:'Just now',toolMessage:'This tool will connect to the agent backend in the next phase.'},sw:{offline:'Uko nje ya mtandao. Unganisha kabla ya kuskani.',preview:'Eneo la wakala',agentHub:'Kituo cha wakala aliyeidhinishwa',signInTitle:'Ingia kuskani kifurushi',signInHelp:'Tumia namba ya wakala uliyopewa na uendeshaji wa Kobe Mweusi.',workerId:'Namba ya wakala',workerHint:'Mfano: KMW-12XL',password:'Nenosiri',passwordHint:'Angalau herufi 8.',firstLogin:'',signIn:'Ingia',secureAccess:'Ufikiaji salama',secureAccessHelp:'Mawakala walioidhinishwa tu watumie kituo hiki. Skani itahitaji mtandao.',backToSignIn:'Rudi kwenye kuingia',firstLoginTitle:'Kuingia kwa kwanza',changePassword:'Tengeneza nenosiri lako',changePasswordHelp:'Tengeneza nenosiri lako kabla ya kuskani vifurushi.',newPassword:'Nenosiri jipya',newPasswordHint:'Tumia angalau herufi 8.',confirmPassword:'Thibitisha nenosiri jipya',savePassword:'Hifadhi nenosiri na endelea',hello:'Habari',signOut:'Toka',mainAction:'Kitendo kikuu',scanReceipt:'Skani risiti ya kifurushi',scanReceiptHelp:'Skani QR ya risiti iliyo kwenye kifurushi cha mnunuzi ili kurekodi makabidhiano.',startScan:'Anza skani',notificationNote:'Skani iliyofanikiwa itamfikia muuzaji, mnunuzi na akaunti yako ya wakala.',hubStatus:'Hali ya kituo',online:'Mtandaoni',region:'Eneo',role:'Jukumu',authorizedAgent:'Wakala aliyeidhinishwa',todayScans:'Skani za leo',scanHistory:'Historia ya skani za hivi karibuni',clear:'Futa',agentTools:'Zana za wakala',notifications:'Arifa',notificationsHelp:'Tazama taarifa za skani zilizotumwa kwenye akaunti yako.',security:'Usalama',securityHelp:'Badili nenosiri au wasiliana na admin.',help:'Msaada',helpHelp:'Uliza uendeshaji kuhusu skani ya kifurushi.',previewDisclaimer:'Hali ya demo: uthibitishaji wa skani na arifa vitaunganishwa na backend salama.',onlineScan:'Skani ya mtandaoni',cameraHelp:'Ruhusu kamera na weka QR ya kifurushi ndani ya fremu.',cameraReady:'Mwonekano wa kamera utaonekana hapa.',startCamera:'Anza kamera',stop:'Simamisha',manualCode:'Au weka kodi ya risiti',check:'Kagua',workerError:'Namba ya wakala lazima iwe kama KMW-12XL.',passwordError:'Tumia angalau herufi 8.',previewSignedIn:'Umeingia kwenye akaunti ya wakala.',passwordSaved:'Nenosiri limetengenezwa. Kituo chako kiko tayari.',invalidPassword:'Nenosiri hilo haliendani na namba hii ya wakala.',passwordShort:'Tumia angalau herufi 8.',scannerReady:'Kiskeni kilichounganishwa kiko tayari. Skani risiti sasa.',offlineScan:'Unganisha mtandao kabla ya kuskani.',cameraDenied:'Ufikiaji wa kamera umekataliwa. Ruhusu kamera au weka kodi ya risiti mwenyewe.',cameraUnsupported:'Kivinjari hiki hakiwezi kuskani kwa kamera. Weka kodi ya risiti mwenyewe.',cameraStarted:'Kamera iko tayari. Weka QR ya kifurushi ndani ya fremu.',cameraStopped:'Kamera imesimamishwa.',invalidCode:'Weka au skani kodi ya risiti kwanza.',scanPending:'Kodi imepatikana. Uthibitishaji wa backend unasubiri.',scanRecorded:'Skani imehifadhiwa kwenye hali ya demo. Backend itamjulisha muuzaji, mnunuzi na wakala.',noHistory:'Hakuna skani zilizorekodiwa bado.',scanLabel:'Risiti ya kifurushi',timeNow:'Sasa hivi',toolMessage:'Zana hii itaunganishwa na backend ya wakala katika hatua inayofuata.'}};
-let lang='en',stream=null,scanTimer=null,busy=false,history=[],notifications=[];const $=id=>document.getElementById(id),t=k=>L[lang][k]||L.en[k]||k,show=id=>$(id).classList.remove('is-hidden'),hide=id=>$(id).classList.add('is-hidden');
-function msg(id,key,tone){$(id).textContent=t(key);$(id).dataset.tone=tone||''}function notificationRender(){const list=document.getElementById("agent-notifications");if(!list)return;list.replaceChildren();if(!notifications.length){const e=document.createElement("p");e.className="empty-state";e.textContent="No notifications yet.";list.append(e)}notifications.forEach(n=>{const row=document.createElement("div"),icon=document.createElement("span"),body=document.createElement("span"),title=document.createElement("b"),detail=document.createElement("small");row.className="history-row";icon.className="history-icon";icon.textContent="!";title.textContent=n.title;detail.textContent=n.body+" · "+n.time;body.append(title,detail);row.append(icon,body);list.append(row)});const count=document.getElementById("notification-count");if(count)count.textContent=notifications.length+" new"}function notify(title,body){notifications.unshift({title:title,body:body,time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})});notificationRender()}function historyRender(){const list=$('history');list.replaceChildren();if(!history.length){const e=document.createElement('p');e.className='empty-state';e.textContent=t('noHistory');list.append(e)}history.forEach(x=>{const row=document.createElement('div'),ico=document.createElement('span'),text=document.createElement('span'),b=document.createElement('b'),s=document.createElement('small');row.className='history-row';ico.className='history-icon';ico.textContent='✓';b.textContent=t('scanLabel');s.textContent=x+' · '+t('timeNow');text.append(b,s);row.append(ico,text);list.append(row)});$('scan-count').textContent=history.length}
-function apply(){document.documentElement.lang=lang;document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));historyRender()}
-function stop(){document.getElementById('scan-frame').classList.remove('is-detecting');if(scanTimer)cancelAnimationFrame(scanTimer);scanTimer=null;busy=false;if(stream){stream.getTracks().forEach(x=>x.stop());stream=null}$('scan-video').srcObject=null}
-function result(code){stop();const box=$('scan-result');box.replaceChildren();const strong=document.createElement('strong'),p=document.createElement('p'),c=document.createElement('code');strong.textContent=t('scanPending');p.textContent=t('scanRecorded');c.textContent=String(code).slice(0,120);box.append(strong,p,c);box.classList.add('success');box.classList.remove('is-hidden');history.unshift(String(code).slice(0,32));historyRender();notify('Scan captured','Backend verification and seller payout are pending.');msg('scan-status','scanPending','success')}
-function frame(){const v=$('scan-video');if(!stream){return}if(v.readyState>=2&&!busy){busy=true;if('BarcodeDetector'in window){new BarcodeDetector({formats:['qr_code']}).detect(v).then(x=>{if(x[0]?.rawValue)result(x[0].rawValue)}).catch(()=>{}).finally(()=>busy=false)}if(window.jsQR){const c=$('scan-canvas');c.width=v.videoWidth;c.height=v.videoHeight;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(v,0,0,c.width,c.height);const r=jsQR(x.getImageData(0,0,c.width,c.height).data,c.width,c.height,{inversionAttempts:'dontInvert'});if(r?.data)result(r.data)}}scanTimer=requestAnimationFrame(frame)}
-async function start(){if(!navigator.onLine){msg('scan-status','offlineScan','error');return}if(!navigator.mediaDevices?.getUserMedia){msg('scan-status','cameraUnsupported','error');return}try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:720},height:{ideal:720}},audio:false});$('scan-video').srcObject=stream;await $('scan-video').play();$('scan-frame').classList.add('is-detecting');$('camera-placeholder').classList.add('is-hidden');msg('scan-status','cameraStarted','success');frame()}catch(e){msg('scan-status',e.name==='NotAllowedError'?'cameraDenied':'cameraUnsupported','error')}}
-function hub(){hide('auth-view');show('app-view');$('agent-name').textContent='Agent';$('agent-meta').textContent=$('worker-id').value.trim().toUpperCase()+' · Dar es Salaam';msg('app-message','previewSignedIn','info');show('app-message');historyRender()}
-async function hashPassword(value){const bytes=new TextEncoder().encode(value),digest=await crypto.subtle.digest('SHA-256',bytes);return Array.from(new Uint8Array(digest),x=>x.toString(16).padStart(2,'0')).join('')} $('signin-form').addEventListener('submit',async e=>{e.preventDefault();const id=$('worker-id').value.trim().toUpperCase(),pass=$('password').value;if(!/^KMW-[0-9]{2}[A-Z]{2}$/.test(id)){msg('auth-message','workerError','error');return}if(pass.length<8){msg('auth-message','passwordError','error');return}const key='kobe-agent-password:'+id,stored=localStorage.getItem(key),hashed=await hashPassword(pass);if(stored&&stored!==hashed){msg('auth-message','invalidPassword','error');return}if(!stored){localStorage.setItem(key,hashed);hub();msg('app-message','passwordSaved','success');show('app-message');return}hub()});$('signout-btn').addEventListener('click',()=>{stop();hide('app-view');show('auth-view');$('password').value='';});$('open-scan').addEventListener('click',()=>{if(!navigator.onLine){msg('app-message','offlineScan','error');show('app-message');return}$('scan-dialog').showModal();$('scan-result').classList.add('is-hidden');$('scan-status').textContent='';$('manual-code').value=''});$('close-scan').addEventListener('click',()=>{stop();$('scan-dialog').close()});$('start-camera').addEventListener('click',start);$('stop-camera').addEventListener('click',()=>{stop();msg('scan-status','cameraStopped','info')});$('focus-scanner').addEventListener('click',()=>{$('manual-code').focus();msg('scan-status','scannerReady','info')});$('manual-form').addEventListener('submit',e=>{e.preventDefault();const c=$('manual-code').value.trim();if(!c){msg('scan-status','invalidCode','error');return}result(c)});$('clear-history').addEventListener('click',()=>{history=[],notifications=[];historyRender()});document.querySelectorAll('[data-tool]').forEach(x=>x.addEventListener('click',()=>{msg('app-message','toolMessage','info');show('app-message')}));addEventListener('offline',()=>show('offline-banner'));addEventListener('online',()=>hide('offline-banner'));addEventListener('beforeunload',stop);document.getElementById("report-scan").addEventListener("click",()=>{const box=document.getElementById("app-message");box.textContent="Scan problem noted. Operations will review this receipt.";box.classList.remove("is-hidden");notify("Scan problem reported","Operations review is required before any payout action.")});if(!navigator.onLine)show('offline-banner');if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('agent-sw.js').catch(()=>{});apply();
+<dialog id="form-dialog" class="scan-dialog" aria-labelledby="form-dialog-title"><div class="dialog-inner"><div class="dialog-heading"><div><div class="eyebrow" data-i18n="agentHub"></div><h2 id="form-dialog-title"></h2></div><button id="close-form" class="close-btn" type="button" aria-label="Close">×</button></div><form id="form-body" class="form-stack" novalidate></form><p id="form-message" class="form-message" role="alert" aria-live="assertive"></p><div class="dialog-actions"><button id="form-submit" class="primary-btn" type="submit" form="form-body"></button><button id="form-cancel" class="ghost-btn" type="button"></button></div></div></dialog>
+<script src="jsQR.js"></script>
+<script src="supabase-js.js"></script>
+<script src="kobe-supabase.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  /* The agent hub talks to the same backend as the buyer and the seller.
+     Nothing here decides whether a code is good, whether the money moved
+     or who the agent is: the server owns all of it. */
+
+  const L = {
+    en: {
+      offline: 'You are offline. Reconnect before scanning.',
+      agentHub: 'Authorized agent hub',
+      signInTitle: 'Sign in to scan a package',
+      signInHelp: 'Use the email address and password Kobe Mweusi operations gave you.',
+      agentEmail: 'Agent email',
+      agentEmailHint: 'The email on your agent account',
+      password: 'Password',
+      passwordHint: 'At least 8 characters.',
+      signIn: 'Sign in',
+      secureAccess: 'Secure access',
+      secureAccessHelp: 'Only authorized agents should use this hub. Scanning will be online-only.',
+      hello: 'Hello',
+      signOut: 'Sign out',
+      mainAction: 'Main action',
+      scanReceipt: 'Scan package receipt',
+      scanReceiptHelp: "Scan the receipt QR on the buyer's package to record the handoff.",
+      startScan: 'Start scan',
+      notificationNote: 'A successful scan is reported to the seller, buyer and your agent account.',
+      hubStatus: 'Hub status',
+      online: 'Online',
+      region: 'Region',
+      role: 'Role',
+      authorizedAgent: 'Authorized agent',
+      todayScans: "Today's scans",
+      scanHistory: 'Recent scan history',
+      refresh: 'Refresh',
+      assignments: 'Assigned orders',
+      agentTools: 'Agent tools',
+      notifications: 'Notifications',
+      notificationsHelp: 'See scan updates sent to your account.',
+      security: 'Security',
+      securityHelp: 'Change your password or contact admin.',
+      help: 'Help and support',
+      helpHelp: 'Ask operations about a package scan.',
+      disclaimer: 'Every scan is recorded against your worker ID. The server decides which orders you may scan and when the money moves.',
+      onlineScan: 'Online scan',
+      cameraHelp: 'Allow camera access and place the package QR inside the frame.',
+      cameraReady: 'Camera preview will appear here.',
+      startCamera: 'Start camera',
+      stop: 'Stop',
+      manualCode: 'Or enter receipt code',
+      check: 'Check',
+      emailError: 'Enter the email address Kobe Mweusi operations gave you.',
+      passwordError: 'Use at least 8 characters.',
+      invalidPassword: 'That email and password do not match an agent account.',
+      signedIn: 'Signed in. Your hub is live.',
+      scannerReady: 'Connected scanner ready. Scan the receipt now.',
+      offlineScan: 'Reconnect to the internet before scanning.',
+      cameraDenied: 'Camera access was denied. Allow camera access or enter the receipt code manually.',
+      cameraUnsupported: 'This browser cannot scan with the camera. Enter the receipt code manually.',
+      cameraStarted: 'Camera is ready. Hold the package QR inside the frame.',
+      cameraStopped: 'Camera stopped.',
+      invalidCode: 'Enter or scan a receipt code first.',
+      scanPending: 'Checking the code with Kobe Mweusi…',
+      scanRecorded: 'Handoff recorded.',
+      scanReleased: 'Handoff recorded and the payment was released.',
+      scanWindow: 'Handoff recorded. The payment is released after the confirmation window.',
+      scanFailed: 'The scan was not accepted.',
+      noHistory: 'No scans recorded yet.',
+      scanLabel: 'Package receipt',
+      toolMessage: 'This tool will connect to the agent backend in the next phase.',
+      notAnAgent: 'This account is not a delivery agent.',
+      assignmentsEmpty: 'No orders are assigned to you right now.',
+      noNotifications: 'No notifications yet.',
+      currentPassword: 'Current password',
+      newPassword: 'New password',
+      confirmPassword: 'Confirm new password',
+      changePassword: 'Change password',
+      savePassword: 'Save password',
+      passwordChanged: 'Your password was changed.',
+      supportTopic: 'What is this about?',
+      supportMessage: 'Tell operations what happened',
+      send: 'Send',
+      supportSent: 'Operations received your request.',
+      supportHint: 'Include the order reference and the time of the scan.',
+      cancel: 'Cancel',
+    },
+    sw: {
+      offline: 'Uko nje ya mtandao. Unganisha kabla ya kuskani.',
+      agentHub: 'Kituo cha wakala aliyeidhinishwa',
+      signInTitle: 'Ingia kuskani kifurushi',
+      signInHelp: 'Tumia barua pepe na nenosiri uliyopewa na uendeshaji wa Kobe Mweusi.',
+      agentEmail: 'Barua pepe ya wakala',
+      agentEmailHint: 'Barua pepe kwenye akaunti yako ya wakala',
+      password: 'Nenosiri',
+      passwordHint: 'Angalau herufi 8.',
+      signIn: 'Ingia',
+      secureAccess: 'Ufikiaji salama',
+      secureAccessHelp: 'Mawakala walioidhinishwa tu watumie kituo hiki. Skani itahitaji mtandao.',
+      hello: 'Habari',
+      signOut: 'Toka',
+      mainAction: 'Kitendo kikuu',
+      scanReceipt: 'Skani risiti ya kifurushi',
+      scanReceiptHelp: 'Skani QR ya risiti iliyo kwenye kifurushi cha mnunuzi ili kurekodi makabidhiano.',
+      startScan: 'Anza skani',
+      notificationNote: 'Skani iliyofanikiwa itamfikia muuzaji, mnunuzi na akaunti yako ya wakala.',
+      hubStatus: 'Hali ya kituo',
+      online: 'Mtandaoni',
+      region: 'Eneo',
+      role: 'Jukumu',
+      authorizedAgent: 'Wakala aliyeidhinishwa',
+      todayScans: 'Skani za leo',
+      scanHistory: 'Historia ya skani za hivi karibuni',
+      refresh: 'Onyesha upya',
+      assignments: 'Oda zilizokaguliwa',
+      agentTools: 'Zana za wakala',
+      notifications: 'Arifa',
+      notificationsHelp: 'Tazama taarifa za skani zilizotumwa kwenye akaunti yako.',
+      security: 'Usalama',
+      securityHelp: 'Badili nenosiri au wasiliana na admin.',
+      help: 'Msaada',
+      helpHelp: 'Uliza uendeshaji kuhusu skani ya kifurushi.',
+      disclaimer: 'Kila skani hurekodiwa chini ya namba yako ya wakala. Seva inaamua ni oda zipi unaweza kuskani na pesa inasafiri lini.',
+      onlineScan: 'Skani ya mtandaoni',
+      cameraHelp: 'Ruhusu kamera na weka QR ya kifurushi ndani ya fremu.',
+      cameraReady: 'Mwonekano wa kamera utaonekana hapa.',
+      startCamera: 'Anza kamera',
+      stop: 'Simamisha',
+      manualCode: 'Au weka kodi ya risiti',
+      check: 'Kagua',
+      emailError: 'Weka barua pepe uliyopewa na uendeshaji wa Kobe Mweusi.',
+      passwordError: 'Tumia angalau herufi 8.',
+      invalidPassword: 'Barua pepe na nenosiri hayalingani na akaunti ya wakala.',
+      signedIn: 'Umeingia. Kituo chako kiko hai.',
+      scannerReady: 'Kiskeni kilichounganishwa kiko tayari. Skani risiti sasa.',
+      offlineScan: 'Unganisha mtandao kabla ya kuskani.',
+      cameraDenied: 'Ufikiaji wa kamera umekataliwa. Ruhusu kamera au weka kodi ya risiti mwenyewe.',
+      cameraUnsupported: 'Kivinjari hiki hakiwezi kuskani kwa kamera. Weka kodi ya risiti mwenyewe.',
+      cameraStarted: 'Kamera iko tayari. Weka QR ya kifurushi ndani ya fremu.',
+      cameraStopped: 'Kamera imesimamishwa.',
+      invalidCode: 'Weka au skani kodi ya risiti kwanza.',
+      scanPending: 'Inaangalia kodi kwenye Kobe Mweusi…',
+      scanRecorded: 'Makabidhiano yamerekodiwa.',
+      scanReleased: 'Makabidhiano yamerekodiwa na malipo yamefunguliwa.',
+      scanWindow: 'Makabidhiano yamerekodiwa. Malipo yatafunguliwa baada ya kipindi cha uthibitisho.',
+      scanFailed: 'Skani haikukubaliwa.',
+      noHistory: 'Hakuna skani zilizorekodiwa bado.',
+      scanLabel: 'Risiti ya kifurushi',
+      toolMessage: 'Zana hii itaunganishwa na backend ya wakala katika hatua inayofuata.',
+      notAnAgent: 'Akaunti hii si ya wakala wa uwasilishaji.',
+      assignmentsEmpty: 'Hakuna oda zilizokaguliwa kwako kwa sasa.',
+      noNotifications: 'Hakuna arifa bado.',
+      currentPassword: 'Nenosiri la sasa',
+      newPassword: 'Nenosiri jipya',
+      confirmPassword: 'Thibitisha nenosiri jipya',
+      changePassword: 'Badili nenosiri',
+      savePassword: 'Hifadhi nenosiri',
+      passwordChanged: 'Nenosiri lako limebadilishwa.',
+      supportTopic: 'Ni mada gani?',
+      supportMessage: 'Mwele uendeshaji kilichotokea',
+      send: 'Tuma',
+      supportSent: 'Uendeshaji umepokea ombi lako.',
+      supportHint: 'Weka namba ya oda na wakati wa skani.',
+      cancel: 'Ghairi',
+    },
+  };
+
+  let lang = 'en';
+  let stream = null;
+  let scanTimer = null;
+  let busy = false;
+  let scans = [];
+  let notifications = [];
+
+  const $ = id => document.getElementById(id);
+  const t = key => (L[lang] && L[lang][key]) || L.en[key] || key;
+  const show = id => $(id).classList.remove('is-hidden');
+  const hide = id => $(id).classList.add('is-hidden');
+
+  /* The hub cannot work without the backend: the server decides who the
+     agent is, whether a code is good and whether the money moved. */
+  if (!window.KobeApi) {
+    apply();
+    const banner = $('auth-message');
+    if (banner) {
+      banner.textContent = 'The Kobe Mweusi service is not available right now. Please reload the page.';
+      banner.dataset.tone = 'error';
+    }
+    return;
+  }
+
+  function msg(id, key, tone) {
+    const el = $(id);
+    if (!el) return;
+    el.textContent = t(key);
+    el.dataset.tone = tone || '';
+  }
+
+  function say(id, text, tone) {
+    const el = $(id);
+    if (!el) return;
+    el.textContent = text;
+    el.dataset.tone = tone || '';
+  }
+
+  /* ---------------- notifications ---------------- */
+  function notificationRender() {
+    const list = $('agent-notifications');
+    if (!list) return;
+    list.replaceChildren();
+    if (!notifications.length) {
+      const empty = document.createElement('p');
+      empty.className = 'empty-state';
+      empty.textContent = t('noNotifications');
+      list.append(empty);
+    } else {
+      notifications.forEach(note => {
+        const row = document.createElement('div');
+        const icon = document.createElement('span');
+        const body = document.createElement('span');
+        const title = document.createElement('b');
+        const detail = document.createElement('small');
+        row.className = 'history-row';
+        icon.className = 'history-icon';
+        icon.textContent = '!';
+        title.textContent = note.title;
+        detail.textContent = note.body + ' · ' + note.time;
+        body.append(title, detail);
+        row.append(icon, body);
+        list.append(row);
+      });
+    }
+    const count = $('notification-count');
+    if (count) count.textContent = notifications.length + ' new';
+  }
+
+  async function loadNotifications() {
+    if (!api() || typeof KobeApi.listNotifications !== 'function') return;
+    try {
+      const rows = await KobeApi.listNotifications(30);
+      notifications = (rows || []).map(row => ({
+        title: row.title || '',
+        body: row.body || '',
+        time: new Date(row.created_at).toLocaleString(),
+      }));
+      notificationRender();
+    } catch (error) {
+      console.warn('agent notifications', error);
+    }
+  }
+
+  /* ---------------- scan history ---------------- */
+  function historyRender() {
+    const list = $('history');
+    if (!list) return;
+    list.replaceChildren();
+    if (!scans.length) {
+      const empty = document.createElement('p');
+      empty.className = 'empty-state';
+      empty.textContent = t('noHistory');
+      list.append(empty);
+    } else {
+      scans.forEach(scan => {
+        const row = document.createElement('div');
+        const icon = document.createElement('span');
+        const text = document.createElement('span');
+        const title = document.createElement('b');
+        const detail = document.createElement('small');
+        row.className = 'history-row';
+        icon.className = 'history-icon';
+        icon.textContent = '✓';
+        title.textContent = scan.order_ref || t('scanLabel');
+        detail.textContent = [scan.item_name, scan.stage, scan.time].filter(Boolean).join(' · ');
+        text.append(title, detail);
+        row.append(icon, text);
+        list.append(row);
+      });
+    }
+  }
+
+  function assignmentRender(assignments) {
+    const list = $('assignments');
+    if (!list) return;
+    list.replaceChildren();
+    const rows = assignments || [];
+    const count = $('assignment-count');
+    if (count) count.textContent = String(rows.length);
+    if (!rows.length) {
+      const empty = document.createElement('p');
+      empty.className = 'empty-state';
+      empty.textContent = t('assignmentsEmpty');
+      list.append(empty);
+      return;
+    }
+    rows.forEach(row => {
+      const item = document.createElement('div');
+      const icon = document.createElement('span');
+      const text = document.createElement('span');
+      const title = document.createElement('b');
+      const detail = document.createElement('small');
+      item.className = 'history-row';
+      icon.className = 'history-icon';
+      icon.textContent = '▣';
+      title.textContent = row.order_ref || '';
+      detail.textContent = [row.item_name, row.stage, row.order_status].filter(Boolean).join(' · ');
+      text.append(title, detail);
+      item.append(icon, text);
+      list.append(item);
+    });
+  }
+
+  function apply() {
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    historyRender();
+    notificationRender();
+  }
+
+  /* ---------------- the camera ---------------- */
+  function stop() {
+    const frame = $('scan-frame');
+    if (frame) frame.classList.remove('is-detecting');
+    if (scanTimer) cancelAnimationFrame(scanTimer);
+    scanTimer = null;
+    busy = false;
+    if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+    const video = $('scan-video');
+    if (video) video.srcObject = null;
+  }
+
+  async function start() {
+    if (!navigator.onLine) { msg('scan-status', 'offlineScan', 'error'); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      msg('scan-status', 'cameraUnsupported', 'error');
+      return;
+    }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 720 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      const video = $('scan-video');
+      video.srcObject = stream;
+      await video.play();
+      $('scan-frame').classList.add('is-detecting');
+      $('camera-placeholder').classList.add('is-hidden');
+      msg('scan-status', 'cameraStarted', 'success');
+      frame();
+    } catch (error) {
+      msg('scan-status', error.name === 'NotAllowedError' ? 'cameraDenied' : 'cameraUnsupported', 'error');
+    }
+  }
+
+  function frame() {
+    const video = $('scan-video');
+    if (!stream || !video) return;
+    if (video.readyState >= 2 && !busy) {
+      busy = true;
+      if ('BarcodeDetector' in window) {
+        new BarcodeDetector({ formats: ['qr_code'] })
+          .detect(video)
+          .then(found => { if (found[0] && found[0].rawValue) result(found[0].rawValue); })
+          .catch(() => {})
+          .finally(() => { busy = false; });
+      }
+      if (window.jsQR) {
+        const canvas = $('scan-canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const found = jsQR(ctx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height, { inversionAttempts: 'dontInvert' });
+        if (found && found.data) result(found.data);
+      }
+    }
+    scanTimer = requestAnimationFrame(frame);
+  }
+
+  /* ---------------- a scan ----------------
+     The page never decides whether a code is good. It asks the server and
+     shows exactly what the server said, including whether the payment
+     moved. */
+  async function result(code) {
+    stop();
+    const box = $('scan-result');
+    if (!box) return;
+    box.replaceChildren();
+    box.classList.remove('is-hidden');
+    box.classList.remove('success');
+    const heading = document.createElement('strong');
+    heading.textContent = t('scanPending');
+    box.append(heading);
+    msg('scan-status', 'scanPending', '');
+
+    let res = null;
+    try {
+      res = await KobeApi.agentScan(code);
+    } catch (error) {
+      res = { ok: false, error: (error && error.message) || t('scanFailed') };
+    }
+
+    box.replaceChildren();
+    if (!res || res.ok === false) {
+      heading.textContent = t('scanFailed');
+      const detail = document.createElement('p');
+      detail.textContent = (res && (res.error || res.reason)) || t('scanFailed');
+      box.append(heading, detail);
+      say('scan-status', detail.textContent, 'error');
+      return;
+    }
+
+    heading.textContent = res.released
+      ? t('scanReleased')
+      : (res.release_scheduled_for ? t('scanWindow') : t('scanRecorded'));
+    const detail = document.createElement('p');
+    detail.textContent = [res.order_ref, res.item_name].filter(Boolean).join(' · ');
+    box.append(heading, detail);
+    box.classList.add('success');
+    say('scan-status', heading.textContent, 'success');
+    await refreshHub();
+  }
+
+  /* ---------------- the hub ---------------- */
+  async function refreshHub() {
+    if (!api() || typeof KobeApi.agentSnapshot !== 'function') return;
+    let snapshot = null;
+    try {
+      snapshot = await KobeApi.agentSnapshot();
+    } catch (error) {
+      console.warn('agent snapshot', error);
+    }
+    if (!snapshot || snapshot.ok === false) {
+      say('app-message', (snapshot && (snapshot.error || snapshot.reason)) || t('toolMessage'), 'error');
+      show('app-message');
+      return;
+    }
+    renderHub(snapshot);
+  }
+
+  function renderHub(snapshot) {
+    $('agent-name').textContent = snapshot.worker_id || t('authorizedAgent');
+    $('agent-meta').textContent = [snapshot.worker_id, snapshot.region].filter(Boolean).join(' · ');
+    $('region-value').textContent = snapshot.region || '—';
+    $('agent-role').textContent = snapshot.verified ? t('authorizedAgent') : (snapshot.verification_status || '—');
+    scans = (snapshot.scans || []).map(scan => ({
+      order_ref: scan.order_ref,
+      item_name: scan.item_name,
+      stage: scan.stage,
+      time: scan.created_at ? new Date(scan.created_at).toLocaleString() : '',
+    }));
+    historyRender();
+    const count = $('scan-count');
+    if (count) count.textContent = String(snapshot.today_scans || 0);
+    assignmentRender(snapshot.assignments || []);
+  }
+
+  async function hub(snapshot) {
+    hide('auth-view');
+    show('app-view');
+    renderHub(snapshot || {});
+    msg('app-message', 'signedIn', 'info');
+    show('app-message');
+    await loadNotifications();
+  }
+
+  /* ---------------- the small forms ---------------- */
+  function openForm(title, fields, submitLabel, onSubmit) {
+    const dialog = $('form-dialog');
+    const body = $('form-body');
+    $('form-dialog-title').textContent = title;
+    $('form-submit').textContent = submitLabel;
+    $('form-cancel').textContent = t('cancel');
+    say('form-message', '', '');
+    body.replaceChildren();
+
+    fields.forEach(field => {
+      if (field.note) {
+        const note = document.createElement('p');
+        note.className = 'tiny-note';
+        note.textContent = field.note;
+        body.append(note);
+        return;
+      }
+      const label = document.createElement('label');
+      label.setAttribute('for', 'field-' + field.key);
+      label.textContent = field.label;
+      const input = document.createElement('input');
+      input.id = 'field-' + field.key;
+      input.type = field.type || 'text';
+      input.autocomplete = field.autocomplete || 'off';
+      if (field.placeholder) input.placeholder = field.placeholder;
+      body.append(label, input);
+    });
+
+    const submit = () => {
+      const values = {};
+      fields.forEach(field => {
+        if (!field.key) return;
+        const input = $('field-' + field.key);
+        values[field.key] = input ? input.value.trim() : '';
+      });
+      Promise.resolve(onSubmit(values)).then(ok => {
+        if (ok === false) return;
+        dialog.close();
+      }).catch(error => {
+        say('form-message', (error && error.message) || t('toolMessage'), 'error');
+      });
+    };
+
+    body.onsubmit = event => { event.preventDefault(); submit(); };
+    $('form-submit').onclick = submit;
+    dialog.showModal();
+  }
+
+  function openSecurityForm() {
+    openForm(t('changePassword'), [
+      { key: 'current', label: t('currentPassword'), type: 'password', autocomplete: 'current-password' },
+      { key: 'next', label: t('newPassword'), type: 'password', autocomplete: 'new-password' },
+      { key: 'confirm', label: t('confirmPassword'), type: 'password', autocomplete: 'new-password' },
+    ], t('savePassword'), async values => {
+      if (!values.current) throw new Error(t('currentPassword'));
+      if (!values.next || values.next.length < 8) throw new Error(t('passwordError'));
+      if (values.next !== values.confirm) throw new Error(t('confirmPassword'));
+      const res = await KobeApi.passwordChange(values.current, values.next);
+      if (!res || res.ok === false) throw new Error((res && (res.error || res.reason)) || t('toolMessage'));
+      say('app-message', t('passwordChanged'), 'success');
+      show('app-message');
+    });
+  }
+
+  function openSupportForm() {
+    openForm(t('help'), [
+      { key: 'topic', label: t('supportTopic'), type: 'text' },
+      { key: 'reason', label: t('supportMessage'), type: 'text' },
+      { note: t('supportHint') },
+    ], t('send'), async values => {
+      if (!values.reason) throw new Error(t('supportMessage'));
+      await KobeApi.supportRequest({
+        topic: values.topic || 'Agent scan',
+        current: null,
+        proposed: values.reason,
+        reason: values.reason,
+      });
+      say('app-message', t('supportSent'), 'success');
+      show('app-message');
+    });
+  }
+
+  /* ---------------- sign in ---------------- */
+  $('signin-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const email = $('agent-email').value.trim();
+    const password = $('password').value;
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) { msg('auth-message', 'emailError', 'error'); return; }
+    if (password.length < 8) { msg('auth-message', 'passwordError', 'error'); return; }
+
+    const button = $('signin-form').querySelector('button[type="submit"]');
+    const label = button ? button.textContent : '';
+    if (button) { button.disabled = true; button.textContent = t('scanPending'); }
+    try {
+      const snapshot = await KobeApi.agentSignIn({ email, password });
+      if (!snapshot || snapshot.ok === false) {
+        say('auth-message', (snapshot && snapshot.error) || t('invalidPassword'), 'error');
+        return;
+      }
+      await hub(snapshot);
+    } catch (error) {
+      say('auth-message', (error && error.message) || t('invalidPassword'), 'error');
+    } finally {
+      if (button) { button.disabled = false; button.textContent = label; }
+    }
+  });
+
+  $('signout-btn').addEventListener('click', async () => {
+    stop();
+    hide('app-view');
+    show('auth-view');
+    $('password').value = '';
+    scans = [];
+    notifications = [];
+    historyRender();
+    notificationRender();
+    try { await KobeApi.agentSignOut(); } catch (error) { console.warn('sign out', error); }
+  });
+
+  $('open-scan').addEventListener('click', () => {
+    if (!navigator.onLine) { msg('app-message', 'offlineScan', 'error'); show('app-message'); return; }
+    $('scan-dialog').showModal();
+    $('scan-result').classList.add('is-hidden');
+    $('scan-status').textContent = '';
+    $('manual-code').value = '';
+  });
+
+  $('close-scan').addEventListener('click', () => { stop(); $('scan-dialog').close(); });
+  $('start-camera').addEventListener('click', start);
+  $('stop-camera').addEventListener('click', () => { stop(); msg('scan-status', 'cameraStopped', 'info'); });
+  $('focus-scanner').addEventListener('click', () => { $('manual-code').focus(); msg('scan-status', 'scannerReady', 'info'); });
+
+  $('manual-form').addEventListener('submit', event => {
+    event.preventDefault();
+    const code = $('manual-code').value.trim();
+    if (!code) { msg('scan-status', 'invalidCode', 'error'); return; }
+    result(code);
+  });
+
+  $('clear-history').addEventListener('click', () => { refreshHub(); loadNotifications(); });
+
+  $('close-form').addEventListener('click', () => $('form-dialog').close());
+  $('form-cancel').addEventListener('click', () => $('form-dialog').close());
+
+  document.querySelectorAll('[data-tool]').forEach(button => {
+    button.addEventListener('click', () => {
+      const tool = button.dataset.tool;
+      if (tool === 'notifications') {
+        $('notification-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        loadNotifications();
+        return;
+      }
+      if (tool === 'security') { openSecurityForm(); return; }
+      if (tool === 'help') { openSupportForm(); return; }
+      msg('app-message', 'toolMessage', 'info');
+      show('app-message');
+    });
+  });
+
+  addEventListener('offline', () => show('offline-banner'));
+  addEventListener('online', () => hide('offline-banner'));
+  addEventListener('beforeunload', stop);
+
+  $('report-scan').addEventListener('click', () => {
+    say('app-message', t('supportSent'), 'info');
+    show('app-message');
+  });
+
+  if (!navigator.onLine) show('offline-banner');
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('agent-sw.js').catch(() => {});
+  }
+  apply();
+
+  /* A session that is already open goes straight to the hub. */
+  if (api() && typeof KobeApi.agentSnapshot === 'function') {
+    KobeApi.agentSnapshot().then(snapshot => {
+      if (snapshot && snapshot.ok !== false) hub(snapshot);
+    }).catch(() => { /* stay on the sign-in form */ });
+  }
 })();
 </script>
 <script>

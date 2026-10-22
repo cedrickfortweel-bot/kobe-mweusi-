@@ -1,4 +1,4 @@
-﻿import { json, ApiError, asApiError } from "../_shared/http.ts";
+import { json, ApiError, asApiError } from "../_shared/http.ts";
 import { verifyUser, serviceClient, isStaff } from "../_shared/auth.ts";
 import { consumeRateLimit, subjectHash } from "../_shared/rate.ts";
 import { sendNotifications } from "../_shared/push.ts";

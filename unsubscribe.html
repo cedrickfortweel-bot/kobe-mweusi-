@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kobe Mweusi — Email settings</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2316231B'/%3E%3Cpath d='M16 7a9 9 0 100 18 9 9 0 000-18z' fill='none' stroke='%23c8ff35' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#F7F6F0; --surface:#FFFFFF; --surface-2:#EEF3ED; --line:#D9E1D8;
+    --text:#16231B; --text-muted:#66736A; --shell:#168451; --danger:#C94F45;
+    --font:'Manrope',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:520px;margin:0 auto;padding:28px 18px 60px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px 24px;text-align:center}
+  .mark{display:inline-flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.02em;font-size:15px;margin-bottom:18px}
+  .mark i{width:26px;height:26px;border-radius:7px;background:var(--text);display:grid;place-items:center;color:var(--bg);font-style:normal;font-size:13px}
+  h1{margin:0 0 10px;font-size:20px;line-height:1.3}
+  p{margin:0 0 14px;font-size:14px;line-height:1.65;color:var(--text-muted)}
+  .ok{color:var(--shell)}
+  .bad{color:var(--danger)}
+  .spinner{width:26px;height:26px;margin:6px auto 14px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--shell);animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .btn{display:inline-block;margin-top:8px;background:var(--text);color:var(--bg);text-decoration:none;font-weight:700;font-size:14px;padding:12px 20px;border-radius:10px;border:0;cursor:pointer;font-family:inherit}
+  .note{margin-top:18px;font-size:12px;color:var(--text-muted);line-height:1.6}
+  a{color:var(--shell)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="mark"><i>K</i> KOBE MWEUSI</div>
+    <div id="state"><div class="spinner"></div><p>Checking your link…</p></div>
+  </div>
+  <p class="note">You can change what you hear about at any time in Notification settings in the app. Nothing here affects the money in your wallet or in escrow.</p>
+</div>
+<script src="supabase-js.js"></script>
+<script>
+/* The unsubscribe link works from an inbox, with no sign-in, so the token
+   is the authorisation. The token is a uuid the server issued for one
+   category of one account, and the server flips that category's email
+   preference when it is used. */
+(function(){
+  var state = document.getElementById('state');
+  var params = new URLSearchParams(location.search);
+  var token = params.get('token');
+
+  function show(html){ state.innerHTML = html; }
+
+  if(!token){
+    show('<h1 class="bad">This link is not valid</h1><p>The link is incomplete. Open the email again and use the link in it.</p><a class="btn" href="/">Back to Kobe Mweusi</a>');
+    return;
+  }
+
+  if(!window.supabase || !supabase.createClient){
+    show('<h1 class="bad">We could not check that link</h1><p>Please try again in a moment.</p>');
+    return;
+  }
+
+  var client = supabase.createClient(
+    'https://arnbsijvnxnoqybumkys.supabase.co',
+    'sb_publishable_PDZh59CJskfn0O6_Rme8xw_MXoprn0v',
+    { auth: { persistSession: false } }
+  );
+
+  client.rpc('consume_unsubscribe_token', { p_token: token })
+    .then(function(res){
+      if(res.error) throw res.error;
+      var data = res.data || {};
+      if(data.ok === false){
+        show('<h1 class="bad">' + (data.error || 'This link is not valid') + '</h1><p>It may already have been used.</p>');
+        return;
+      }
+      show('<h1 class="ok">You are unsubscribed</h1><p>' + (data.message || 'You will no longer receive email for this category.') + '</p><a class="btn" href="/">Back to Kobe Mweusi</a>');
+    })
+    .catch(function(error){
+      show('<h1 class="bad">We could not check that link</h1><p>' + String(error && error.message || 'Please try again in a moment.') + '</p>');
+    });
+})();
+</script>
+</body>
+</html>

@@ -46,7 +46,7 @@ async function insertWithRef(service: any, base: Record<string, unknown>): Promi
 async function loadOrder(service: any, ref: string, viewerId: string, staff: boolean) {
   const { data: order, error } = await service
     .from("orders")
-    .select("*, seller_profiles:seller_id (shop_name, kobe_id), buyer_profile:buyer_id (display_name, phone_e164)")
+    .select("*, seller_profiles:seller_id (shop_name, kobe_id), buyer_profile:buyer_id (display_name, phone_e164, phone_verified_at)")
     .eq("ref", ref)
     .maybeSingle();
   if (error) throw error;
@@ -71,7 +71,7 @@ async function listOrdersFor(service: any, viewerId: string, role: string) {
   const isSeller = role === "seller";
   const { data: rows, error } = await service
     .from("orders")
-    .select("*, seller_profiles:seller_id (shop_name, kobe_id), buyer_profile:buyer_id (display_name, phone_e164)")
+    .select("*, seller_profiles:seller_id (shop_name, kobe_id), buyer_profile:buyer_id (display_name, phone_e164, phone_verified_at)")
     .eq(isSeller ? "seller_id" : "buyer_id", viewerId)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -99,6 +99,7 @@ async function listOrdersFor(service: any, viewerId: string, role: string) {
 function mapBuyerOrder(row: any, disputeRef?: string | null): Record<string, unknown> {
   return {
     id: row.ref,
+    orderId: row.id,
     seller: row.seller_profiles?.shop_name || "Seller",
     sellerKid: row.seller_profiles?.kobe_id || "",
     sellerId: row.seller_id,
@@ -110,11 +111,19 @@ function mapBuyerOrder(row: any, disputeRef?: string | null): Record<string, unk
     fee: Number(row.buyer_fee_tzs),
     total: Number(row.total_due_tzs),
     status: BUYER_STATUS[row.status] || row.status,
+    /* The raw state, so the app can tell "in escrow" from "delivered"
+       without parsing a label. */
+    state: row.status,
     createdAt: new Date(row.created_at).getTime(),
     disputeId: disputeRef || null,
     productId: row.product_id,
     source: row.source,
     expiresAt: row.expires_at ? new Date(row.expires_at).getTime() : null,
+    exp: row.confirm_by
+      ? new Date(row.confirm_by).getTime()
+      : row.expires_at
+        ? new Date(row.expires_at).getTime()
+        : null,
   };
 }
 
@@ -122,7 +131,9 @@ function mapSellerOrder(row: any, disputeRef?: string | null): Record<string, un
   return {
     id: row.ref,
     who: row.buyer_profile?.display_name || "Buyer",
-    ph: row.buyer_profile?.phone_e164 || "",
+    /* Only a number the buyer has confirmed is shown. A number nobody
+       proved they own must not be handed to a stranger. */
+    ph: row.buyer_profile?.phone_verified_at ? row.buyer_profile?.phone_e164 || "" : "",
     item: row.item_name,
     q: row.quantity,
     u: Number(row.unit_price_tzs),
@@ -136,6 +147,14 @@ function mapSellerOrder(row: any, disputeRef?: string | null): Record<string, un
     buyerId: row.buyer_id,
     productId: row.product_id,
     createdAt: new Date(row.created_at).toISOString(),
+    /* The deadline by which the buyer must confirm, if the order carries
+       one. The actual release time is decided by the escrow rules, and
+       the seller app reads that from the escrow timers. */
+    exp: row.confirm_by
+      ? new Date(row.confirm_by).getTime()
+      : row.expires_at
+        ? new Date(row.expires_at).getTime()
+        : null,
   };
 }
 
@@ -179,41 +198,51 @@ export default async function handler(request: Request) {
       if (product.seller_id === auth.user.id) throw new ApiError(403, "You cannot buy from your own shop");
       if (quantity > product.stock_quantity) throw new ApiError(409, "Only " + product.stock_quantity + " left in stock");
 
+      const subtotal = Number(product.price_tzs) * quantity;
+      const buyerFee = Math.round(subtotal * 0.01);
+      const sellerFee = Math.round(subtotal * 0.01);
+      const total = subtotal + buyerFee;
+
       /* A repeated request (double tap, retry, refresh) with the same
          idempotency key returns the original order instead of creating
          a second one. */
       if (idempotencyKey) {
         const { data: existing, error: existingError } = await service
-          .from("payment_intents")
-          .select("order_id")
+          .from("orders")
+          .select("*, seller_profiles:seller_id (shop_name, kobe_id)")
           .eq("idempotency_key", idempotencyKey)
           .eq("buyer_id", auth.user.id)
           .maybeSingle();
         if (existingError) throw existingError;
         if (existing) {
-          const { data: orderRow, error: orderError } = await service
-            .from("orders")
-            .select("*, seller_profiles:seller_id (shop_name, kobe_id)")
-            .eq("id", existing.order_id)
+          const { data: dispute } = await service
+            .from("disputes")
+            .select("ref")
+            .eq("order_id", existing.id)
+            .neq("status", "resolved")
             .maybeSingle();
-          if (orderError) throw orderError;
-          if (orderRow && orderRow.buyer_id === auth.user.id) {
-            const { data: dispute } = await service
-              .from("disputes")
-              .select("ref")
-              .eq("order_id", orderRow.id)
-              .neq("status", "resolved")
-              .maybeSingle();
-            return json({ ok: true, order: mapBuyerOrder(orderRow, dispute?.ref), alreadyCreated: true });
-          }
-          throw new ApiError(403, "This order belongs to another buyer");
+          return json({ ok: true, order: mapBuyerOrder(existing, dispute?.ref), alreadyCreated: true });
         }
       }
 
-      const subtotal = Number(product.price_tzs) * quantity;
-      const buyerFee = Math.round(subtotal * 0.01);
-      const sellerFee = Math.round(subtotal * 0.01);
-      const total = subtotal + buyerFee;
+      /* The buyer's wallet funds the purchase. Check the balance before
+         touching the stock, so a short balance never reserves stock. */
+      const { data: wallet, error: walletError } = await service.rpc("wallet_available_balance", {
+        p_user: auth.user.id,
+      });
+      if (walletError) throw walletError;
+      const balance = Number(wallet || 0);
+
+      if (balance < total) {
+        return json({
+          ok: false,
+          error: "Your wallet balance is not enough for this purchase.",
+          reason: "insufficient_balance",
+          balance_tzs: balance,
+          required_tzs: total,
+          shortfall_tzs: total - balance,
+        }, 409);
+      }
 
       /* Reserve stock first; put it back if the order row cannot be created. */
       const { error: stockError } = await service.rpc("reserve_stock", {
@@ -242,21 +271,44 @@ export default async function handler(request: Request) {
           status: "awaiting_payment",
           note,
           source,
+          idempotency_key: idempotencyKey,
           expires_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
         });
-
-        const { error: intentError } = await service.from("payment_intents").insert({
-          buyer_id: auth.user.id,
-          order_id: orderRow.id,
-          provider: "azampay",
-          amount_tzs: total,
-          status: "pending",
-          idempotency_key: idempotencyKey || `${orderRow.id}:${Date.now()}`,
-        }).maybeSingle();
-        if (intentError) throw intentError;
       } catch (error) {
         await service.rpc("restore_stock", { p_product_id: productId, p_quantity: quantity }).catch(() => {});
         throw error;
+      }
+
+      /* Move the money from the wallet into escrow. The database checks
+         the balance again under a lock, so two purchases from the same
+         wallet cannot both pass the check. */
+      const { data: escrow, error: escrowError } = await service.rpc("place_funds_in_escrow", {
+        p_order_id: orderRow.id,
+        p_payment_intent_id: null,
+        p_funding_source: "wallet",
+      });
+
+      if (escrowError) {
+        /* The balance went away between the check and the debit, or
+           something else went wrong. Undo the order completely. */
+        await service.rpc("restore_stock", { p_product_id: productId, p_quantity: quantity }).catch(() => {});
+        await service.from("orders").update({ status: "cancelled" }).eq("id", orderRow.id).catch(() => {});
+
+        if (escrowError.code === "P0001" && /INSUFFICIENT_WALLET_BALANCE/.test(escrowError.message || "")) {
+          let shortfall = 0;
+          try {
+            const detail = JSON.parse(escrowError.details || "{}");
+            shortfall = Number(detail.shortfall_tzs || 0);
+          } catch { /* the detail is best effort */ }
+          return json({
+            ok: false,
+            error: "Your wallet balance is not enough for this purchase.",
+            reason: "insufficient_balance",
+            shortfall_tzs: shortfall,
+            required_tzs: total,
+          }, 409);
+        }
+        throw escrowError;
       }
 
       const { data: sellerProfile } = await service
@@ -271,13 +323,14 @@ export default async function handler(request: Request) {
       ]);
 
       sendNotifications(service, [product.seller_id], "New order " + orderRow.ref,
-        "A buyer ordered " + product.name + " for TSh " + total.toLocaleString() + ". Payment is pending.",
+        "A buyer ordered " + product.name + " for TSh " + total.toLocaleString() + ". The money is held in escrow.",
         { link: "/seller.html#seller-orders", order: orderRow.ref });
 
       return json({
         ok: true,
-        order: mapBuyerOrder({ ...orderRow, seller_profiles: sellerProfile }),
-        payment: { status: "pending", amount: total, provider: "azampay", awaitingProvider: true },
+        order: mapBuyerOrder({ ...orderRow, status: "in_escrow", seller_profiles: sellerProfile }),
+        escrow: { status: escrow?.status ?? "funded", amount: total, source: "wallet" },
+        balance_tzs: balance - total,
       }, 201);
     }
 

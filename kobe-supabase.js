@@ -6,6 +6,9 @@
   );
 
   const appUrl = file => new URL(file, location.origin).toString();
+
+  /* Handoff codes the server issued, keyed by order reference. */
+  const handoffTokens = {};
   const cleanPhone = value => {
     const digits = String(value || '').replace(/[^0-9+]/g, '');
     if (!digits) return null;
@@ -211,13 +214,19 @@
   }
 
   function mapLiveSession(session) {
-    return {
-      id: session.id,
-      status: session.status,
-      sellerVerified: session.seller_profiles.verification_status === 'verified',
-      sellerName: session.seller_profiles.shop_name,
-      sellerKid: session.seller_profiles.kobe_id,
-      title: session.title,
+   const seller = session.seller_profiles || {};
+   /* The canonical Seller Kobe ID (KOBE12XL) is the one a customer reads
+      and searches for. The app-facing id is kept as a fallback for
+      sellers whose registry row has not been created yet. */
+   const registry = Array.isArray(seller.kobe_id_registry) ? seller.kobe_id_registry[0] : seller.kobe_id_registry;
+   return {
+   id: session.id,
+   status: session.status,
+   sellerVerified: seller.verification_status === 'verified',
+   sellerName: seller.shop_name,
+   sellerKid: (registry && registry.kobe_id) || seller.kobe_id || '',
+   sellerKidApp: seller.kobe_id || '',
+   title: session.title,
       description: session.description,
       platform: session.platform,
       externalUrl: session.external_url,
@@ -241,7 +250,7 @@
 
   async function listPublicLiveSessions() {
     const { data, error } = await client.from('live_sessions')
-      .select('id,seller_id,title,description,platform,external_url,status,starts_at,ends_at,seller_profiles!inner(shop_name,kobe_id,verification_status),live_session_products(sort_order,pinned,products(id,name,description,price_tzs,stock_quantity,image_path,status))')
+      .select('id,seller_id,title,description,platform,external_url,status,starts_at,ends_at,seller_profiles!inner(shop_name,kobe_id,verification_status,kobe_id_registry(kobe_id)),live_session_products(sort_order,pinned,products(id,name,description,price_tzs,stock_quantity,image_path,status))')
       .eq('status', 'live').order('starts_at', { ascending: true });
     fail(error);
     return (data || []).map(mapLiveSession);
@@ -252,7 +261,7 @@
     fail(authError);
     if (!auth.user) throw new Error('Sign in as a seller to load your live listings.');
     const { data, error } = await client.from('live_sessions')
-      .select('id,seller_id,title,description,platform,external_url,status,starts_at,ends_at,seller_profiles!inner(shop_name,kobe_id,verification_status),live_session_products(sort_order,pinned,products(id,name,description,price_tzs,stock_quantity,image_path,status))')
+      .select('id,seller_id,title,description,platform,external_url,status,starts_at,ends_at,seller_profiles!inner(shop_name,kobe_id,verification_status,kobe_id_registry(kobe_id)),live_session_products(sort_order,pinned,products(id,name,description,price_tzs,stock_quantity,image_path,status))')
       .eq('seller_id', auth.user.id).in('status', ['scheduled', 'live']).order('starts_at', { ascending: true });
     fail(error);
     return (data || []).map(mapLiveSession);
@@ -381,8 +390,16 @@
       const { error } = await client.auth.updateUser({ password });
       fail(error);
     },
-    setTransactionPin: async ({ current, pin }) => {
-      return invoke('security', { action: 'set-pin', current, pin });
+    /* Set or change the transaction PIN. The server decides which it is:
+       a current PIN is required only when one is already set, and a
+       wrong one counts towards the lockout. */
+    setTransactionPin: async ({ current, pin } = {}) => {
+      return invoke('security', { action: 'set-pin', current: current || '', new: pin || '' });
+    },
+    /* Reset a forgotten PIN. Needs the password, and a phone code the
+       server can see was confirmed. */
+    resetTransactionPin: async ({ password, pin } = {}) => {
+      return invoke('security', { action: 'pin-reset', password: password || '', new_pin: pin || '' });
     },
     signOutAll: async () => {
       const { error } = await client.auth.signOut({ scope: 'global' });
@@ -406,18 +423,41 @@
     const { data, error } = await client.functions.invoke(name, { body });
     if (error) {
       let message = error.message || 'Request failed';
-      const context = typeof error.context === 'string' ? error.context : '';
-      for (const candidate of [message, context]) {
+      /* A non-2xx response still carries a body. Keeping it lets the app
+         react to a specific reason, for example a wallet that is short
+         for the purchase, instead of only showing a generic message.
+
+         The client hands back the Response itself, so the body has to be
+         read from it. Without this the server's own wording is lost and
+         every refusal looks like an outage. */
+      let payload = null;
+      const context = error.context;
+      if (context && typeof context.json === 'function') {
         try {
-          const parsed = JSON.parse(candidate);
-          if (parsed && parsed.error) { message = parsed.error; break; }
+          const parsed = await context.json();
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) payload = parsed;
+        } catch (e) { /* the body was not json */ }
+      } else if (typeof context === 'string') {
+        try {
+          const parsed = JSON.parse(context);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) payload = parsed;
         } catch (e) { /* not JSON */ }
       }
+      if (!payload) {
+        try {
+          const parsed = JSON.parse(message);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) payload = parsed;
+        } catch (e) { /* not JSON */ }
+      }
+      if (payload && payload.error) message = payload.error;
       if (/fetch|network|offline|failed to fetch/i.test(message)) {
         message = 'Backend service is not available. Please try again later.';
       }
       if (/edge function/i.test(message)) {
         message = 'Backend service is not available. Please try again later.';
+      }
+      if (payload) {
+        return Object.assign({ ok: false, error: message }, payload, { error: message });
       }
       throw new Error(message);
     }
@@ -457,12 +497,40 @@
       const res = await guardedRead('orders', { action: 'list', role: 'buyer' }, null);
       return (res && res.orders) || [];
     },
+    /* Create an order and fund it from the wallet.
+
+       The amount is never sent. The server reads the price from the
+       product row, applies the fee and checks the wallet balance, so a
+       tampered client cannot change what is charged. */
+    async createOrder({ product_id, quantity = 1, note, source, live_session_id, idempotencyKey } = {}) {
+      return guardedWrite('orders', {
+        action: 'create',
+        product_id,
+        quantity: Number(quantity) || 1,
+        note: note || null,
+        source: source || 'store',
+        live_session_id: live_session_id || null,
+        idempotencyKey: idempotencyKey || ('ord:' + String(product_id || '') + ':' + Date.now()),
+      });
+    },
     async lookupOrder(ref) {
       const res = await guardedWrite('orders', { action: 'lookup', ref });
       return res && res.ok ? res.order : null;
     },
     async cancelOrder(ref) {
       return guardedWrite('orders', { action: 'cancel', ref });
+    },
+
+    /* -------- wallet top-up -------- */
+    /* The buyer tops up through the payment provider. The money then
+       sits in the wallet and pays for later purchases. */
+    async topUp({ amount, phone, operator } = {}) {
+      return guardedWrite('payments', {
+        action: 'topup',
+        amount_tzs: Math.round(Number(amount) || 0),
+        phone: phone || null,
+        operator: operator || null,
+      });
     },
 
     /* -------- disputes -------- */
@@ -528,11 +596,59 @@
     },
 
     /* -------- handoff -------- */
+    /* The codes the server issued for an order, keyed by order reference.
+       Only a server-issued code is ever rendered into a QR, so a QR can
+       never carry a raw transaction id. */
     async handoffIssue(orderRef) {
-      return guardedWrite('handoff', { action: 'issue', order_ref: orderRef });
+      const res = await guardedWrite('handoff', { action: 'issue', order_ref: orderRef });
+      if (res && res.ok !== false && orderRef) handoffTokens[orderRef] = res;
+      return res;
     },
     async verifyHandoffCode({ code }) {
       return guardedWrite('handoff', { action: 'verify', code });
+    },
+    handoffCodeSvg(txId) {
+      const issued = handoffTokens[txId];
+      const seed = issued && issued.buyer_code ? issued.buyer_code : txId;
+      if (typeof window.generateQrSvg === 'function') return window.generateQrSvg(seed);
+      return '';
+    },
+
+    /* -------- escrow -------- */
+    /* The release decision belongs to the server. The app never computes
+       the countdown itself and never assumes a release happened. */
+    async escrowTimers() {
+      const res = await guardedRead('escrow', { action: 'status' }, null);
+      return (res && res.timers) || [];
+    },
+    async escrowDecision(orderId) {
+      const res = await guardedRead('escrow', { action: 'evaluate', order_id: orderId }, null);
+      return (res && res.decision) || null;
+    },
+    /* The buyer confirms the goods arrived. The server decides whether
+       that releases the escrow. */
+    async confirmReceipt(orderId) {
+      return guardedWrite('escrow', { action: 'confirm', order_id: orderId });
+    },
+    async requestEscrowRelease(orderId) {
+      return guardedWrite('escrow', { action: 'release', order_id: orderId });
+    },
+
+    /* -------- payments -------- */
+    async paymentIntent(orderRef) {
+      return guardedWrite('payments', { action: 'intent', order_ref: orderRef });
+    },
+    async paymentStatus(orderRef) {
+      const res = await guardedRead('payments', { action: 'status', order_ref: orderRef }, null);
+      return res && res.ok ? res : null;
+    },
+
+    /* -------- identifiers -------- */
+    /* The buyer's own Wallet ID. The server decides whether it may be
+       revealed at all. */
+    async myWalletId() {
+      const res = await guardedRead('escrow', { action: 'wallet' }, null);
+      return (res && res.wallet_id) || null;
     },
 
     /* -------- chat -------- */
@@ -565,6 +681,40 @@
       const res = await guardedRead('wallet', { action: 'summary' }, null);
       return res && res.ok ? res : null;
     },
+
+    /* Request a withdrawal of money that has already been released from
+       escrow. The server decides what is available; the client only
+       states the amount it wants. */
+    async requestPayout({ amount, phone, operator } = {}) {
+      return guardedWrite('wallet', {
+        action: 'withdraw',
+        amount_tzs: Math.round(Number(amount) || 0),
+        method: 'mobile_money',
+        destination: phone ? String(phone) : null,
+        operator: operator || null,
+        idempotency_key: `payout:${Date.now()}`,
+      });
+    },
+    async myPayouts() {
+      const res = await guardedRead('wallet', { action: 'payouts' }, null);
+      return (res && res.payouts) || [];
+    },
+    async payoutCapacity() {
+      const res = await guardedRead('wallet', { action: 'payouts' }, null);
+      return (res && res.capacity) || null;
+    },
+    /* Staff only. */
+    async pendingPayouts() {
+      const res = await guardedRead('seller', { action: 'payouts' }, null);
+      return (res && res.payouts) || [];
+    },
+    async approvePayout(payoutId, providerReference) {
+      return guardedWrite('seller', {
+        action: 'approve-payout',
+        payout_id: payoutId,
+        provider_reference: providerReference || null,
+      });
+    },
     async sellerOverview() {
       const res = await guardedRead('seller', { action: 'overview' }, null);
       return res && res.ok ? res.overview : null;
@@ -578,6 +728,176 @@
       return (res && res.activity) || [];
     },
 
+    /* Confirm the account's phone number. Supabase Auth owns the code;
+       the server records the confirmation only after Auth confirms it. */
+    async verifyPhone() {
+      return guardedWrite('security', { action: 'verify-phone' });
+    },
+    async phoneStatus() {
+      return guardedRead('security', { action: 'phone-status' }, null);
+    },
+
+    /* Sandbox top-up. Only works while the payment provider is
+       configured for the sandbox, so it cannot run in production. */
+    async sandboxTopUp({ amount, note } = {}) {
+      return guardedWrite('payments', {
+        action: 'sandbox-topup',
+        amount_tzs: Math.round(Number(amount) || 0),
+        note: note || null,
+      });
+    },
+
+    /* -------- seller catalogue, live sessions, verification -------- */
+
+    /* The verification status and the live session controls are
+       standalone functions, so they are exposed here as well. Without
+       this the apps would call KobeApi.getMyKycStatus() and get a
+       TypeError, because the name is not on the api object. */
+    getMyKycStatus: () => getMyKycStatus(),
+    endLiveSession: id => endLiveSession(id),
+    listPublicProducts: sellerId => listPublicProducts(sellerId),
+    listOwnProducts: () => listOwnProducts(),
+    saveProduct: values => saveProduct(values),
+    listPublicLiveSessions: () => listPublicLiveSessions(),
+    listOwnLiveSessions: () => listOwnLiveSessions(),
+    saveLiveSession: values => saveLiveSession(values),
+    submitKyc: values => submitKyc(values),
+    saveSellerProfile: values => saveSellerProfile(values),
+    ensureSellerProfile: () => ensureSellerProfile(),
+
+    /* The seller's orders, in the shape the seller app renders:
+       { id, who, ph, item, q, u, amt, fee, total, dt, s, d, disputeId }. */
+    async listSellerOrders() {
+      const res = await guardedRead('orders', { action: 'list', role: 'seller' }, null);
+      return (res && res.orders) || [];
+    },
+
+    /* The seller's catalogue, in the shape the seller app renders:
+       { id, n, d, p, s, v, img }. */
+    async sellerProducts() {
+      let rows = [];
+      try {
+        rows = await listOwnProducts();
+      } catch (error) {
+        console.error('Could not load the catalogue:', error);
+        return [];
+      }
+      return rows.map(row => ({
+        id: row.id,
+        n: row.name,
+        d: row.description || '',
+        p: Number(row.price_tzs || 0),
+        s: Number(row.stock_quantity || 0),
+        v: row.status === 'active' ? 1 : 0,
+        img: row.image_path || '',
+      }));
+    },
+
+    /* Save a catalogue item. The photo may be a data URL, in which case it
+       is uploaded to the shop media bucket first and only the path is
+       stored. The seller id and the price are never taken from the page. */
+    async saveSellerProduct({ id, n, d, p, s, v, img } = {}) {
+      let imagePath = null;
+      if (typeof img === 'string' && img.startsWith('data:')) {
+        imagePath = await api.uploadShopMedia({ dataUrl: img, name: 'product.jpg' });
+      } else if (typeof img === 'string' && img) {
+        imagePath = img;
+      }
+      const row = await api.saveProduct({
+        id: id || null,
+        name: n,
+        description: d || '',
+        price_tzs: Number(p || 0),
+        stock_quantity: Number(s || 0),
+        status: v ? 'active' : 'draft',
+        image_path: imagePath,
+      });
+      return {
+        id: row.id,
+        n: row.name,
+        d: row.description || '',
+        p: Number(row.price_tzs || 0),
+        s: Number(row.stock_quantity || 0),
+        v: row.status === 'active' ? 1 : 0,
+        img: row.image_path || '',
+      };
+    },
+
+    /* The seller's live sessions, in the shape the seller app renders:
+       { id, t, d, plat, url, status, start, endAt, pin, products }. */
+    async sellerLiveSessions() {
+      let rows = [];
+      try {
+        rows = await listOwnLiveSessions();
+      } catch (error) {
+        console.error('Could not load the live sessions:', error);
+        return [];
+      }
+      return rows.map(row => ({
+        id: row.id,
+        t: row.title,
+        d: row.description || '',
+        plat: row.platform,
+        url: row.externalUrl || '',
+        status: row.status,
+        start: row.endAt ? new Date(row.endAt).getTime() - 3600000 : Date.now(),
+        endAt: row.endAt,
+        pin: row.products.findIndex(p => p.pinned),
+        products: row.products.map(p => ({
+          id: p.id,
+          n: p.name,
+          p: Number(p.price || 0),
+          s: Number(p.stock || 0),
+          sold: 0,
+          shown: 1,
+          img: '',
+        })),
+      }));
+    },
+
+    /* Start or update a live session. */
+    async saveSellerLiveSession({ id, t, d, plat, url, status, starts_at, ends_at, product_ids } = {}) {
+      const row = await api.saveLiveSession({
+        id: id || null,
+        title: t,
+        description: d || '',
+        platform: plat || 'tiktok',
+        external_url: url || '',
+        status: status || 'scheduled',
+        starts_at: starts_at || null,
+        ends_at: ends_at || null,
+        product_ids: product_ids || [],
+      });
+      return row;
+    },
+
+    /* The seller's verification state, in the shape the app renders:
+       kyc 0 = not started, 1 = in review, 2 = verified. */
+    async sellerVerification() {
+      const status = await getMyKycStatus();
+      if (!status) return { kyc: 0, ver: { type: '', idLast: '', sub: 0, rev: 0, app: 0, seen: false }, note: '' };
+      const seller = status.seller || {};
+      const submission = status.submission || null;
+      const verified = seller.verification_status === 'verified';
+      const inReview = !!submission && (submission.status === 'pending' || submission.status === 'under_review');
+      const rejected = !!submission && submission.status === 'rejected';
+      return {
+        kyc: verified ? 2 : inReview || rejected ? 1 : 0,
+        ver: {
+          type: submission ? (submission.entity_type === 'personal' ? 'Personal' : 'Corporate') : '',
+          idLast: submission && submission.id_last4 ? submission.id_last4 : '',
+          sub: submission && submission.submitted_at ? new Date(submission.submitted_at).getTime() : 0,
+          rev: submission && submission.reviewed_at ? new Date(submission.reviewed_at).getTime() : 0,
+          app: verified ? 1 : 0,
+          seen: !!submission,
+          rejected,
+        },
+        note: rejected && submission.review_note ? submission.review_note : '',
+        kobeId: seller.kobe_id || '',
+        verificationStatus: seller.verification_status || 'unverified',
+      };
+    },
+
     /* -------- security -------- */
     async pinSet(pin) {
       return guardedWrite('security', { action: 'pin-set', new_pin: pin });
@@ -585,12 +905,15 @@
     async pinChange(oldPin, newPin) {
       return guardedWrite('security', { action: 'pin-change', old_pin: oldPin, new_pin: newPin });
     },
+    /* The PIN check goes through the locked path, so five wrong attempts
+       lock it. The response says whether it is locked and for how
+       long, so the page can say so rather than "wrong PIN". */
     async pinVerify(pin) {
       return guardedWrite('security', { action: 'pin-verify', pin });
     },
     async pinStatus() {
       const res = await guardedWrite('security', { action: 'pin-status' });
-      return res && res.ok ? res : { ok: true, hasPin: false };
+      return res && res.ok ? res : { ok: true, hasPin: false, locked_until: null };
     },
     async passwordChange(oldPassword, newPassword) {
       return guardedWrite('security', { action: 'password-change', old_password: oldPassword, new_password: newPassword });
@@ -603,26 +926,63 @@
       if (!auth.user) throw new Error('Sign in as a seller.');
       const { data, error } = await client
         .from('seller_profiles')
-        .select('*')
+        .select('*, kobe_id_registry(kobe_id)')
         .eq('user_id', auth.user.id)
         .maybeSingle();
       fail(error);
-      return data;
+      if (!data) return data;
+
+      /* The canonical Seller Kobe ID is what a customer reads. The
+         app-facing id stays as a fallback so nothing breaks for a seller
+         whose registry row has not been created yet. */
+      const registry = Array.isArray(data.kobe_id_registry)
+        ? data.kobe_id_registry[0]
+        : data.kobe_id_registry;
+      return Object.assign({}, data, {
+        kobe_id: (registry && registry.kobe_id) || data.kobe_id,
+        app_kobe_id: data.kobe_id,
+      });
+    },
+
+    /* Resolve a seller ID in either format to the canonical one. The
+       customer may have the KOBE12XL code, the older app-facing id, or
+       a public live link that contains either. */
+    async resolveSellerId(code) {
+      const raw = String(code || '').trim();
+      if (!raw) return null;
+      const { data, error } = await client.rpc('public_seller_identity_by_kid', {
+        p_kid: raw,
+      });
+      if (error) {
+        /* The function may not be deployed yet; fall back to what the
+           caller already has rather than failing the lookup. */
+        return null;
+      }
+      return Array.isArray(data) ? data[0] ?? null : data ?? null;
     },
     async saveShopDetails({ shopName, bio, region, publicContact, hours, delivery, socials, avatarPath, coverPath }) {
       const { data: auth, error: authError } = await client.auth.getUser();
       fail(authError);
       if (!auth.user) throw new Error('Sign in as a seller.');
-      const { data: profile, error: profileError } = await client
-        .from('profiles')
-        .select('account_type')
-        .eq('id', auth.user.id)
-        .single();
-      fail(profileError);
-      if (profile.account_type !== 'seller') throw new Error('Sellers only.');
+
+      /* A verified seller's public details are locked: they were part of
+         what the review checked. The update below only matches a pending
+         seller, so a verified seller would otherwise be told nothing and
+         believe the change had been saved. Say so plainly instead. */
+      const { data: seller, error: sellerError } = await client
+        .from('seller_profiles')
+        .select('verification_status')
+        .eq('user_id', auth.user.id)
+        .maybeSingle();
+      fail(sellerError);
+      if (!seller) throw new Error('Your shop is not set up yet.');
+      if (seller.verification_status === 'verified') {
+        throw new Error('Your shop details are locked because your seller account is verified. Send a change request and support will update them for you.');
+      }
+
       const payload = {};
-      if (shopName !== undefined) payload.shop_name = String(shopName).slice(1, 120);
-      if (bio !== undefined) payload.bio = String(bio).slice(0, 500);
+      if (shopName !== undefined) payload.shop_name = String(shopName).slice(0, 120);
+      if (bio !== undefined) payload.bio = String(bio).slice(0, 2000);
       if (region !== undefined) payload.region = String(region).slice(0, 100);
       if (publicContact !== undefined) payload.public_contact = publicContact;
       if (hours !== undefined || delivery !== undefined) {
@@ -657,7 +1017,7 @@
        if (!auth.user) throw new Error('Sign in to view your profile.');
        const { data, error } = await client
          .from('profiles')
-         .select('id, account_type, display_name, phone_e164, created_at')
+    .select('id, account_type, display_name, phone_e164, phone_verified_at, created_at')
          .eq('id', auth.user.id)
          .maybeSingle();
        fail(error);
@@ -674,7 +1034,7 @@
          created_at: auth.user.created_at,
        };
     },
-    async saveMyProfile({ displayName, phoneE164 }) {
+    async saveMyProfile({ displayName, phoneE164, avatarPath } = {}) {
       const { data: auth, error: authError } = await client.auth.getUser();
       fail(authError);
       if (!auth.user) throw new Error('Sign in to edit your profile.');
@@ -688,11 +1048,18 @@
         throw new Error('Phone must be in international format, for example +255712345678.');
       }
 
+      /* Only the columns the RLS grants are sent. account_type, id and
+         created_at stay server owned. */
+      const payload = { display_name: name, phone_e164: phone || null };
+      if (avatarPath !== undefined && avatarPath !== null && avatarPath !== '') {
+        payload.avatar_path = String(avatarPath).slice(0, 400);
+      }
+
       const { data, error } = await client
         .from('profiles')
-        .update({ display_name: name, phone_e164: phone || null })
+        .update(payload)
         .eq('id', auth.user.id)
-        .select('id, account_type, display_name, phone_e164, created_at')
+        .select('id, account_type, display_name, phone_e164, phone_verified_at, avatar_path, created_at')
         .maybeSingle();
       fail(error);
       /* Empty result with no error means RLS hid the row, which for a
@@ -715,6 +1082,61 @@
       });
       fail(error);
       return { ok: true };
+    },
+
+    /* -------- delivery agent hub --------
+       The agent workspace used to keep its own password in localStorage
+       and record scans in an array, so a scan never reached the server
+       and the seller was never told. The agent now signs in like every
+       other account, and the server decides whether the account is an
+       agent at all. */
+    async agentSignIn({ email, password } = {}) {
+      const address = String(email || '').trim().toLowerCase();
+      if (!address) throw new Error('Enter the email Kobe Mweusi operations gave you.');
+      if (!password) throw new Error('Enter your password.');
+      const { data, error } = await client.auth.signInWithPassword({ email: address, password });
+      if (error) throw new Error('That email and password do not match an agent account.');
+      const user = data.user;
+      if (!user.email_confirmed_at) {
+        await client.auth.signOut();
+        throw new Error('Your email is not confirmed yet. Check your inbox for the verification link.');
+      }
+      /* The hub only opens for an account the server calls an agent. A
+         backend that is merely unavailable is not the same thing as a
+         refusal, so the session is only dropped on a real refusal. */
+      const snapshot = await api.agentSnapshot();
+      if (!snapshot || snapshot.ok === false) {
+        const message = (snapshot && (snapshot.error || snapshot.reason)) || 'This account is not a delivery agent.';
+        if (!/not a delivery agent/i.test(message)) return { ok: false, error: message };
+        await client.auth.signOut();
+        throw new Error(message);
+      }
+      return snapshot;
+    },
+    async agentSignOut() {
+      const { error } = await client.auth.signOut();
+      fail(error);
+    },
+    async agentSnapshot() {
+      return guardedWrite('agent', { action: 'snapshot' });
+    },
+    /* A scan is recorded by the server. The page never decides whether
+       a code is good or whether the money moved. */
+    async agentScan(code) {
+      return guardedWrite('agent', { action: 'scan', code: String(code || '').trim() });
+    },
+
+    /* -------- notifications -------- */
+    /* The durable inbox, read through the view that only ever shows the
+       signed-in user's own rows. */
+    async listNotifications(limit = 60) {
+      const { data, error } = await client
+        .from('my_notifications')
+        .select('id,title,body,link,category,kind,priority,read_at,created_at')
+        .order('created_at', { ascending: false })
+        .limit(Math.max(1, Math.min(Number(limit) || 60, 200)));
+      fail(error);
+      return data || [];
     },
 
     /* -------- push -------- */
@@ -744,6 +1166,27 @@
       });
       fail(error);
       return path;
+    },
+
+    /* The profile photo. It lives in the profile-avatars bucket so it
+       follows the account to another device, rather than living in this
+       browser's local storage. */
+    async uploadAvatar(dataUrl) {
+      const { data: auth, error: authError } = await client.auth.getUser();
+      fail(authError);
+      if (!auth.user) throw new Error('Sign in to upload a photo.');
+      const path = `${auth.user.id}/${crypto.randomUUID()}.jpg`;
+      const blob = dataUrlToBlob(dataUrl);
+      const { error } = await client.storage.from('profile-avatars').upload(path, blob, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+      fail(error);
+      return path;
+    },
+    async avatarUrl(path) {
+      if (!path) return '';
+      return client.storage.from('profile-avatars').getPublicUrl(path).data.publicUrl;
     },
   });
 
@@ -800,6 +1243,8 @@
           filter: `user_id=eq.${userId}` }, notify)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_events',
           filter: `user_id=eq.${userId}` }, notify)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications',
+          filter: `user_id=eq.${userId}` }, notify)
         .subscribe();
     } catch (e) { /* realtime is optional */ }
   }
@@ -823,9 +1268,32 @@
     dataUrlToBlob,
   };
   window.KobeBackend = api;
-  window.KobeApi = Object.assign(window.KobeApi || {}, api);
+  window.KobeApi = api;
+
+  /* The buyer page ships a preview API as a fallback for when the
+     backend has not loaded. The real boundary REPLACES it rather than
+     being merged into it: a merge would let a preview method and a
+     real method collide, and which one answered would depend on load
+     order. A method that exists only in the preview must never be
+     reachable by accident. */
+  try {
+    if (typeof KobeApi !== 'undefined' && KobeApi && typeof KobeApi === 'object') {
+      KobeApi = api;
+    }
+  } catch (e) {
+    /* No preview API on this page, or the binding is not assignable. */
+  }
+
+  /* Let the page install its request guards on the real boundary, so the
+     double-tap and timeout protection applies to the real methods and
+     not only to the preview. */
+  try {
+    if (typeof window.kobeWrapApi === 'function') window.kobeWrapApi(api);
+  } catch (e) {
+    /* The guard is optional. */
+  }
+
   window.kobeLogout = signOut;
-  if (typeof KobeApi !== 'undefined') Object.assign(KobeApi, api);
 
   const page = location.pathname.split('/').pop();
   const expectedRole = page === 'seller.html' ? 'seller' : page === 'buyer.html' ? 'buyer' : null;

@@ -1,4 +1,4 @@
-﻿/* KYC decision notifications and production staff roles. */
+/* KYC decision notifications and production staff roles. */
 
 alter table public.internal_user_roles
   drop constraint if exists internal_user_roles_role_check;

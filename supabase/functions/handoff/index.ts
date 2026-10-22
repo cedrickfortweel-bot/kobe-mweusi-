@@ -2,6 +2,13 @@ import { json, ApiError, asApiError } from "../_shared/http.ts";
 import { verifyUser, serviceClient, isStaff } from "../_shared/auth.ts";
 import { consumeRateLimit } from "../_shared/rate.ts";
 import { sendNotifications } from "../_shared/push.ts";
+import {
+  hashHandoffToken,
+  looksLikeHandoffCode,
+  scanFailure,
+  handoffNotice,
+  type HandoffOrder,
+} from "../_shared/handoff.ts";
 
 /* The handoff QR flow:
    1. An order in escrow (or delivered) issues two single-use codes:
@@ -14,14 +21,21 @@ import { sendNotifications } from "../_shared/push.ts";
    which only the payment callback may call. */
 
 const ORDER_REF = /^KM-\d{6}$/;
-const CODE_LIFETIME_MS = 15 * 60 * 1000;
+/* A handoff code has NO clock on it.
 
-const encoder = new TextEncoder();
+   It is valid from the moment it is issued until it is scanned, until a
+   newer code replaces it, or until the order closes. A time limit was
+   never the right instrument: a buyer showing their code while an agent
+   was delayed would have had it expire mid-handover, and the scan would
+   be refused, leaving the order stuck in escrow.
+
+   The order's own state is a better clock than a timestamp, and the
+   database enforces it. */
+const CODE_LIFETIME_MS = 0;
+
 async function hashToken(token: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(token));
-  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+  return hashHandoffToken(token);
 }
-
 function newToken(): string {
   return "KMH1." + crypto.randomUUID();
 }
@@ -65,30 +79,25 @@ export default async function handler(request: Request) {
       if (!ORDER_REF.test(ref)) throw new ApiError(400, "Enter a valid order reference");
       const order = await loadEscrowOrder(service, ref, auth.user.id, staff);
 
-      const expiresAt = new Date(Date.now() + CODE_LIFETIME_MS).toISOString();
-
-      /* Replace any previous unused codes for this order. */
-      await service.from("handoff_codes").delete().eq("order_id", order.id).is("used_at", null);
+      /* No expiry: the code lives until it is scanned, replaced, or the
+         order closes. */
+      const expiresAt: string | null = CODE_LIFETIME_MS > 0
+        ? new Date(Date.now() + CODE_LIFETIME_MS).toISOString()
+        : null;
 
       const sellerToken = newToken();
       const buyerToken = newToken();
-      const { error: insertError } = await service.from("handoff_codes").insert([
-        {
-          order_id: order.id,
-          code_type: "seller",
-          token_hash: await hashToken(sellerToken),
-          issued_to: order.seller_id,
-          expires_at: expiresAt,
-        },
-        {
-          order_id: order.id,
-          code_type: "buyer",
-          token_hash: await hashToken(buyerToken),
-          issued_to: order.buyer_id,
-          expires_at: expiresAt,
-        },
-      ]);
-      if (insertError) throw insertError;
+
+      /* The database owns the issue rules: escrow state, expiry, and the
+         one-active-code-per-order rule. It revokes the previous unused
+         codes rather than deleting them, so the audit trail survives. */
+      const { data: issued, error: issueError } = await service.rpc("issue_handoff_codes", {
+        p_order_id: order.id,
+        p_seller_token_hash: await hashToken(sellerToken),
+        p_buyer_token_hash: await hashToken(buyerToken),
+        p_expires_at: expiresAt,
+      });
+      if (issueError) throw issueError;
 
       return json({
         ok: true,
@@ -96,6 +105,7 @@ export default async function handler(request: Request) {
         seller_code: sellerToken,
         buyer_code: buyerToken,
         expires_at: expiresAt,
+        issued: issued ?? null,
       });
     }
 
@@ -105,74 +115,56 @@ export default async function handler(request: Request) {
       if (!limit.allowed) return json({ error: "Too many scans. Please wait a moment." }, 429);
 
       const scanned = String(body.code || "").trim();
-      if (!scanned.startsWith("KMH1.") || scanned.length < 40) {
+      if (!looksLikeHandoffCode(scanned)) {
         throw new ApiError(400, "That is not a valid Kobe handoff code");
       }
 
       const tokenHash = await hashToken(scanned);
-      const { data: codeRow, error: codeError } = await service
-        .from("handoff_codes")
-        .select("*")
-        .eq("token_hash", tokenHash)
-        .maybeSingle();
-      if (codeError) throw codeError;
-      if (!codeRow) throw new ApiError(404, "This code is not valid. Scan the code from the matching order screen.");
 
-      if (codeRow.used_at) throw new ApiError(409, "This code has already been used");
-      if (new Date(codeRow.expires_at).getTime() <= Date.now()) {
-        throw new ApiError(409, "This code expired. Go back and generate a fresh one.");
-      }
+      /* The database owns the scan rules: code validity, one-time use,
+         order membership, the escrow state, who may scan, the handoff
+         audit trail and the release window. It also owns the wording, so
+         that every way a scan can fail tells the person holding the
+         phone exactly what happened. */
+      const { data: recorded, error: recordError } = await service.rpc("record_handoff_scan", {
+        p_token_hash: tokenHash,
+        p_scanner: auth.user.id,
+        p_stage: null,
+      });
+      if (recordError) throw scanFailure(recordError);
+
+      const result = Array.isArray(recorded) ? recorded[0] : recorded;
+      const orderId = result?.order_id;
+      if (!orderId) throw new ApiError(500, "The scan was not recorded");
 
       const { data: order, error: orderError } = await service
         .from("orders")
         .select("*, seller_profiles:seller_id (shop_name, kobe_id), buyer_profile:buyer_id (display_name, phone_e164)")
-        .eq("id", codeRow.order_id)
+        .eq("id", orderId)
         .maybeSingle();
       if (orderError) throw orderError;
       if (!order) throw new ApiError(404, "The order for this code no longer exists");
-      if (order.status !== "in_escrow" && order.status !== "delivered") {
-        throw new ApiError(409, "The money for this order is no longer held in escrow");
-      }
-      if (order.status === "disputed") {
-        throw new ApiError(409, "This order is disputed. The money stays frozen until support resolves it.");
-      }
 
-      /* A seller code (the seller's own QR) may only be scanned by
-         the buyer who paid, or staff. A buyer code (the buyer's QR)
-         may only be scanned by the assigned seller, or staff. */
-      const isBuyerCode = codeRow.code_type === "buyer";
-      const authorized = staff
-        || (isBuyerCode && order.seller_id === auth.user.id)
-        || (!isBuyerCode && order.buyer_id === auth.user.id);
-      if (!authorized) {
-        throw new ApiError(403, "Only " + (isBuyerCode ? "the seller of this order" : "the buyer of this order") + " can scan this code");
-      }
-
-      /* Atomic one-time claim: if two scans race, only one wins. */
-      const { data: claimed, error: claimError } = await service
-        .from("handoff_codes")
-        .update({ used_at: new Date().toISOString(), scanned_by: auth.user.id })
-        .eq("id", codeRow.id)
-        .is("used_at", null)
-        .select("*")
-        .maybeSingle();
-      if (claimError) throw claimError;
-      if (!claimed) throw new ApiError(409, "This code has already been used");
-
-      await service.rpc("record_handoff", {
-        p_order_id: order.id,
-        p_code_type: codeRow.code_type,
-        p_scanned_by: auth.user.id,
-      });
-
-      const counterparty = isBuyerCode
+      const counterparty = result.code_type === "buyer"
         ? (order.buyer_profile?.display_name || "Buyer")
         : (order.seller_profiles?.shop_name || "Seller");
 
-      const otherPartyId = isBuyerCode ? order.buyer_id : order.seller_id;
-      sendNotifications(service, [otherPartyId], "Handoff verified for order " + order.ref,
-        "The " + (isBuyerCode ? "seller" : "buyer") + " scanned the handoff code for order " + order.ref + ".",
-        { link: (isBuyerCode ? "/seller.html#seller-orders" : "/buyer.html#order/" + order.ref), order: order.ref });
+      /* The side that owns the scanned code is the side whose handover
+         just became true, so that is who hears about it. */
+      const handoffOrder: HandoffOrder = {
+        ref: order.ref,
+        buyer_id: order.buyer_id,
+        seller_id: order.seller_id,
+      };
+      const notice = handoffNotice(handoffOrder, result.role, result.code_type);
+
+      sendNotifications(
+        service,
+        notice.recipients.map((entry) => entry.id),
+        notice.title,
+        notice.body,
+        { link: notice.recipients[0]?.link, order: order.ref }
+      );
 
       return json({
         ok: true,
@@ -180,15 +172,23 @@ export default async function handler(request: Request) {
         item_name: order.item_name,
         quantity: order.quantity,
         amount: Number(order.subtotal_tzs),
-        code_type: codeRow.code_type,
+        code_type: result.code_type,
+        role: result.role,
         counterparty,
-        scanned_at: claimed.used_at,
+        scanned_at: result.scanned_at,
+        /* The buyer's code being scanned releases the escrow at once.
+           The seller's code being scanned opens the three-hour window. */
+        released: result.released === true,
+        release_scheduled_for: result.release_scheduled_for ?? null,
       });
     }
 
     return json({ error: "Unknown action" }, 400);
   } catch (error) {
     const api = error instanceof ApiError ? error : asApiError(error);
-    return json({ ok: false, error: api.message }, api.status);
+    /* The reason travels with the message, so the app can tell the
+       difference between "already scanned", "wrong person" and "the
+       handover is done" without parsing English. */
+    return json({ ok: false, error: api.message, reason: api.reason || null }, api.status);
   }
 }

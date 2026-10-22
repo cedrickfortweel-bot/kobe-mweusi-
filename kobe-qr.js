@@ -2297,7 +2297,36 @@ var qrcode = function() {
 }));
 
 window.KobeQr = {
-  svg(payload, label) {
+  /* The centre mark.
+     The brand logo itself, kobe-turtle-logo.png, cannot go here: it is a
+     768px near-black image with no transparency and a mean luminance of
+     29 out of 255. At QR scale it would black out the modules underneath
+     and its own shape would be invisible.
+
+     So the mark is drawn as a vector instead: a bold turtle silhouette in
+     the same colour as the QR modules, so it reads as dark on the white
+     square, with the gold ring around it carrying the brand colour. It
+     costs no bytes, needs no file, and stays crisp at any size.
+
+     The mark covers about 5% of the code area, well inside what error
+     correction level H tolerates. */
+  turtle(cx, cy, size, fill) {
+    const s = size / 100;
+    return (
+      '<g transform="translate(' + (cx - size / 2) + ' ' + (cy - size / 2) + ') scale(' + s + ')" fill="' + fill + '">' +
+      '<path d="M50 72 l-5 12 l10 0 z"/>' +
+      '<ellipse cx="25" cy="34" rx="12" ry="8"/>' +
+      '<ellipse cx="75" cy="34" rx="12" ry="8"/>' +
+      '<ellipse cx="25" cy="66" rx="12" ry="8"/>' +
+      '<ellipse cx="75" cy="66" rx="12" ry="8"/>' +
+      '<circle cx="50" cy="24" r="11"/>' +
+      '<ellipse cx="50" cy="51" rx="30" ry="23"/>' +
+      '</g>'
+    );
+  },
+
+  svg(payload, label, options) {
+    const opts = options || {};
     const qr = qrcode(0, 'H');
     qr.addData(String(payload));
     qr.make();
@@ -2316,6 +2345,9 @@ window.KobeQr = {
     const title = String(label || 'Kobe Mweusi QR code').replace(/[&<>"']/g, char => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[char]));
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="${title}" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path d="${path}" fill="#14150F"/><rect x="${inset}" y="${inset}" width="${badge}" height="${badge}" rx="${badge * 0.18}" fill="#fff" stroke="#C6903D" stroke-width="${size * 0.012}"/><circle cx="${center}" cy="${center}" r="${badge * 0.35}" fill="none" stroke="#C6903D" stroke-width="${badge * 0.09}"/><circle cx="${center}" cy="${center}" r="${badge * 0.21}" fill="none" stroke="#C6903D" stroke-width="${badge * 0.06}" opacity=".6"/><circle cx="${center}" cy="${center}" r="${badge * 0.08}" fill="#C6903D"/></svg>`;
+    const mark = opts.logo === false
+      ? ''
+      : window.KobeQr.turtle(center, center, badge * 0.56, '#14150F');
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="${title}" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path d="${path}" fill="#14150F"/><rect x="${inset}" y="${inset}" width="${badge}" height="${badge}" rx="${badge * 0.18}" fill="#fff" stroke="#C6903D" stroke-width="${size * 0.012}"/><circle cx="${center}" cy="${center}" r="${badge * 0.35}" fill="none" stroke="#C6903D" stroke-width="${badge * 0.09}"/>${mark}</svg>`;
   }
 };
