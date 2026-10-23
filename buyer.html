@@ -94,7 +94,7 @@
   /* SIDEBAR (desktop) */
   aside.sidebar {
     width: 232px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--line);
-    display: flex; flex-direction: column; padding: 22px 16px; position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column; padding: 22px 16px; position: sticky; top: 0; height: 100vh; height: 100dvh;
     transition: width .22s ease, padding .22s ease;
   }
   aside.sidebar.collapsed { width: 76px; padding: 22px 12px; }
@@ -112,7 +112,7 @@
   .sidebar-top .collapse-btn:hover { background: color-mix(in srgb,var(--shell) 16%,transparent); border-color: color-mix(in srgb,var(--shell) 48%,transparent); }
   .sidebar-top .collapse-btn:focus-visible { outline: 2px solid var(--shell); outline-offset: 2px; }
 
-  nav.side-nav { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+  nav.side-nav { display: flex; flex-direction: column; gap: 3px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
   nav.side-nav a { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; color: var(--text-muted); font-size: 14.5px; font-weight: 600; transition: background .15s, color .15s; white-space: nowrap; overflow: hidden; }
   nav.side-nav a svg { width: 19px; height: 19px; flex-shrink: 0; }
 nav.side-nav a { background: var(--bg); color: var(--text); font-weight: var(--kobe-weight-semibold); font-size: var(--kobe-text-base); text-align: left; white-space: nowrap; }
@@ -1295,7 +1295,7 @@ button.side-profile:focus-visible{outline:3px solid var(--shell);outline-offset:
   aside.sidebar{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
   aside.sidebar .side-nav{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 }
-</style></head>
+</style><link rel="stylesheet" href="kobe-theme.css"></head>
 <body class="km-page-shell">
 <div class="app">
   <aside class="sidebar" id="sidebar">
@@ -4411,7 +4411,7 @@ function showReceiptReleaseQr(){
   showQrBrightMode(false);
 }
 function downloadReceiptMock(){
-  const html = '<!doctype html><html><head><meta charset=\"utf-8\"><title>Kobe Mweusi Receipt</title><style>body{font-family:Arial;background:#0b1118;color:#eee;padding:30px}main{max-width:420px;margin:auto;border:1px solid #8d692f;border-radius:18px;padding:24px;background:#101a24}h1{color:#f2cf84;font-size:20px}p{color:#a6a491}strong{color:#fff}</style><style id="kobe-brand-consistency">.brand-copy,.brand span,.admin-brand-copy span,.login-brand-copy{font-family:Manrope,system-ui,sans-serif;letter-spacing:-.045em}.brand-copy b,.brand span b,.admin-brand-copy b,.login-brand-copy b{color:var(--text)!important;font-weight:650}.brand-copy strong,.brand span strong,.admin-brand-copy strong,.login-brand-copy strong{color:var(--shell)!important;font-weight:850}</style><style id="kobe-deep-dark">html[data-theme="dark"]{--bg:#050607!important;--card:#0b0e10!important;--surface:#0b0e10!important;--surface-2:#111518!important;--line:#1c2326!important;--text-muted:#a8b2af!important}</style></head><body><main><h1>KOBE MWEUSI</h1><p>Transaction Receipt</p><h2>'+document.getElementById('rm-amt').textContent+'</h2><p>Receipt ID: <strong>'+document.getElementById('rm-receipt-id').textContent+'</strong></p><p>Seller: <strong>'+document.getElementById('rm-seller').textContent+'</strong></p><p>Status: <strong>'+document.getElementById('rm-status-badge').textContent+'</strong></p><p>Date: <strong>'+document.getElementById('rm-date').textContent+'</strong></p></main></body></html>';
+  const html = '<!doctype html><html><head><meta charset=\"utf-8\"><title>Kobe Mweusi Receipt</title><style>body{font-family:Arial;background:#0b1118;color:#eee;padding:30px}main{max-width:420px;margin:auto;border:1px solid #8d692f;border-radius:18px;padding:24px;background:#101a24}h1{color:#f2cf84;font-size:20px}p{color:#a6a491}strong{color:#fff}</style><style id="kobe-brand-consistency">.brand-copy,.brand span,.admin-brand-copy span,.login-brand-copy{font-family:Manrope,system-ui,sans-serif;letter-spacing:-.045em}.brand-copy b,.brand span b,.admin-brand-copy b,.login-brand-copy b{color:var(--text)!important;font-weight:650}.brand-copy strong,.brand span strong,.admin-brand-copy strong,.login-brand-copy strong{color:var(--shell)!important;font-weight:850}</style><style id="kobe-deep-dark">html[data-theme="dark"]{--bg:#050607!important;--card:#0b0e10!important;--surface:#0b0e10!important;--surface-2:#111518!important;--line:#1c2326!important;--text-muted:#a8b2af!important}</style><link rel="stylesheet" href="kobe-theme.css"></head><body><main><h1>KOBE MWEUSI</h1><p>Transaction Receipt</p><h2>'+document.getElementById('rm-amt').textContent+'</h2><p>Receipt ID: <strong>'+document.getElementById('rm-receipt-id').textContent+'</strong></p><p>Seller: <strong>'+document.getElementById('rm-seller').textContent+'</strong></p><p>Status: <strong>'+document.getElementById('rm-status-badge').textContent+'</strong></p><p>Date: <strong>'+document.getElementById('rm-date').textContent+'</strong></p></main></body></html>';
   const blob = new Blob([html],{type:'text/html'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(document.getElementById('rm-receipt-id').textContent||'receipt')+'.html'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 function printReceiptMock(){
@@ -4440,7 +4440,7 @@ function printReceiptMock(){
     '.rm-title-row h3{color:#000}' +
     '.rm-subtitle{color:#555}' +
     'img{border-radius:6px}' +
-    '</style></head><body>');
+    '</style><link rel="stylesheet" href="kobe-theme.css"></head><body>');
   w.document.write(clone.outerHTML);
   w.document.write('</body></html>');
   w.document.close();

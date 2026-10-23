@@ -1,0 +1,111 @@
+/* Kobe Mweusi — shared theme tokens.
+   Linked from every page: buyer, seller, agent, admin, home.
+   Dark is the default (matches the app). Light is opt-in via data-theme. */
+
+:root {
+  color-scheme: light dark;
+
+  /* dark theme (default) */
+  --bg: #0A0F0C;
+  --surface: #101812;
+  --surface-2: #17221A;
+  --text: #F7F1DE;
+  --text-muted: #AAB5A9;
+  --border: #2A382D;
+  --accent: #E2B24D;          /* brand gold: use as background, not text on dark */
+  --on-accent: #10130e;       /* text on top of accent */
+  --accent-text: #E2B24D;     /* accent as text/links on dark backgrounds */
+  --danger: #ff8a80;
+  --success: #3ddc84;
+  --moss: #3ddc84;
+  --moss-dim: color-mix(in srgb, #3ddc84 18%, transparent);
+  --shell: #E2B24D;
+  --shell-dim: #9B742C;
+  --held: #f0b429;
+  --proc: #5aa9ff;
+  --v-green: #3ddc84;
+  --v-green-dim: color-mix(in srgb, #3ddc84 35%, transparent);
+  --v-green-bg: color-mix(in srgb, #3ddc84 14%, transparent);
+  --bad: #ff8a80;
+  --ok: #3ddc84;
+  --line: #2A382D;
+  --mut: var(--text-muted);
+  --muted: var(--text-muted);
+  --card: var(--surface);
+  --panel: var(--surface);
+  --panel-2: var(--surface-2);
+  --ink: var(--text);
+  --font: 'Manrope', system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* light theme: explicit toggle */
+:root[data-theme="light"] {
+  --bg: #F7F6F0;
+  --surface: #FFFFFF;
+  --surface-2: #EEF3ED;
+  --text: #16231B;
+  --text-muted: #66736A;
+  --border: #D9E1D8;
+  --accent: #C58F2E;
+  --on-accent: #FFFFFF;
+  --accent-text: #8D641F;
+  --danger: #C94F45;
+  --success: #168451;
+  --moss: #168451;
+  --moss-dim: #DDF1E6;
+  --shell: #C58F2E;
+  --shell-dim: #8D641F;
+  --held: #b7791f;
+  --proc: #1f6fd1;
+  --v-green: #1a8a4a;
+  --v-green-dim: color-mix(in srgb, #1a8a4a 35%, transparent);
+  --v-green-bg: color-mix(in srgb, #1a8a4a 12%, transparent);
+  --bad: #b3261e;
+  --ok: #1a8a4a;
+  --line: #D9E1D8;
+  --mut: var(--text-muted);
+  --muted: var(--text-muted);
+  --card: var(--surface);
+  --panel: var(--surface);
+  --panel-2: var(--surface-2);
+  --ink: var(--text);
+}
+
+/* light theme: follows device setting unless user chose dark */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #F7F6F0;
+    --surface: #FFFFFF;
+    --surface-2: #EEF3ED;
+    --text: #16231B;
+    --text-muted: #66736A;
+    --border: #D9E1D8;
+    --accent: #C58F2E;
+    --on-accent: #FFFFFF;
+    --accent-text: #8D641F;
+    --danger: #C94F45;
+    --success: #168451;
+    --moss: #168451;
+    --moss-dim: #DDF1E6;
+    --shell: #C58F2E;
+    --shell-dim: #8D641F;
+    --held: #b7791f;
+    --proc: #1f6fd1;
+    --v-green: #1a8a4a;
+    --v-green-dim: color-mix(in srgb, #1a8a4a 35%, transparent);
+    --v-green-bg: color-mix(in srgb, #1a8a4a 12%, transparent);
+    --bad: #b3261e;
+    --ok: #1a8a4a;
+    --line: #D9E1D8;
+    --mut: var(--text-muted);
+    --muted: var(--text-muted);
+    --card: var(--surface);
+    --panel: var(--surface);
+    --panel-2: var(--surface-2);
+    --ink: var(--text);
+  }
+}
+
+body { background: var(--bg); color: var(--text); }
+EOF
+Write-Output "created"
