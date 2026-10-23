@@ -2052,7 +2052,7 @@ As agreed with the seller..." oninput="updateOrderDescriptionState(this)"></text
       <header class="page-head"><div><button class="back-link" onclick="appBack('settings')">‹ Settings</button><h1 style="margin-top:8px;">Account</h1><p>Manage your identity and account information</p></div></header>
       <div class="account-profile-card">
         <div class="account-profile-top"><div class="account-big-avatar" id="account-big-avatar">U</div><div><h2>Your Name</h2><p>@yourusername · Buyer</p></div></div>
-        <div class="account-id-grid"><div class="account-id-box"><span>Wallet ID</span><strong id="accountWalletId">—</strong></div><div class="account-id-box"><span>Member since</span><strong>September 2026</strong></div></div>
+        <div class="account-id-grid"><div class="account-id-box"><span>Wallet ID</span><strong id="accountWalletId">—</strong></div><div class="account-id-box"><span>Member since</span><strong id="accountMemberSince">—</strong></div></div>
       </div>
       <div class="settings-section-label">Profile</div>
       <div class="account-list">
@@ -3408,15 +3408,20 @@ async function populateAccountScreen(){
      loadSavedAvatar(initials);
      const nameEl=document.querySelector('#screen-account h2');
      const subEl=document.querySelector('#screen-account p');
-     const walletEl=document.querySelector('#screen-account strong:first-child');
-     const sinceEl=document.querySelector('#screen-account strong:last-child');
-     const email = profile ? (profile.email || 'Email unavailable') : 'Email unavailable';
-     if(nameEl) nameEl.textContent = displayName || 'Your Name';
-     if(subEl) subEl.textContent = email;
-     if(walletEl) walletEl.textContent = profile ? (profile.id ? profile.id.slice(0,8).toUpperCase() : '—') : '—';
-     if(sinceEl && profile && profile.created_at){
-       sinceEl.textContent = new Date(profile.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' });
-     }
+      const walletEl=document.getElementById('accountWalletId');
+      const sinceEl=document.getElementById('accountMemberSince');
+      const email = profile ? (profile.email || 'Email unavailable') : 'Email unavailable';
+      if(nameEl) nameEl.textContent = displayName || 'Your Name';
+      if(subEl) subEl.textContent = '@' + (displayName || 'yourusername').toLowerCase().replace(/\s+/g, '') + ' · Buyer';
+      if(walletEl) {
+        try {
+          const wid = (window.KobeApi && KobeApi.myWalletId) ? await KobeApi.myWalletId() : null;
+          walletEl.textContent = wid || '—';
+        } catch(e) { walletEl.textContent = '—'; }
+      }
+      if(sinceEl && profile && profile.created_at){
+        sinceEl.textContent = new Date(profile.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' });
+      }
      const sideName=document.querySelector('.side-profile .name');
      if(sideName) sideName.textContent = displayName || 'Your Name';
      const sideEmail=document.getElementById('side-email');
