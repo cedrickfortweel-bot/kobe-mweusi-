@@ -1,0 +1,11 @@
+node_modules
+.git
+supabase/.temp
+*.log
+cleanup.sql
+cleanup_runner.js
+size_check.js
+kobe-mweusi-admin-console-2-5.html
+seller.html.backup
+wrangler.toml
+EOF
