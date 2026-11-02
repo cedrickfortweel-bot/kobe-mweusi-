@@ -1,120 +1,315 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex">
-  <meta name="theme-color" content="#0d0d0f">
-  <title>Kobe Mweusi | Operations console</title>
-  <link rel="icon" href="kobe-turtle-logo.png" type="image/png">
-  <link rel="stylesheet" href="kobe-tailwind.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Kobe Mweusi</title>
   <style>
-    :root{font-family:Manrope,system-ui,sans-serif;color:#edf1ed;background:#0d0d0f;--admin-bg:#0d0d0f;--admin-panel:#151819;--admin-panel-2:#1b2021;--admin-line:#2a3130;--admin-muted:#9ca8a1;--admin-moss:#c8ff35;--admin-cyan:#7ce7df;--admin-danger:#ff8c86;--text:#edf1ed;--shell:#c8ff35}
-    *{box-sizing:border-box}body{min-width:320px;margin:0;background:radial-gradient(circle at 75% -15%,rgba(124,231,223,.13),transparent 30%),radial-gradient(circle at 10% 5%,rgba(200,255,53,.08),transparent 26%),var(--admin-bg);color:#edf1ed}button,input,textarea{font:inherit}button{cursor:pointer}
-    .admin-shell{min-height:100vh;display:grid;grid-template-columns:248px minmax(0,1fr)}.admin-sidebar{position:sticky;top:0;height:100vh;padding:24px 16px;background:rgba(13,13,15,.84);border-right:1px solid var(--admin-line);backdrop-filter:blur(18px);z-index:2}.admin-main{min-width:0;padding:28px clamp(18px,4vw,52px) 54px}
-    .admin-brand{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;padding:2px 8px 24px}.admin-brand img{width:38px;height:38px;object-fit:contain}.admin-brand-copy{display:flex;flex-direction:column;line-height:1}.admin-brand-copy b,.admin-brand-copy strong{font-family:Manrope,system-ui,sans-serif;letter-spacing:-.05em}.admin-brand-copy b{font-size:17px;font-weight:650}.admin-brand-copy strong{font-size:17px;font-weight:850;color:var(--admin-moss)}.admin-brand-copy small{margin-top:6px;color:var(--admin-muted);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-    .nav-label{padding:15px 10px 7px;color:#68766f;font-size:10px;font-weight:850;letter-spacing:.12em;text-transform:uppercase}.admin-nav{display:grid;gap:3px}.admin-nav a{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;color:#aeb9b2;font-size:12px;font-weight:750;text-decoration:none}.admin-nav a:hover,.admin-nav a.active{color:#f3f7f2;background:var(--admin-panel-2)}.admin-nav a.active{box-shadow:inset 3px 0 var(--admin-moss)}.nav-dot{width:7px;height:7px;border-radius:99px;background:#52615a}.active .nav-dot{background:var(--admin-moss);box-shadow:0 0 12px var(--admin-moss)}
-    .side-footer{position:absolute;right:16px;bottom:18px;left:16px;padding:12px;border:1px solid var(--admin-line);border-radius:13px;background:rgba(21,24,25,.78);color:var(--admin-muted);font-size:10px;line-height:1.5}.side-footer strong{display:block;color:#edf1ed;font-size:11px;margin-bottom:3px}
-    .admin-topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:30px}.eyebrow{color:var(--admin-moss);font-size:10px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}.admin-topbar h1{margin:7px 0 4px;font-size:clamp(25px,3vw,36px);letter-spacing:-.055em;line-height:1.05}.admin-topbar p{margin:0;color:var(--admin-muted);font-size:13px}.top-actions{display:flex;align-items:center;gap:10px}.live-chip{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid rgba(124,231,223,.22);border-radius:99px;color:var(--admin-cyan);font-size:11px;font-weight:800}.live-chip i{width:7px;height:7px;border-radius:99px;background:var(--admin-cyan);box-shadow:0 0 12px var(--admin-cyan)}
-    .admin-button{border:1px solid var(--admin-line);border-radius:10px;padding:10px 13px;background:transparent;color:#edf1ed;font-size:12px;font-weight:800}.admin-button:hover{border-color:var(--admin-moss);color:var(--admin-moss)}.admin-button-primary{border-color:var(--admin-moss);background:var(--admin-moss);color:#11150e}.admin-button-primary:hover{background:#d9ff78;color:#11150e}
-    .metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:22px}.metric-card,.admin-card{border:1px solid var(--admin-line);border-radius:16px;background:linear-gradient(145deg,rgba(27,32,33,.94),rgba(18,21,22,.94));box-shadow:0 18px 45px rgba(0,0,0,.16)}.metric-card{padding:16px}.metric-card span{display:block;color:var(--admin-muted);font-size:11px;font-weight:700}.metric-card strong{display:block;margin-top:9px;color:#f5f8f4;font-size:25px;letter-spacing:-.05em}.metric-card small{display:block;margin-top:7px;color:#789188;font-size:10px}.metric-accent{color:var(--admin-moss)!important}
-    .admin-card{padding:20px}.card-title{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}.card-title h2{margin:0;font-size:17px;letter-spacing:-.03em}.card-title p{margin:5px 0 0;color:var(--admin-muted);font-size:12px;line-height:1.5}.card-kicker{color:var(--admin-cyan);font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
-    .login-layout{display:grid;min-height:calc(100vh - 56px);place-items:center}.login-card{width:min(100%,500px);padding:clamp(24px,5vw,42px);border:1px solid var(--admin-line);border-radius:22px;background:linear-gradient(145deg,rgba(27,32,33,.97),rgba(12,14,15,.97));box-shadow:0 24px 80px rgba(0,0,0,.35)}.login-brand{display:flex;align-items:center;gap:13px;margin-bottom:30px}.login-brand img{width:52px;height:52px;object-fit:contain}.login-brand-copy b,.login-brand-copy strong{font-size:25px;letter-spacing:-.06em}.login-brand-copy b{font-weight:650}.login-brand-copy strong{font-weight:850;color:var(--admin-moss)}.login-brand-copy small{display:block;margin-top:7px;color:var(--admin-cyan);font-size:10px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}.login-card h1{margin:0 0 8px;font-size:28px;letter-spacing:-.055em}.login-card .lead{margin:0 0 23px;color:var(--admin-muted);font-size:13px;line-height:1.6}.form-grid{display:grid;gap:14px}.form-field{display:grid;gap:7px}.form-field label{color:#d8e2db;font-size:11px;font-weight:800}.form-field input,.review-note{width:100%;border:1px solid var(--admin-line);border-radius:10px;background:#0f1213;color:#f3f7f2;outline:0;padding:12px 13px}.form-field input:focus,.review-note:focus{border-color:var(--admin-moss);box-shadow:0 0 0 3px rgba(200,255,53,.1)}.login-submit{width:100%;margin-top:5px}.oauth-divider{display:flex;align-items:center;gap:10px;margin:22px 0 13px;color:#6f7a73;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.oauth-divider:before,.oauth-divider:after{content:"";height:1px;flex:1;background:var(--admin-line)}.oauth-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.oauth-button{display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--admin-line);border-radius:10px;padding:11px 9px;background:#111516;color:#eaf0eb;font-size:12px;font-weight:800}.oauth-button:hover{border-color:#71817a;background:#1a2020}.oauth-icon{width:18px;height:18px;display:grid;place-items:center;font-size:14px;font-weight:900}.google-icon{color:#ea4335}.microsoft-icon{display:grid;grid-template-columns:1fr 1fr;gap:1px;width:15px;height:15px}.microsoft-icon i{display:block}.microsoft-icon i:nth-child(1){background:#f25022}.microsoft-icon i:nth-child(2){background:#7fba00}.microsoft-icon i:nth-child(3){background:#00a4ef}.microsoft-icon i:nth-child(4){background:#ffb900}.login-security{display:flex;gap:8px;margin-top:20px;padding:11px 12px;border:1px solid rgba(124,231,223,.16);border-radius:10px;background:rgba(124,231,223,.05);color:#9fb9b3;font-size:11px;line-height:1.5}.login-security strong{color:var(--admin-cyan)}.login-security span{display:block}.admin-notice{margin:16px 0;padding:12px 14px;border:1px solid rgba(124,231,223,.2);border-radius:10px;background:rgba(124,231,223,.07);color:#dce9e4;font-size:12px;line-height:1.5;white-space:pre-wrap}.admin-notice.error{border-color:rgba(255,140,134,.35);background:rgba(255,140,134,.08);color:#ffd7d4}.queue{display:grid;gap:13px}.submission{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:20px;padding:19px;border:1px solid var(--admin-line);border-radius:15px;background:#111516}.submission h2{margin:0 0 6px;color:#f2f7f2;font-size:16px}.meta{color:var(--admin-muted);font-size:12px;line-height:1.65;overflow-wrap:anywhere}.docs{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.docs a{padding:7px 10px;border:1px solid var(--admin-line);border-radius:99px;color:var(--admin-cyan);font-size:11px;font-weight:800;text-decoration:none}.docs a:hover{border-color:var(--admin-cyan);background:rgba(124,231,223,.06)}.review-note{min-height:88px;margin:0;font-size:12px;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.btn-danger{border-color:rgba(255,140,134,.4);color:var(--admin-danger)}.status-pill,.kobe-id{display:inline-flex;align-items:center;margin-top:8px;padding:5px 9px;border-radius:99px;font-size:10px;font-weight:850}.status-pill{background:rgba(200,255,53,.1);border:1px solid rgba(200,255,53,.24);color:var(--admin-moss)}.kobe-id{background:#0c1110;color:var(--admin-moss);border:1px solid rgba(200,255,53,.24);letter-spacing:.06em}.empty{padding:22px;border:1px dashed var(--admin-line);border-radius:14px;color:var(--admin-muted);font-size:12px}.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px}.section-head h2{margin:0;font-size:20px;letter-spacing:-.04em}.section-head p{margin:5px 0 0;color:var(--admin-muted);font-size:12px}@media(max-width:1000px){.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:760px){.admin-shell{display:block}.admin-sidebar{position:static;height:auto;padding:14px 16px;border-right:0;border-bottom:1px solid var(--admin-line)}.admin-brand{padding-bottom:13px}.admin-nav{display:flex;overflow:auto}.nav-label,.side-footer{display:none}.admin-nav a{white-space:nowrap}.admin-main{padding:22px 14px 40px}.submission{grid-template-columns:1fr}.admin-topbar{align-items:flex-start;flex-direction:column}.top-actions{width:100%;justify-content:space-between}}@media(max-width:480px){.metric-grid{grid-template-columns:1fr 1fr;gap:8px}.metric-card{padding:13px}.metric-card strong{font-size:21px}.oauth-grid{grid-template-columns:1fr}.login-card{padding:23px 18px}}
-  .admin-staff{display:flex;align-items:center;gap:10px}.admin-staff p{margin:0}.staff-avatar{display:grid;width:38px;height:38px;place-items:center;border-radius:50%;background:var(--admin-moss);color:#11150e;font-size:13px;font-weight:900}.admin-module{margin-top:16px}.module-status{display:inline-flex;align-items:center;padding:6px 9px;border:1px solid rgba(124,231,223,.2);border-radius:999px;color:var(--admin-cyan);font-size:10px;font-weight:800;white-space:nowrap}.module-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.module-grid>div{min-height:88px;padding:14px;border:1px solid var(--admin-line);border-radius:12px;background:rgba(15,18,19,.7)}.module-grid strong{display:block;color:#f2f7f2;font-size:12px}.module-grid span{display:block;margin-top:8px;color:var(--admin-muted);font-size:11px;line-height:1.45}@media(max-width:1000px){.module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.module-grid{grid-template-columns:1fr}.module-status{display:none}}.admin-module{margin-top:16px}.module-status{display:inline-flex;align-items:center;padding:6px 9px;border:1px solid rgba(124,231,223,.2);border-radius:999px;color:var(--admin-cyan);font-size:10px;font-weight:800;white-space:nowrap}.module-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.module-grid>div{min-height:88px;padding:14px;border:1px solid var(--admin-line);border-radius:12px;background:rgba(15,18,19,.7)}.module-grid strong{display:block;color:#f2f7f2;font-size:12px}.module-grid span{display:block;margin-top:8px;color:var(--admin-muted);font-size:11px;line-height:1.45}@media(max-width:1000px){.module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.module-grid{grid-template-columns:1fr}.module-status{display:none}}</style>
-<style id="kobe-brand-consistency">.brand-copy,.brand span,.admin-brand-copy span,.login-brand-copy{font-family:Manrope,system-ui,sans-serif;letter-spacing:-.045em}.brand-copy b,.brand span b,.admin-brand-copy b,.login-brand-copy b{color:var(--text)!important;font-weight:650}.brand-copy strong,.brand span strong,.admin-brand-copy strong,.login-brand-copy strong{color:var(--shell)!important;font-weight:850}</style>
-<style id="kobe-admin-sidebar">
-/* The operations sidebar was a fixed 248px column whose footer was
-   pinned with position:absolute, so on a short screen the footer sat
-   on top of the last navigation links and the links underneath could
-   not be tapped. The nav now scrolls inside the column and the footer
-   takes its place in the flow, under it.
+    :root {
+      --bg: #070b0d;
+      --panel: #11181b;
+      --panel-2: #171f22;
+      --line: #243136;
+      --text: #edf5f6;
+      --muted: #a1b0b5;
+      --green: #45d39b;
+      --yellow: #f3bc5a;
+      --red: #ff7369;
+      --shadow: rgba(0,0,0,.28);
+    }
 
-   The links also had 3px between them, which is too tight for a thumb
-   on a phone, where this whole nav becomes a horizontal strip. */
-.admin-sidebar{display:flex;flex-direction:column;overflow:hidden}
-.admin-brand{flex-shrink:0}
-.admin-nav{flex:1;min-height:0;overflow-y:auto;gap:6px;padding-bottom:8px;scrollbar-width:thin}
-.admin-nav a{min-height:40px;padding:11px 12px}
-.admin-nav a:focus-visible{outline:2px solid var(--admin-moss);outline-offset:2px}
-.admin-nav .nav-label{padding:16px 10px 6px}
-.side-footer{position:static;margin-top:14px;flex-shrink:0}
-/* The dashboard tiles carry a number, not only a label. */
-.metric-block strong{display:block;margin-top:6px;color:#f2f7f2;font-size:22px;letter-spacing:-.04em}
-.metric-block span{display:block;color:#c3cec7;font-size:11px;font-weight:700}
-.metric-block em{display:block;margin-top:5px;color:var(--admin-muted);font-size:11px;font-style:normal;line-height:1.45}
-/* Five tiles now: let them sit on one row when there is room for them. */
-.metric-grid{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
-@media(max-width:760px){
-  .admin-sidebar{height:auto;overflow:visible}
-  .admin-nav{flex:none;min-height:auto;display:flex;overflow-x:auto;overflow-y:hidden;gap:8px;padding-bottom:8px;-webkit-overflow-scrolling:touch}
-  .admin-nav a{min-height:44px}
-}
-</style><link rel="stylesheet" href="kobe-theme.css"></head>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, Arial, sans-serif;
+    }
+
+    body { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 260px;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .brand {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      padding: 8px 10px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .nav { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .nav button {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      padding: 12px 12px;
+      border-radius: 10px;
+      text-align: left;
+      font-size: 14px;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+    .nav button:hover {
+      background: rgba(255,255,255,0.02);
+      border-color: var(--line);
+    }
+    .muted { color: var(--muted); }
+    .danger { color: var(--red); }
+
+    .main { flex: 1; padding: 28px; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 12px 28px var(--shadow);
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+
+    .value {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .delta { margin-top: 8px; font-size: 12px; color: var(--green); }
+
+    .section {
+      display: grid;
+      grid-template-columns: 1.3fr 0.7fr;
+      gap: 18px;
+      margin-top: 20px;
+    }
+
+    .list { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+    .row {
+      display: flex; justify-content: space-between; gap: 12px; align-items: center;
+      padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,0.01);
+    }
+    .small { color: var(--muted); font-size: 12px; }
+
+    .badge {
+      padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700;
+      background: rgba(69, 211, 155, 0.12); color: var(--green); border: 1px solid rgba(69, 211, 155, 0.2);
+    }
+    .badge.warn {
+      background: rgba(243, 188, 90, 0.12); color: var(--yellow); border-color: rgba(243, 188, 90, 0.22);
+    }
+    .badge.alert {
+      background: rgba(255, 115, 105, 0.12); color: var(--red); border-color: rgba(255, 115, 105, 0.25);
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 14px; border-radius: 10px; font-weight: 700; cursor: pointer;
+      border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+    }
+    .btn.primary { background: var(--green); color: #071a12; border-color: var(--green); }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+
+    @media (max-width: 980px) {
+      body { display: block; }
+      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--line); }
+      .kpis { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+      .section { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
 <body>
-  <div class="admin-shell">
-    <aside class="admin-sidebar" aria-label="Operations navigation">
-      <a class="admin-brand" href="Kobe_Mweusi_homepage_v7_static.html" aria-label="Kobe Mweusi home">
-        <img src="kobe-turtle-logo.png" alt="Kobe Mweusi turtle logo">
-        <span class="admin-brand-copy"><span><b>Kobe</b> <strong>Mweusi</strong></span><small>Operations console</small></span>
-      </a>
-      <nav class="admin-nav">
-        <span class="nav-label">Overview</span>
-        <a class="active" href="#overview"><i class="nav-dot"></i>Overview</a>
-        <a href="#analytics"><i class="nav-dot"></i>Analytics</a>
-        <span class="nav-label">Trust &amp; safety</span>
-        <a href="#kyc"><i class="nav-dot"></i>Seller verification</a>
-        <a href="#risk"><i class="nav-dot"></i>Risk &amp; fraud</a>
-        <a href="#audit"><i class="nav-dot"></i>Audit log</a>
-        <span class="nav-label">Operations</span>
-        <a href="#orders"><i class="nav-dot"></i>Orders &amp; escrow</a><a href="#payments"><i class="nav-dot"></i>Payments &amp; finance</a><a href="#agents"><i class="nav-dot"></i>Agent Hub management</a><a href="#disputes"><i class="nav-dot"></i>Disputes &amp; support</a><span class="nav-label">Business</span><a href="#monitoring"><i class="nav-dot"></i>Errors &amp; monitoring</a><a href="#messaging"><i class="nav-dot"></i>Messaging</a><a href="#hr"><i class="nav-dot"></i>HR</a><a href="#marketing"><i class="nav-dot"></i>Marketing</a><a href="#system"><i class="nav-dot"></i>System</a>
-        
-        
-      </nav>
-      <div class="side-footer"><strong>Secure operations</strong>Money movement stays inside protected backend functions. Admin actions are recorded.</div>
-    </aside>
-    <main class="admin-main">
-      <section id="login-panel" class="login-layout" aria-labelledby="login-title">
-        <div class="login-card">
-          <div class="login-brand"><img src="kobe-turtle-logo.png" alt="Kobe Mweusi turtle logo"><span class="login-brand-copy"><b>Kobe</b> <strong>Mweusi</strong><small>Authorized operations</small></span></div>
-          <div class="eyebrow">Operations console</div>
-          <h1 id="login-title">Welcome back</h1>
-          <p class="lead">Review sellers, protect escrow, and keep every Kobe Mweusi transaction moving safely.</p>
-          <form id="login-form" class="form-grid">
-            <div class="form-field"><label for="email">Work email</label><input id="email" type="email" autocomplete="username" placeholder="name@kobemweusi.co.tz" required></div>
-            <div class="form-field"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Your secure password" required></div>
-            <button id="login-button" class="admin-button admin-button-primary login-submit" type="submit">Sign in securely</button>
-          </form>
-          <div class="oauth-divider">or continue with</div>
-          <div class="oauth-grid"><button id="google-login" class="oauth-button" type="button"><span class="oauth-icon google-icon">G</span>Google</button><button id="microsoft-login" class="oauth-button" type="button"><span class="microsoft-icon"><i></i><i></i><i></i><i></i></span>Microsoft</button></div>
-          <div class="login-security"><strong>Protected access</strong><span>Only authorized staff accounts can enter. Sensitive approvals are recorded in the audit trail.</span></div>
-          <div id="notice" class="admin-notice" role="status" aria-live="polite" hidden></div>
+  <aside class="sidebar">
+    <div class="brand">Kobe Mweusi</div>
+
+    <nav class="nav">
+      <button>Overview</button>
+      <button>Users</button>
+      <button>Sellers</button>
+      <button>Agents</button>
+      <button>Escrow</button>
+      <button>Payouts</button>
+      <button>Disputes</button>
+      <button>KYC</button>
+      <button>Live Sessions</button>
+      <button>Messages</button>
+      <button class="muted">Account settings</button>
+      <button class="danger" id="logoutBtn">Log out</button>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="title">Admin dashboard</div>
+      <button class="btn primary">Create new seller</button>
+    </div>
+
+    <div class="kpis">
+      <div class="card">
+        <div class="label">Total users</div>
+        <div class="value">12,480</div>
+        <div class="delta">+8.4% this month</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Active sellers</div>
+        <div class="value">2,164</div>
+        <div class="delta">+6.2% this week</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Escrow balance</div>
+        <div class="value">TSh 9.4M</div>
+        <div class="delta">+TSh 468K today</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Open disputes</div>
+        <div class="value">37</div>
+        <div class="delta">8 escalated</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="card">
+        <div class="label">Recent activity</div>
+        <div class="list">
+          <div class="row">
+            <div>
+              <div>Seller verification approved</div>
+              <div class="small">Seller ID: KM-218901</div>
+            </div>
+            <span class="badge">Completed</span>
+          </div>
+
+          <div class="row">
+            <div>
+              <div>Payout request reviewed</div>
+              <div class="small">Amount: TSh 340,000</div>
+            </div>
+            <span class="badge warn">Pending</span>
+          </div>
+
+          <div class="row">
+            <div>
+              <div>Dispute raised by buyer</div>
+              <div class="small">Order KM-563242</div>
+            </div>
+            <span class="badge alert">Alert</span>
+          </div>
         </div>
-      </section>
-      <section id="admin-panel" hidden>
-        <header class="admin-topbar"><div><div class="eyebrow">Authorized operations</div><h1>Good to see you</h1><div class="admin-staff"><span id="staff-avatar" class="staff-avatar">A</span><p id="staff-label"></p></div></div><div class="top-actions"><span class="live-chip"><i></i>Secure connection</span><button id="logout" class="admin-button" hidden>Sign out</button></div></header>
-        <div class="metric-grid" aria-label="Operations snapshot"><article class="metric-card"><span>Seller verification</span><strong id="metric-kyc">—</strong><small>Waiting for review</small></article><article class="metric-card"><span>Held in escrow</span><strong id="metric-escrow">—</strong><small>TSh under protection</small></article><article class="metric-card"><span>Open disputes</span><strong id="metric-disputes">—</strong><small>Need a decision</small></article><article class="metric-card"><span>Payouts</span><strong id="metric-payouts">—</strong><small>Waiting for approval</small></article><article class="metric-card"><span>Agent network</span><strong id="metric-agents">—</strong><small>Connected hubs</small></article></div>
-        <section id="overview" class="admin-card" aria-labelledby="overview-title"><div class="section-head"><div><h2 id="overview-title">Operations overview</h2><p>What the platform is holding, what is moving, and which queue needs a person today. Every number is read from the records the platform runs on.</p></div><button id="refresh" class="admin-button" type="button">Refresh</button></div><div id="notice-panel" class="admin-notice" role="status" aria-live="polite" hidden></div><div id="overview-grid" class="module-grid"></div></section>
-        <section id="kyc" class="admin-card" style="margin-top:16px" aria-labelledby="kyc-title"><div class="section-head"><div><h2 id="kyc-title">Seller verification</h2><p>Review submitted documents, approve verified sellers, or return a clear reason for correction.</p></div><span id="queue-count" class="card-kicker">Review queue</span></div><div id="queue" class="queue"></div></section>
+      </div>
 
-        <section id="payouts" class="admin-card" style="margin-top:16px" aria-labelledby="payouts-title"><div class="section-head"><div><h2 id="payouts-title">Seller payouts</h2><p>Withdrawals of money that has already been released from escrow. Approving a payout reduces the seller&rsquo;s balance and writes the ledger entry.</p></div><span id="payout-count" class="card-kicker">Payout queue</span></div><div id="payout-queue" class="queue"></div></section>
+      <div class="card">
+        <div class="label">Operations</div>
+        <div class="toolbar">
+          <button class="btn">Review KYC</button>
+          <button class="btn">Escrow logs</button>
+          <button class="btn">Support queue</button>
+        </div>
+      </div>
+    </div>
 
-        <section id="analytics" class="admin-card" aria-labelledby="analytics-title"><div class="section-head"><div><h2 id="analytics-title">Analytics</h2><p>Orders, money and people, measured from the same records the platform runs on.</p></div><span id="analytics-kicker" class="card-kicker">Live</span></div><div id="analytics-grid" class="module-grid"></div></section>
-        <section id="orders" class="admin-card" aria-labelledby="orders-title"><div class="section-head"><div><h2 id="orders-title">Orders &amp; escrow</h2><p>Search an order by reference, item or name, and see exactly where its money is.</p></div><span id="order-count" class="card-kicker">Orders</span></div><form id="order-search" class="form-grid" style="margin-bottom:16px"><div class="form-field"><label for="order-query">Search</label><input id="order-query" type="search" autocomplete="off" placeholder="KM-000001, item or name"></div><button class="admin-button admin-button-primary" type="submit">Search</button></form><div id="order-list" class="queue"></div></section>
-        <section id="payments" class="admin-card" aria-labelledby="payments-title"><div class="section-head"><div><h2 id="payments-title">Payments &amp; finance</h2><p>What the platform holds for buyers, what it has released to sellers, and what it has earned.</p></div><span id="finance-kicker" class="card-kicker">Live</span></div><div id="finance-grid" class="module-grid"></div></section>
-        <section id="agents" class="admin-card admin-module" aria-labelledby="agents-title"><div class="section-head"><div><h2 id="agents-title">Agent Hub management</h2><p>Give an agent their worker ID and region, verify them, and assign the orders they carry. Only a verified agent may be given an order.</p></div><span id="agent-count" class="card-kicker">Agent network</span></div><form id="assign-form" class="form-grid" style="margin-bottom:16px"><div class="form-field"><label for="assign-order">Order reference</label><input id="assign-order" type="text" autocomplete="off" placeholder="KM-000001" maxlength="9"></div><div class="form-field"><label for="assign-agent">Agent</label><select id="assign-agent" class="admin-button" style="width:100%"></select></div><button class="admin-button admin-button-primary" type="submit">Assign agent</button></form><div id="agent-list" class="queue"></div></section>
-        <section id="disputes" class="admin-card" aria-labelledby="disputes-title"><div class="section-head"><div><h2 id="disputes-title">Disputes &amp; support</h2><p>Open disputes, with the ones past the seller deadline marked first.</p></div><span id="dispute-count" class="card-kicker">Disputes</span></div><div id="dispute-list" class="queue"></div></section>
-        <section id="risk" class="admin-card admin-module"><div class="section-head"><div><h2>Risk &amp; fraud</h2><p>Blocklists, flagged accounts, risk rules, failed PIN alerts, and emergency pause.</p></div><span class="module-status">Risk controls pending</span></div><div class="module-grid"><div><strong>Blocklist</strong><span>Suspicious accounts and devices</span></div><div><strong>Alerts</strong><span>Failed PIN and rate limits</span></div><div><strong>Rules</strong><span>Automated review conditions</span></div><div><strong>Emergency pause</strong><span>Approval-controlled safety switch</span></div></div></section>
-        <section id="audit" class="admin-card" aria-labelledby="audit-title"><div class="section-head"><div><h2 id="audit-title">Staff, access &amp; audit</h2><p>Who did what, and when. Every sensitive action in the platform writes a line here.</p></div><span id="audit-count" class="card-kicker">Audit trail</span></div><div id="audit-list" class="queue"></div></section>
-        <section id="monitoring" class="admin-card admin-module"><div class="section-head"><div><h2>Errors &amp; monitoring</h2><p>Crashes, Edge Functions, database errors, cron jobs, downtime, and alert ownership.</p></div><span class="module-status">Observability pending</span></div><div class="module-grid"><div><strong>Crash feed</strong><span>Buyer, seller, agent, admin via Sentry</span></div><div><strong>Backend failures</strong><span>Functions, writes, RATE_LIMITED</span></div><div><strong>Cron &amp; uptime</strong><span>Runs, response time, downtime</span></div><div><strong>Incidents</strong><span>New, checking, fixed, owner</span></div></div></section>
-        <section id="messaging" class="admin-card admin-module"><div class="section-head"><div><h2>Messaging</h2><p>Shared inbox, English/Kiswahili templates, and notification delivery tracking.</p></div><span class="module-status">Messaging workspace pending</span></div><div class="module-grid"><div><strong>Shared inbox</strong><span>Per-role conversations</span></div><div><strong>Templates</strong><span>English and Kiswahili</span></div><div><strong>Delivery</strong><span>Push, email, WhatsApp results</span></div><div><strong>Realtime alerts</strong><span>Payment, scan, KYC, dispute</span></div></div></section>
-        <section id="hr" class="admin-card admin-module"><div class="section-head"><div><h2>HR</h2><p>Internal staff operations and secure people records.</p></div><span class="module-status">HR workspace pending</span></div><div class="module-grid"><div><strong>Onboarding</strong><span>Checklists and documents</span></div><div><strong>Leave</strong><span>Leave and attendance</span></div><div><strong>Performance</strong><span>Notes and reviews</span></div><div><strong>Documents</strong><span>Secure staff files</span></div></div></section>
-        <section id="marketing" class="admin-card admin-module"><div class="section-head"><div><h2>Marketing</h2><p>Campaigns, promo codes, featured shops, and consent-aware behaviour analytics.</p></div><span class="module-status">Marketing workspace pending</span></div><div class="module-grid"><div><strong>Campaigns</strong><span>Reach and conversion</span></div><div><strong>Promo codes</strong><span>Rules and redemption</span></div><div><strong>Featured shops</strong><span>Curated marketplace placement</span></div><div><strong>Behaviour</strong><span>Funnel and retention</span></div></div></section>
-        <section id="system" class="admin-card admin-module"><div class="section-head"><div><h2>System</h2><p>Backups, database size, fee rate, confirmation windows, and Cloudflare Access.</p></div><span class="module-status">System controls pending</span></div><div class="module-grid"><div><strong>Backups</strong><span>Status and restore readiness</span></div><div><strong>Database</strong><span>Size and capacity alerts</span></div><div><strong>Settings</strong><span>Fees and confirmation windows</span></div><div><strong>Access gate</strong><span>Cloudflare Access and MFA</span></div></div></section>
-      </section>
-    </main>
-  </div>
-  <script src="supabase-js.js"></script>
-  <script src="kobe-supabase.js"></script>
-  <script src="kobe-admin.js"></script>
+    <div class="section">
+      <div class="card">
+        <div class="label">Sellers waiting for attention</div>
+        <div class="list">
+          <div class="row">
+            <div>
+              <div>Grace Market</div>
+              <div class="small">KYC incomplete</div>
+            </div>
+            <span class="badge warn">Action needed</span>
+          </div>
+
+          <div class="row">
+            <div>
+              <div>Jenga Goods</div>
+              <div class="small">Live session ended</div>
+            </div>
+            <span class="badge">Review</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">Support</div>
+        <div class="list">
+          <div class="row">
+            <div>
+              <div>12 support requests</div>
+              <div class="small">3 urgent</div>
+            </div>
+            <span class="badge alert">New</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabaseUrl = 'https://YOUR_PROJECT_REF.supabase.co';
+    const supabaseKey = 'YOUR_ANON_KEY';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    (async function () {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile || profile.role !== 'admin') {
+        window.location.href = 'index.html';
+      }
+    })();
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      window.location.href = 'index.html';
+    });
+  </script>
 </body>
 </html>
