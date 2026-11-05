@@ -30,7 +30,9 @@
   function mountThemeControl() {
     const adminPage = document.body.classList.contains('admin-page');
     const header = adminPage ? null : document.querySelector('header.top, header.topbar, header.admin-topbar');
-    const host = adminPage || !header ? document.body : header.querySelector('.top-actions') || header;
+    const host = adminPage || !header
+      ? document.body
+      : header.querySelector('.top-actions, .right') || header;
     if (!host || host.querySelector('.kobe-theme-toggle')) return;
 
     const control = document.createElement('button');
@@ -45,7 +47,13 @@
 
     function updateControl() {
       const isOled = root.dataset.theme === 'oled';
-      control.textContent = `OLED: ${isOled ? 'On' : 'Off'}`;
+      const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      icon.setAttribute('viewBox', '0 0 24 24');
+      icon.setAttribute('aria-hidden', 'true');
+      icon.innerHTML = isOled
+        ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>'
+        : '<path d="M20.2 15.6A8.5 8.5 0 0 1 8.4 3.8 8.5 8.5 0 1 0 20.2 15.6Z"/>';
+      control.replaceChildren(icon);
       control.setAttribute('aria-pressed', String(isOled));
       control.setAttribute('aria-label', isOled ? 'Switch to light theme' : 'Switch to OLED theme');
       control.title = isOled ? 'Switch to light theme' : 'Switch to OLED theme';

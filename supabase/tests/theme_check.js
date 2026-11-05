@@ -25,8 +25,12 @@ const agentWorker = fs.readFileSync(path.join(root, 'agent-sw.js'), 'utf8');
 
 assert.match(themeScript, /localStorage\.setItem\(preferenceKey, theme\)/, 'theme choice must persist');
 assert.match(themeScript, /clearLegacyLightOverrides/, 'legacy forced-light overrides must be cleared');
+assert.match(themeScript, /Switch to OLED theme/, 'theme control must have a descriptive OLED label');
+assert.match(themeScript, /createElementNS\('http:\/\/www\.w3\.org\/2000\/svg', 'svg'\)/, 'theme control must use an inline SVG icon');
 assert.match(themeStyles, /html\[data-theme="oled"\][\s\S]*--bg:\s*#000000/, 'OLED theme must use a true-black background');
 assert.match(themeStyles, /--text-muted:\s*#b7b7bd/, 'OLED theme must retain readable muted text');
+assert.match(themeStyles, /\.kobe-theme-toggle\s*\{[^}]*width:\s*36px;[^}]*height:\s*36px;/, 'theme control must remain compact');
+assert.match(fs.readFileSync(path.join(root, 'portal-calm.css'), 'utf8'), /agent-authenticated \.agent-sidebar-brand\s*\{\s*display:\s*flex;/, 'agent sidebar branding must remain visible on mobile');
 for (const asset of ['kobe-theme.css', 'kobe-theme.js', 'kobe-oled.css']) {
   assert.ok(appWorker.includes(`'${asset}'`), `buyer/seller offline shell must cache ${asset}`);
   assert.ok(agentWorker.includes(`'${asset}'`), `agent offline shell must cache ${asset}`);

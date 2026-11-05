@@ -106,20 +106,34 @@ html[data-theme="oled"] .kobe-theme-toggle {
 }
 
 .kobe-theme-toggle {
-  display: inline-flex;
-  min-height: 40px;
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
   flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 12px;
+  place-items: center;
+  padding: 0;
   border: 1px solid #9a7126;
-  border-radius: 999px;
+  border-radius: 50%;
   background: #fffaf0;
   color: #694b16;
-  font: 750 12px/1 Manrope, system-ui, sans-serif;
-  white-space: nowrap;
+  line-height: 0;
   cursor: pointer;
   transition: background-color .18s ease, color .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.kobe-theme-toggle svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.kobe-theme-toggle svg circle {
+  fill: none;
 }
 
 .kobe-theme-toggle:hover {
@@ -138,6 +152,13 @@ html[data-theme="oled"] .kobe-theme-toggle {
   right: max(14px, env(safe-area-inset-right));
   z-index: 10000;
   box-shadow: 0 4px 16px rgba(0, 0, 0, .18);
+}
+
+header.top .right,
+header.top .top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 html[data-theme="oled"] body.admin-page,

@@ -749,7 +749,9 @@ body.agent-page {
   }
 
   .agent-page.agent-authenticated .agent-sidebar-brand {
-    display: none;
+    display: flex;
+    min-height: 40px;
+    padding: 2px 6px;
   }
 
   .agent-page.agent-authenticated .agent-nav {
