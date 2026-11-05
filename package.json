@@ -11,11 +11,12 @@
     "lint:encoding": "node supabase/tests/encoding_check.mjs",
     "lint:qr": "node supabase/tests/qr_check.mjs",
     "lint:chars": "node supabase/tests/stray_chars_check.mjs",
+    "lint:theme": "node supabase/tests/theme_check.js",
     "docs": "node supabase/tests/gen_inventory.mjs",
     "flow": "node flow_check.js",
     "api": "node api_surface_check.js",
-    "test": "npm run lint:sql && npm run lint:css && npm run lint:nav && npm run lint:encoding && npm run lint:chars && npm run lint:qr && npm run flow && npm run api",
-    "verify": "npm run lint:sql && npm run lint:sql:selftest && npm run lint:css && npm run lint:nav && npm run lint:encoding && npm run lint:chars && npm run lint:qr && npm run docs && npm run flow && npm run api"
+    "test": "npm run lint:sql && npm run lint:css && npm run lint:nav && npm run lint:encoding && npm run lint:chars && npm run lint:qr && npm run lint:theme && npm run flow && npm run api",
+    "verify": "npm run lint:sql && npm run lint:sql:selftest && npm run lint:css && npm run lint:nav && npm run lint:encoding && npm run lint:chars && npm run lint:qr && npm run lint:theme && npm run docs && npm run flow && npm run api"
   },
   "devDependencies": {
     "libpg-query": "^17.2.0"

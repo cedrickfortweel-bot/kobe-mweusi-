@@ -1,0 +1,795 @@
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+body.admin-page,
+body.agent-page {
+  --portal-bg: #f5f7f4;
+  --portal-surface: #fff;
+  --portal-surface-2: #eef3ed;
+  --portal-line: #dfe6df;
+  --portal-text: #18251e;
+  --portal-muted: #65736a;
+  --portal-gold: #c58f2e;
+  --portal-gold-text: #775513;
+  --portal-green: #168451;
+  --portal-green-soft: #ddf1e6;
+  --portal-danger: #b3261e;
+  color-scheme: light;
+}
+
+body.admin-page {
+  color: var(--portal-text);
+  background:
+    radial-gradient(circle at 90% -15%, rgba(22, 132, 81, .08), transparent 30rem),
+    var(--portal-bg);
+}
+
+.admin-sidebar {
+  background: rgba(255, 255, 255, .94);
+  border-color: var(--portal-line);
+  backdrop-filter: blur(18px);
+}
+
+.admin-brand-copy strong,
+.login-brand-copy strong {
+  color: var(--portal-gold-text);
+}
+
+.admin-brand-copy small,
+.admin-nav a {
+  color: var(--portal-muted);
+}
+
+.nav-label {
+  color: #64736a;
+}
+
+.admin-nav a:hover,
+.admin-nav a.active {
+  color: var(--portal-text);
+  background: var(--portal-surface-2);
+}
+
+.admin-nav a.active {
+  box-shadow: inset 3px 0 var(--portal-gold);
+}
+
+.active .nav-dot {
+  background: var(--portal-gold);
+  box-shadow: 0 0 10px rgba(197, 143, 46, .35);
+}
+
+.side-footer {
+  background: var(--portal-surface-2);
+  border-color: var(--portal-line);
+  color: var(--portal-muted);
+}
+
+.side-footer strong,
+.admin-topbar h1,
+.admin-card h2,
+.metric-card strong,
+.module-grid strong,
+.submission h2,
+.login-card h1 {
+  color: var(--portal-text);
+}
+
+.eyebrow,
+.metric-accent,
+.card-kicker {
+  color: var(--portal-gold-text);
+}
+
+.admin-topbar p,
+.metric-card span,
+.metric-card small,
+.card-title p,
+.section-head p,
+.login-card .lead {
+  color: var(--portal-muted);
+}
+
+.live-chip,
+.module-status {
+  border-color: rgba(22, 132, 81, .2);
+  color: var(--portal-green);
+  background: var(--portal-green-soft);
+}
+
+.live-chip i {
+  background: var(--portal-green);
+  box-shadow: 0 0 10px rgba(22, 132, 81, .35);
+}
+
+.admin-button {
+  min-height: 44px;
+  border-color: var(--portal-line);
+  color: var(--portal-text);
+  background: var(--portal-surface);
+  transition: background .2s, color .2s, border-color .2s, transform .2s;
+}
+
+.admin-button:hover {
+  border-color: var(--portal-gold);
+  color: var(--portal-gold-text);
+}
+
+.admin-button-primary {
+  border-color: var(--portal-gold);
+  background: var(--portal-gold);
+  color: #18251e;
+}
+
+.admin-button-primary:hover {
+  border-color: #b77c1f;
+  background: #d4a84e;
+  color: #18251e;
+}
+
+.metric-card,
+.admin-card {
+  border-color: var(--portal-line);
+  background: var(--portal-surface);
+  box-shadow: 0 10px 28px rgba(23, 50, 36, .055);
+}
+
+.metric-card small {
+  color: var(--portal-green);
+}
+
+.module-grid > div,
+.submission,
+.form-field input,
+.review-note,
+.oauth-button {
+  border-color: var(--portal-line);
+  background: var(--portal-surface-2);
+  color: var(--portal-text);
+}
+
+.module-grid span,
+.meta,
+.empty {
+  color: var(--portal-muted);
+}
+
+.module-note {
+  margin: 0 0 14px;
+  padding: 11px 13px;
+  border: 1px solid rgba(197, 143, 46, .22);
+  border-radius: 12px;
+  background: #fbf5e8;
+  color: #775513;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-page:not(.admin-authenticated) .admin-nav {
+  display: none;
+}
+
+.form-field label {
+  color: var(--portal-text);
+}
+
+.form-field input::placeholder,
+.review-note::placeholder {
+  color: #65736a;
+}
+
+.form-field input:focus,
+.review-note:focus {
+  border-color: var(--portal-gold);
+  box-shadow: 0 0 0 3px rgba(197, 143, 46, .14);
+}
+
+.login-card {
+  border-color: var(--portal-line);
+  background: var(--portal-surface);
+  box-shadow: 0 22px 65px rgba(23, 50, 36, .12);
+}
+
+.login-brand-copy small,
+.login-security strong,
+.docs a {
+  color: var(--portal-green);
+}
+
+.oauth-button {
+  background: var(--portal-surface);
+}
+
+.oauth-button:hover {
+  border-color: var(--portal-gold);
+  background: var(--portal-surface-2);
+}
+
+.login-security {
+  border-color: rgba(22, 132, 81, .18);
+  background: var(--portal-green-soft);
+  color: #395347;
+}
+
+.admin-notice {
+  border-color: rgba(22, 132, 81, .2);
+  background: var(--portal-green-soft);
+  color: var(--portal-text);
+}
+
+.admin-notice.error {
+  border-color: rgba(179, 38, 30, .25);
+  background: #fff0ee;
+  color: var(--portal-danger);
+}
+
+.status-pill,
+.kobe-id {
+  border-color: rgba(22, 132, 81, .2);
+  background: var(--portal-green-soft);
+  color: #12663f;
+}
+
+.btn-danger {
+  border-color: rgba(179, 38, 30, .25);
+  color: var(--portal-danger);
+  background: #fff;
+}
+
+.mfa-qr {
+  display: block;
+  width: min(100%, 220px);
+  margin: 18px auto;
+  padding: 10px;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.mfa-secret-wrap {
+  overflow-wrap: anywhere;
+  padding: 12px;
+  border: 1px solid var(--portal-line);
+  border-radius: 10px;
+  background: var(--portal-surface-2);
+  color: var(--portal-muted);
+  font-size: 12px;
+}
+
+.mfa-secret-wrap code {
+  color: var(--portal-text);
+}
+
+#mfa-cancel {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.admin-page :focus-visible {
+  outline: 3px solid var(--portal-gold-text);
+  outline-offset: 3px;
+}
+
+.admin-page section[id],
+.agent-page section[id] {
+  scroll-margin-top: 16px;
+}
+
+body.agent-page {
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  color: var(--portal-text);
+  background:
+    radial-gradient(circle at 86% -10%, rgba(197, 143, 46, .11), transparent 28rem),
+    var(--portal-bg);
+}
+
+.agent-page .shell {
+  padding-bottom: max(48px, env(safe-area-inset-bottom));
+}
+
+.agent-page .brand {
+  color: var(--portal-text);
+}
+
+.agent-page .brand-copy strong {
+  color: var(--portal-gold-text);
+}
+
+.agent-page .brand img {
+  border-radius: 0;
+}
+
+.agent-page .eyebrow {
+  color: var(--portal-gold-text);
+}
+
+.agent-page .auth-panel,
+.agent-page .hero-card,
+.agent-page .status-card,
+.agent-page .list-card,
+.agent-page .scan-dialog {
+  border-color: var(--portal-line);
+  background: var(--portal-surface);
+  box-shadow: 0 12px 32px rgba(23, 50, 36, .06);
+  color: var(--portal-text);
+}
+
+.agent-page .auth-panel {
+  margin-top: clamp(18px, 5vh, 52px);
+}
+
+.agent-page .auth-panel h1,
+.agent-page .welcome-row h1,
+.agent-page .hero-card h2,
+.agent-page .status-card h2,
+.agent-page .list-card h2,
+.agent-page .history-row b,
+.agent-page .tool-row b {
+  color: var(--portal-text);
+}
+
+.agent-page .intro,
+.agent-page .muted,
+.agent-page .hero-card p,
+.agent-page .status-list dt,
+.agent-page .history-row small,
+.agent-page .tool-row small {
+  color: var(--portal-muted);
+}
+
+.agent-page .form-stack input,
+.agent-page .form-stack textarea,
+.agent-page .manual-form input {
+  border-color: var(--portal-line);
+  background: #fff;
+  color: var(--portal-text);
+}
+
+.agent-page .form-stack input::placeholder,
+.agent-page .form-stack textarea::placeholder,
+.agent-page .manual-form input::placeholder {
+  color: #65736a;
+}
+
+.agent-page .form-stack input:focus,
+.agent-page .form-stack textarea:focus,
+.agent-page .manual-form input:focus {
+  border-color: var(--portal-gold);
+  outline: 3px solid rgba(197, 143, 46, .16);
+  outline-offset: 1px;
+}
+
+.agent-page .form-stack label {
+  color: var(--portal-text);
+}
+
+.agent-page .form-stack label small,
+.agent-page .security-note,
+.agent-page .preview-disclaimer,
+.agent-page .empty-state {
+  color: var(--portal-muted);
+}
+
+.agent-page .security-note,
+.agent-page .welcome-row,
+.agent-page .status-list div,
+.agent-page .history-row,
+.agent-page .tool-row,
+.agent-page .manual-form {
+  border-color: var(--portal-line);
+}
+
+.agent-page .security-note strong {
+  color: var(--portal-text);
+}
+
+.agent-page .primary-btn {
+  border-color: var(--portal-gold);
+  background: var(--portal-gold);
+  color: #18251e;
+}
+
+.agent-page .primary-btn:hover {
+  border-color: #b77c1f;
+  background: #d4a84e;
+}
+
+.agent-page .ghost-btn,
+.agent-page .close-btn {
+  border-color: var(--portal-line);
+  background: var(--portal-surface);
+  color: var(--portal-text);
+}
+
+.agent-page .ghost-btn:hover,
+.agent-page .close-btn:hover {
+  border-color: var(--portal-gold);
+  background: var(--portal-surface-2);
+  color: var(--portal-gold-text);
+}
+
+.agent-page .hero-icon,
+.agent-page .history-icon,
+.agent-page .tool-icon,
+.agent-page .staff-avatar {
+  background: var(--portal-green-soft);
+  color: #12663f;
+}
+
+.agent-page .online-dot,
+.agent-page .online-dot i {
+  color: var(--portal-green);
+}
+
+.agent-page .online-dot i {
+  background: var(--portal-green);
+}
+
+.agent-page .notice[data-tone="success"],
+.agent-page .result-card {
+  border-color: rgba(22, 132, 81, .24);
+  background: var(--portal-green-soft);
+  color: #12663f;
+}
+
+.agent-page .result-card p,
+.agent-page .result-card code {
+  color: var(--portal-text);
+}
+
+.agent-page .scan-dialog::backdrop {
+  background: rgba(24, 37, 30, .42);
+}
+
+.agent-page .scan-frame {
+  border-color: var(--portal-line);
+  background: #18251e;
+}
+
+.agent-page .scan-corners {
+  border-color: #fff;
+}
+
+.agent-page .camera-placeholder {
+  color: #fff;
+}
+
+.agent-page :focus-visible {
+  outline: 3px solid var(--portal-gold-text);
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .admin-page .admin-sidebar {
+    background: var(--portal-surface);
+  }
+
+  .admin-page .admin-nav a {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-page .admin-card {
+    padding: 16px;
+  }
+
+  .admin-page .metric-card strong {
+    font-size: 20px;
+    overflow-wrap: anywhere;
+  }
+
+  .agent-page .dialog-inner {
+    padding: 16px;
+  }
+
+  .agent-page .manual-form > div {
+    flex-wrap: wrap;
+  }
+
+  .agent-page .manual-form input {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-page *,
+  .agent-page * {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+.agent-page .agent-layout {
+  display: grid;
+  grid-template-columns: minmax(230px, 270px) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+  width: min(100% - 40px, 1380px);
+  padding-top: 24px;
+}
+
+.agent-page .agent-sidebar {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  min-height: calc(100vh - 48px);
+  flex-direction: column;
+  gap: 28px;
+  align-self: start;
+  padding: 22px 18px;
+  border: 1px solid var(--portal-line);
+  border-radius: 24px;
+  background: var(--portal-surface);
+  box-shadow: 0 16px 40px rgba(23, 50, 36, .06);
+}
+
+.agent-page .agent-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--portal-text);
+  text-decoration: none;
+}
+
+.agent-page .agent-sidebar-brand img {
+  width: 52px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.agent-page .agent-sidebar-brand span {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 5px;
+  align-items: baseline;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -.04em;
+}
+
+.agent-page .agent-sidebar-brand strong {
+  color: var(--portal-gold-text);
+}
+
+.agent-page .agent-sidebar-brand small {
+  grid-column: 1 / -1;
+  color: var(--portal-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+
+.agent-page .agent-sidebar-intro {
+  padding: 18px 14px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, var(--portal-green-soft), #fff 76%);
+}
+
+.agent-page .agent-sidebar-intro h2 {
+  margin: 8px 0;
+  color: var(--portal-text);
+  font-size: 22px;
+  line-height: 1.18;
+}
+
+.agent-page .agent-sidebar-intro p,
+.agent-page .agent-sidebar-foot span {
+  margin: 0;
+  color: var(--portal-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.agent-page .agent-nav {
+  display: none;
+  gap: 6px;
+}
+
+.agent-page.agent-authenticated .agent-sidebar-intro {
+  display: none;
+}
+
+.agent-page.agent-authenticated .agent-nav {
+  display: grid;
+}
+
+.agent-page .agent-nav a,
+.agent-page .agent-nav button {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--portal-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.agent-page .agent-nav a:hover,
+.agent-page .agent-nav button:hover {
+  background: var(--portal-green-soft);
+  color: #12663f;
+}
+
+.agent-page .agent-nav a.active {
+  background: var(--portal-green-soft);
+  color: #12663f;
+  box-shadow: inset 3px 0 var(--portal-gold);
+}
+
+.agent-page .status-card .online-dot.is-offline {
+  color: var(--portal-danger);
+}
+
+.agent-page .status-card .online-dot.is-offline i {
+  background-color: var(--portal-danger);
+}
+
+.agent-page .agent-nav a span,
+.agent-page .agent-nav button span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--portal-surface-2);
+  color: var(--portal-gold-text);
+}
+
+.agent-page .agent-sidebar-foot {
+  display: grid;
+  gap: 5px;
+  margin-top: auto;
+  padding: 14px 12px 0;
+  border-top: 1px solid var(--portal-line);
+  font-size: 12px;
+}
+
+.agent-page .agent-sidebar-foot strong {
+  color: var(--portal-text);
+}
+
+.agent-page .agent-content {
+  min-width: 0;
+}
+
+.agent-page .agent-content > .topbar {
+  min-height: 60px;
+  padding: 0 0 18px;
+  border-bottom: 1px solid var(--portal-line);
+}
+
+.agent-page .agent-topbar-label {
+  display: grid;
+  gap: 3px;
+}
+
+.agent-page .agent-topbar-label strong {
+  color: var(--portal-text);
+  font-size: 14px;
+}
+
+.agent-page .auth-panel {
+  width: min(100%, 560px);
+  margin: clamp(38px, 10vh, 108px) auto 0;
+  padding: clamp(24px, 4vw, 48px);
+}
+
+.agent-page .auth-panel h1 {
+  max-width: 14ch;
+}
+
+.agent-page .auth-panel .form-stack {
+  gap: 12px;
+}
+
+.agent-page .auth-panel .form-stack button {
+  margin-top: 6px;
+}
+
+.agent-page .app-view {
+  min-width: 0;
+}
+
+.agent-page .list-card,
+.agent-page .hero-card,
+.agent-page .status-card {
+  scroll-margin-top: 20px;
+}
+
+.agent-page .error-state {
+  color: #a13e35;
+}
+
+@media (max-width: 760px) {
+  .agent-page .agent-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    width: min(100% - 24px, 640px);
+    padding-top: 12px;
+  }
+
+  .agent-page .agent-sidebar {
+    position: static;
+    min-height: 0;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .agent-page .agent-sidebar-intro {
+    padding: 14px;
+  }
+
+  .agent-page .agent-sidebar-intro h2 {
+    font-size: 19px;
+  }
+
+  .agent-page .agent-sidebar-foot {
+    display: none;
+  }
+
+  .agent-page.agent-authenticated .agent-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 0 0 16px 16px;
+  }
+
+  .agent-page.agent-authenticated .agent-sidebar-brand {
+    display: none;
+  }
+
+  .agent-page.agent-authenticated .agent-nav {
+    display: flex;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .agent-page.agent-authenticated .agent-nav a,
+  .agent-page.agent-authenticated .agent-nav button {
+    min-height: 42px;
+    flex: 0 0 auto;
+    gap: 8px;
+    padding: 8px;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+
+  .agent-page.agent-authenticated .agent-nav #sidebar-help {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: var(--portal-surface);
+    box-shadow: -8px 0 8px var(--portal-surface);
+  }
+
+  .agent-page.agent-authenticated .agent-nav a span,
+  .agent-page.agent-authenticated .agent-nav button span {
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
+  }
+
+  .agent-page .agent-content > .topbar {
+    min-height: 52px;
+    padding: 0 0 10px;
+  }
+
+  .agent-page .auth-panel {
+    margin: 12px auto 28px;
+  }
+}

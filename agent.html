@@ -1,15 +1,29 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0d0d0f"><meta name="description" content="Kobe Mweusi agent hub for authorized package receipt scans"><link rel="icon" href="kobe-turtle-logo.png" type="image/png"><link rel="apple-touch-icon" href="kobe-turtle-logo.png"><link rel="manifest" href="agent.webmanifest"><link rel="stylesheet" href="agent.css"><title>Kobe Mweusi | Agent hub</title>
-<link rel="stylesheet" href="kobe-theme.css"></head>
-<body>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f5f7f4"><meta name="description" content="Kobe Mweusi agent hub for authorized package receipt scans"><link rel="icon" href="kobe-turtle-logo-open.png" type="image/png"><link rel="apple-touch-icon" href="kobe-turtle-logo-open.png"><link rel="manifest" href="agent.webmanifest"><link rel="stylesheet" href="agent.css"><title>Kobe Mweusi | Agent hub</title>
+<link rel="stylesheet" href="kobe-theme.css"><link rel="stylesheet" href="portal-calm.css"><link rel="stylesheet" href="kobe-oled.css"><script src="kobe-theme.js"></script></head>
+<body class="agent-page">
 <div id="offline-banner" class="offline-banner is-hidden" role="status" aria-live="polite"><span data-i18n="offline"></span></div>
-<main class="shell">
-<header class="topbar"><a class="brand" href="Kobe_Mweusi_homepage_v7_static.html" aria-label="Kobe Mweusi home"><img src="kobe-turtle-logo.png" alt="Kobe Mweusi turtle logo"><span class="brand-copy"><b>Kobe</b> <strong>Mweusi</strong></span></a><div class="top-actions"><label class="agent-avatar" title="Agent profile avatar"><img id="agent-avatar-image" alt="Agent avatar"><span id="agent-avatar-initial">A</span><input id="agent-avatar-input" type="file" accept="image/png,image/jpeg,image/webp" hidden></label></div></header>
+<main class="shell agent-layout">
+<aside class="agent-sidebar" aria-label="Agent workspace navigation">
+  <a class="agent-sidebar-brand" href="Kobe_Mweusi_homepage_v7_static.html" aria-label="Kobe Mweusi home"><img src="kobe-turtle-logo-open.png" alt=""><span><b>Kobe</b> <strong>Mweusi</strong><small>Agent workspace</small></span></a>
+  <div class="agent-sidebar-intro"><span class="eyebrow">Delivery operations</span><h2>Every handoff, clearly tracked.</h2><p>Scan assigned packages, review your route and contact operations when you need help.</p></div>
+  <nav class="agent-nav" aria-label="Agent tasks">
+    <a href="#scan-workspace"><span aria-hidden="true">⌁</span>Scan a package</a>
+    <a href="#assignments"><span aria-hidden="true">▣</span>Assigned orders</a>
+    <a href="#history-title"><span aria-hidden="true">✓</span>Scan history</a>
+    <a href="#notification-title"><span aria-hidden="true">!</span>Notifications</a>
+    <button id="sidebar-help" type="button"><span aria-hidden="true">?</span>Contact support</button>
+  </nav>
+  <div class="agent-sidebar-foot"><strong>Secure agent access</strong><span>Order eligibility and every scan are verified by the server.</span></div>
+</aside>
+<div class="agent-content">
+<header class="topbar"><div class="agent-topbar-label"><span class="eyebrow">Kobe Mweusi</span><strong>Agent workspace</strong></div><div class="top-actions"><label class="agent-avatar" title="Agent profile avatar"><img id="agent-avatar-image" alt="Agent avatar"><span id="agent-avatar-initial">A</span><input id="agent-avatar-input" type="file" accept="image/png,image/jpeg,image/webp" hidden></label></div></header>
 <section id="auth-view" class="auth-panel" aria-labelledby="auth-title"><div class="eyebrow" data-i18n="agentHub"></div><h1 id="auth-title" data-i18n="signInTitle"></h1><p class="intro" data-i18n="signInHelp"></p><form id="signin-form" class="form-stack" novalidate><label for="agent-email"><span data-i18n="agentEmail"></span><small data-i18n="agentEmailHint"></small></label><input id="agent-email" type="email" inputmode="email" autocapitalize="off" autocomplete="username" placeholder="agent@kobemweusi.co" maxlength="120" required><label for="password"><span data-i18n="password"></span><small data-i18n="passwordHint"></small></label><input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required><p id="auth-message" class="form-message" role="alert" aria-live="assertive"></p><button class="primary-btn" type="submit" data-i18n="signIn"></button></form><div class="security-note"><strong data-i18n="secureAccess"></strong><span data-i18n="secureAccessHelp"></span></div></section>
 
-<section id="app-view" class="is-hidden" aria-labelledby="app-title"><div class="welcome-row"><div><div class="eyebrow" data-i18n="agentHub"></div><h1 id="app-title"><span data-i18n="hello"></span>, <span id="agent-name">Agent</span></h1><p id="agent-meta" class="muted"></p></div><button id="signout-btn" class="ghost-btn" type="button" data-i18n="signOut"></button></div><div id="app-message" class="notice is-hidden" role="status" aria-live="polite"></div><div class="hub-grid"><section class="hero-card" aria-labelledby="scan-title"><div class="hero-icon" aria-hidden="true">⌁</div><div><div class="eyebrow" data-i18n="mainAction"></div><h2 id="scan-title" data-i18n="scanReceipt"></h2><p data-i18n="scanReceiptHelp"></p></div><button id="open-scan" class="primary-btn" type="button" data-i18n="startScan"></button><p class="tiny-note" data-i18n="notificationNote"></p></section><section class="status-card" aria-labelledby="status-title"><div class="card-heading"><h2 id="status-title" data-i18n="hubStatus"></h2><span class="online-dot"><i></i><span data-i18n="online"></span></span></div><dl class="status-list"><div><dt data-i18n="region"></dt><dd id="region-value">—</dd></div><div><dt data-i18n="role"></dt><dd id="agent-role">—</dd></div><div><dt data-i18n="todayScans"></dt><dd id="scan-count">0</dd></div></dl></section></div><div class="content-grid"><section class="list-card" aria-labelledby="history-title"><div class="card-heading"><h2 id="history-title" data-i18n="scanHistory"></h2><button id="clear-history" class="text-btn" type="button" data-i18n="refresh"></button></div><div id="history" class="history-list"></div></section><aside class="list-card" aria-labelledby="help-title"><div class="card-heading"><h2 id="help-title" data-i18n="agentTools"></h2></div><div class="tool-list"><button class="tool-row" data-tool="notifications" type="button"><span class="tool-icon">!</span><span><b data-i18n="notifications"></b><small data-i18n="notificationsHelp"></small></span><strong aria-hidden="true">›</strong></button><button class="tool-row" data-tool="security" type="button"><span class="tool-icon">•</span><span><b data-i18n="security"></b><small data-i18n="securityHelp"></small></span><strong aria-hidden="true">›</strong></button><button class="tool-row" data-tool="help" type="button"><span class="tool-icon">?</span><span><b data-i18n="help"></b><small data-i18n="helpHelp"></small></span><strong aria-hidden="true">›</strong></button></div></aside></div><section class="list-card" aria-labelledby="assignments-title"><div class="card-heading"><h2 id="assignments-title" data-i18n="assignments"></h2><span id="assignment-count" class="online-dot">0</span></div><div id="assignments" class="history-list"></div></section><section class="list-card" aria-labelledby="notification-title"><div class="card-heading"><h2 id="notification-title">Notifications</h2><span id="notification-count" class="online-dot">0 new</span></div><div id="agent-notifications" class="history-list"><p class="empty-state">No notifications yet.</p></div></section><p class="preview-disclaimer" data-i18n="disclaimer"></p></section>
+<section id="app-view" class="is-hidden" aria-labelledby="app-title"><div class="welcome-row"><div><div class="eyebrow" data-i18n="agentHub"></div><h1 id="app-title"><span data-i18n="hello"></span>, <span id="agent-name">Agent</span></h1><p id="agent-meta" class="muted"></p></div><button id="signout-btn" class="ghost-btn" type="button" data-i18n="signOut"></button></div><div id="app-message" class="notice is-hidden" role="status" aria-live="polite"></div><div class="hub-grid"><section id="scan-workspace" class="hero-card" aria-labelledby="scan-title"><div class="hero-icon" aria-hidden="true">⌁</div><div><div class="eyebrow" data-i18n="mainAction"></div><h2 id="scan-title" data-i18n="scanReceipt"></h2><p data-i18n="scanReceiptHelp"></p></div><button id="open-scan" class="primary-btn" type="button" data-i18n="startScan"></button><p class="tiny-note" data-i18n="notificationNote"></p></section><section class="status-card" aria-labelledby="status-title"><div class="card-heading"><h2 id="status-title" data-i18n="hubStatus"></h2><span class="online-dot"><i></i><span data-i18n="online"></span></span></div><dl class="status-list"><div><dt data-i18n="region"></dt><dd id="region-value">—</dd></div><div><dt data-i18n="role"></dt><dd id="agent-role">—</dd></div><div><dt data-i18n="todayScans"></dt><dd id="scan-count">0</dd></div></dl></section></div><div class="content-grid"><section class="list-card" aria-labelledby="history-title"><div class="card-heading"><h2 id="history-title" data-i18n="scanHistory"></h2><button id="clear-history" class="text-btn" type="button" data-i18n="refresh"></button></div><div id="history" class="history-list"></div></section><aside class="list-card" aria-labelledby="help-title"><div class="card-heading"><h2 id="help-title" data-i18n="agentTools"></h2></div><div class="tool-list"><button class="tool-row" data-tool="notifications" type="button"><span class="tool-icon">!</span><span><b data-i18n="notifications"></b><small data-i18n="notificationsHelp"></small></span><strong aria-hidden="true">›</strong></button><button class="tool-row" data-tool="security" type="button"><span class="tool-icon">•</span><span><b data-i18n="security"></b><small data-i18n="securityHelp"></small></span><strong aria-hidden="true">›</strong></button><button class="tool-row" data-tool="help" type="button"><span class="tool-icon">?</span><span><b data-i18n="help"></b><small data-i18n="helpHelp"></small></span><strong aria-hidden="true">›</strong></button></div></aside></div><section id="assignments" class="list-card" aria-labelledby="assignments-title"><div class="card-heading"><h2 id="assignments-title" data-i18n="assignments"></h2><span id="assignment-count" class="online-dot">0</span></div><div id="assignments-list" class="history-list"></div></section><section class="list-card" aria-labelledby="notification-title"><div class="card-heading"><h2 id="notification-title">Notifications</h2><span id="notification-count" class="online-dot">0 new</span></div><div id="agent-notifications" class="history-list"><p class="empty-state">No notifications yet.</p></div></section><p class="preview-disclaimer" data-i18n="disclaimer"></p></section>
+</div>
 </main>
 <dialog id="scan-dialog" class="scan-dialog" aria-labelledby="scan-dialog-title"><div class="dialog-inner"><div class="dialog-heading"><div><div class="eyebrow" data-i18n="onlineScan"></div><h2 id="scan-dialog-title" data-i18n="scanReceipt"></h2></div><button id="close-scan" class="close-btn" type="button" aria-label="Close">×</button></div><p class="dialog-help" data-i18n="cameraHelp"></p><div id="scan-frame" class="scan-frame"><video id="scan-video" playsinline muted></video><canvas id="scan-canvas" hidden></canvas><div class="scan-corners" aria-hidden="true"></div><p id="camera-placeholder" class="camera-placeholder" data-i18n="cameraReady"></p></div><div class="dialog-actions"><button id="start-camera" class="primary-btn" type="button" data-i18n="startCamera"></button><button id="stop-camera" class="ghost-btn" type="button" data-i18n="stop"></button></div><p id="scan-status" class="form-message" role="status" aria-live="polite"></p><form id="manual-form" class="manual-form"><label for="manual-code" data-i18n="manualCode"></label><div><input id="manual-code" type="text" autocomplete="off" placeholder="KMH1..." maxlength="500"><button class="ghost-btn" type="submit" data-i18n="check"></button><button id="focus-scanner" class="ghost-btn" type="button">Use connected scanner</button></div></form><div id="scan-result" class="result-card is-hidden" role="status" aria-live="polite"></div><button id="report-scan" class="ghost-btn is-hidden" type="button">Report a scan problem</button></div></dialog>
 <dialog id="form-dialog" class="scan-dialog" aria-labelledby="form-dialog-title"><div class="dialog-inner"><div class="dialog-heading"><div><div class="eyebrow" data-i18n="agentHub"></div><h2 id="form-dialog-title"></h2></div><button id="close-form" class="close-btn" type="button" aria-label="Close">×</button></div><form id="form-body" class="form-stack" novalidate></form><p id="form-message" class="form-message" role="alert" aria-live="assertive"></p><div class="dialog-actions"><button id="form-submit" class="primary-btn" type="submit" form="form-body"></button><button id="form-cancel" class="ghost-btn" type="button"></button></div></div></dialog>
@@ -46,6 +60,7 @@
       notificationNote: 'A successful scan is reported to the seller, buyer and your agent account.',
       hubStatus: 'Hub status',
       online: 'Online',
+      offlineStatus: 'Offline',
       region: 'Region',
       role: 'Role',
       authorizedAgent: 'Authorized agent',
@@ -90,6 +105,8 @@
       notAnAgent: 'This account is not a delivery agent.',
       assignmentsEmpty: 'No orders are assigned to you right now.',
       noNotifications: 'No notifications yet.',
+      notificationsLoading: 'Loading notifications…',
+      notificationsUnavailable: 'Could not load notifications. Check your connection and try again.',
       currentPassword: 'Current password',
       newPassword: 'New password',
       confirmPassword: 'Confirm new password',
@@ -124,6 +141,7 @@
       notificationNote: 'Skani iliyofanikiwa itamfikia muuzaji, mnunuzi na akaunti yako ya wakala.',
       hubStatus: 'Hali ya kituo',
       online: 'Mtandaoni',
+      offlineStatus: 'Nje ya mtandao',
       region: 'Eneo',
       role: 'Jukumu',
       authorizedAgent: 'Wakala aliyeidhinishwa',
@@ -168,6 +186,8 @@
       notAnAgent: 'Akaunti hii si ya wakala wa uwasilishaji.',
       assignmentsEmpty: 'Hakuna oda zilizokaguliwa kwako kwa sasa.',
       noNotifications: 'Hakuna arifa bado.',
+      notificationsLoading: 'Inapakia arifa…',
+      notificationsUnavailable: 'Arifa hazikupatikana. Angalia mtandao kisha ujaribu tena.',
       currentPassword: 'Nenosiri la sasa',
       newPassword: 'Nenosiri jipya',
       confirmPassword: 'Thibitisha nenosiri jipya',
@@ -249,21 +269,39 @@
       });
     }
     const count = $('notification-count');
-    if (count) count.textContent = notifications.length + ' new';
+    const unread = notifications.filter(note => !note.read).length;
+    if (count) count.textContent = unread + ' unread';
   }
 
   async function loadNotifications() {
-    if (!api() || typeof KobeApi.listNotifications !== 'function') return;
+    const list = $('agent-notifications');
+    if (!window.KobeApi || typeof window.KobeApi.listNotifications !== 'function') {
+      if (list) list.textContent = t('notificationsUnavailable');
+      return;
+    }
+    if (list) list.textContent = t('notificationsLoading');
     try {
       const rows = await KobeApi.listNotifications(30);
       notifications = (rows || []).map(row => ({
         title: row.title || '',
         body: row.body || '',
         time: new Date(row.created_at).toLocaleString(),
+        read: Boolean(row.read_at),
       }));
       notificationRender();
     } catch (error) {
-      console.warn('agent notifications', error);
+      if (list) {
+        list.replaceChildren();
+        const message = document.createElement('p');
+        message.className = 'empty-state error-state';
+        message.textContent = (error && error.message) || t('notificationsUnavailable');
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'text-btn';
+        retry.textContent = t('refresh');
+        retry.addEventListener('click', loadNotifications, { once: true });
+        list.append(message, retry);
+      }
     }
   }
 
@@ -297,7 +335,7 @@
   }
 
   function assignmentRender(assignments) {
-    const list = $('assignments');
+    const list = $('assignments-list');
     if (!list) return;
     list.replaceChildren();
     const rows = assignments || [];
@@ -423,6 +461,7 @@
       const detail = document.createElement('p');
       detail.textContent = (res && (res.error || res.reason)) || t('scanFailed');
       box.append(heading, detail);
+      $('report-scan').classList.remove('is-hidden');
       say('scan-status', detail.textContent, 'error');
       return;
     }
@@ -440,12 +479,14 @@
 
   /* ---------------- the hub ---------------- */
   async function refreshHub() {
-    if (!api() || typeof KobeApi.agentSnapshot !== 'function') return;
+    if (!window.KobeApi || typeof window.KobeApi.agentSnapshot !== 'function') return;
     let snapshot = null;
     try {
       snapshot = await KobeApi.agentSnapshot();
     } catch (error) {
-      console.warn('agent snapshot', error);
+      say('app-message', (error && error.message) || t('toolMessage'), 'error');
+      show('app-message');
+      return;
     }
     if (!snapshot || snapshot.ok === false) {
       say('app-message', (snapshot && (snapshot.error || snapshot.reason)) || t('toolMessage'), 'error');
@@ -473,6 +514,7 @@
   }
 
   async function hub(snapshot) {
+    document.body.classList.add('agent-authenticated');
     hide('auth-view');
     show('app-view');
     renderHub(snapshot || {});
@@ -502,10 +544,14 @@
       const label = document.createElement('label');
       label.setAttribute('for', 'field-' + field.key);
       label.textContent = field.label;
-      const input = document.createElement('input');
+      const input = document.createElement(field.multiline ? 'textarea' : 'input');
       input.id = 'field-' + field.key;
-      input.type = field.type || 'text';
-      input.autocomplete = field.autocomplete || 'off';
+      if (!field.multiline) {
+        input.type = field.type || 'text';
+        input.autocomplete = field.autocomplete || 'off';
+      } else {
+        input.rows = 4;
+      }
       if (field.placeholder) input.placeholder = field.placeholder;
       body.append(label, input);
     });
@@ -549,7 +595,7 @@
   function openSupportForm() {
     openForm(t('help'), [
       { key: 'topic', label: t('supportTopic'), type: 'text' },
-      { key: 'reason', label: t('supportMessage'), type: 'text' },
+      { key: 'reason', label: t('supportMessage'), multiline: true },
       { note: t('supportHint') },
     ], t('send'), async values => {
       if (!values.reason) throw new Error(t('supportMessage'));
@@ -590,21 +636,32 @@
   });
 
   $('signout-btn').addEventListener('click', async () => {
-    stop();
-    hide('app-view');
-    show('auth-view');
-    $('password').value = '';
-    scans = [];
-    notifications = [];
-    historyRender();
-    notificationRender();
-    try { await KobeApi.agentSignOut(); } catch (error) { console.warn('sign out', error); }
+    const button = $('signout-btn');
+    button.disabled = true;
+    try {
+      await KobeApi.agentSignOut();
+      stop();
+      document.body.classList.remove('agent-authenticated');
+      hide('app-view');
+      show('auth-view');
+      $('password').value = '';
+      scans = [];
+      notifications = [];
+      historyRender();
+      notificationRender();
+    } catch (error) {
+      say('app-message', (error && error.message) || t('toolMessage'), 'error');
+      show('app-message');
+    } finally {
+      button.disabled = false;
+    }
   });
 
   $('open-scan').addEventListener('click', () => {
     if (!navigator.onLine) { msg('app-message', 'offlineScan', 'error'); show('app-message'); return; }
     $('scan-dialog').showModal();
     $('scan-result').classList.add('is-hidden');
+    $('report-scan').classList.add('is-hidden');
     $('scan-status').textContent = '';
     $('manual-code').value = '';
   });
@@ -641,26 +698,46 @@
     });
   });
 
-  addEventListener('offline', () => show('offline-banner'));
-  addEventListener('online', () => hide('offline-banner'));
+  function updateConnectionStatus() {
+    const status = document.querySelector('.status-card .online-dot');
+    if (!status) return;
+    status.classList.toggle('is-offline', !navigator.onLine);
+    const label = status.querySelector('span');
+    if (label) label.textContent = navigator.onLine ? t('online') : t('offlineStatus');
+  }
+
+  function updateAgentNav() {
+    document.querySelectorAll('.agent-nav a').forEach(link => {
+      const active = link.hash === location.hash;
+      link.classList.toggle('active', active);
+      if (active) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    });
+  }
+
+  addEventListener('offline', () => { show('offline-banner'); updateConnectionStatus(); });
+  addEventListener('online', () => { hide('offline-banner'); updateConnectionStatus(); });
+  addEventListener('hashchange', updateAgentNav);
   addEventListener('beforeunload', stop);
 
-  $('report-scan').addEventListener('click', () => {
-    say('app-message', t('supportSent'), 'info');
-    show('app-message');
-  });
+  $('report-scan').addEventListener('click', openSupportForm);
+  $('sidebar-help').addEventListener('click', openSupportForm);
 
   if (!navigator.onLine) show('offline-banner');
+  updateConnectionStatus();
+  updateAgentNav();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('agent-sw.js').catch(() => {});
   }
   apply();
 
   /* A session that is already open goes straight to the hub. */
-  if (api() && typeof KobeApi.agentSnapshot === 'function') {
+  if (window.KobeApi && typeof window.KobeApi.agentSnapshot === 'function') {
     KobeApi.agentSnapshot().then(snapshot => {
       if (snapshot && snapshot.ok !== false) hub(snapshot);
-    }).catch(() => { /* stay on the sign-in form */ });
+    }).catch(error => {
+      say('auth-message', (error && error.message) || t('toolMessage'), 'error');
+    });
   }
 })();
 </script>

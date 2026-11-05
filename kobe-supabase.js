@@ -609,8 +609,8 @@
     },
     handoffCodeSvg(txId) {
       const issued = handoffTokens[txId];
-      const seed = issued && issued.buyer_code ? issued.buyer_code : txId;
-      if (typeof window.generateQrSvg === 'function') return window.generateQrSvg(seed);
+      if (!issued || !issued.buyer_code) return '';
+      if (typeof window.generateQrSvg === 'function') return window.generateQrSvg(issued.buyer_code);
       return '';
     },
 
@@ -681,8 +681,7 @@
 
     /* -------- wallet / seller -------- */
     async walletSummary() {
-      const res = await guardedRead('wallet', { action: 'summary' }, null);
-      return res && res.ok ? res : null;
+      return invoke('wallet', { action: 'summary' });
     },
 
     /* Request a withdrawal of money that has already been released from
@@ -1080,7 +1079,7 @@
         user_id: auth.user.id,
         topic: String(topic).slice(0, 100),
         current_info: current ? String(current).slice(0, 2000) : null,
-        proposed: String(proposed).slice(1, 2000),
+        proposed: String(proposed).slice(0, 2000),
         reason: reason ? String(reason).slice(0, 2000) : null,
       });
       fail(error);
@@ -1140,6 +1139,18 @@
         .limit(Math.max(1, Math.min(Number(limit) || 60, 200)));
       fail(error);
       return data || [];
+    },
+    async markNotificationRead(notificationId) {
+      const { data, error } = await client.rpc('mark_notification_read', {
+        p_notification_id: notificationId,
+      });
+      fail(error);
+      return data;
+    },
+    async markAllNotificationsRead() {
+      const { data, error } = await client.rpc('mark_all_notifications_read');
+      fail(error);
+      return data;
     },
 
     /* -------- push -------- */

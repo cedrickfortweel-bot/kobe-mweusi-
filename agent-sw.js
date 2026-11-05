@@ -8,13 +8,17 @@
    the cached copy answers immediately and the fresh one replaces it in
    the background. The API boundary is one of these files, so it must
    never be pinned to a copy that is older than the server it talks to. */
-const CACHE = 'kobe-agent-hub-v3';
+const CACHE = 'kobe-agent-hub-v6';
 const SHELL = [
   'agent.html',
   'agent.css',
+  'kobe-theme.css',
+  'kobe-theme.js',
+  'kobe-oled.css',
+  'portal-calm.css',
   'agent.webmanifest',
   'agent-sw.js',
-  'kobe-turtle-logo.png',
+  'kobe-turtle-logo-open.png',
   'jsQR.js',
   'kobe-camera.js',
   'supabase-js.js',

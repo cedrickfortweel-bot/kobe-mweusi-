@@ -1,0 +1,310 @@
+:root,
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f5f7f4;
+  --surface: #ffffff;
+  --surface-2: #eef3ed;
+  --line: #dfe6df;
+  --border: #dfe6df;
+  --text: #18251e;
+  --ink: #18251e;
+  --text-muted: #65736a;
+  --mut: #65736a;
+  --muted: #65736a;
+  --shell: #c58f2e;
+  --shell-dim: #8d641f;
+  --accent: #c58f2e;
+  --acc: #c58f2e;
+  --on: #18251e;
+  --on-accent: #18251e;
+  --ai: #775513;
+  --danger: #b3261e;
+  --bad: #b3261e;
+  --moss: #168451;
+  --moss-dim: #ddf1e6;
+  --ok: #168451;
+  --success: #168451;
+  --held: #9a6413;
+  --proc: #1f6fd1;
+  --card: #ffffff;
+  --panel: #ffffff;
+  --panel-2: #eef3ed;
+  --kobe-bg: #f5f7f4;
+  --kobe-surface: #ffffff;
+  --kobe-surface-2: #eef3ed;
+  --kobe-line: #dfe6df;
+  --kobe-ink: #18251e;
+  --kobe-muted: #65736a;
+  --kobe-accent: #c58f2e;
+  --kobe-accent-dim: #8d641f;
+  --kobe-on: #18251e;
+  --kobe-ai: #775513;
+  --kobe-moss: #168451;
+  --kobe-danger: #b3261e;
+  --kobe-held: #9a6413;
+  --kobe-ok: #168451;
+  --kobe-proc: #1f6fd1;
+}
+
+html[data-theme="dark"],
+html[data-theme="emerald"],
+html[data-theme="midnight"],
+body.light {
+  color-scheme: light;
+  --bg: #f5f7f4;
+  --surface: #ffffff;
+  --surface-2: #eef3ed;
+  --line: #dfe6df;
+  --border: #dfe6df;
+  --text: #18251e;
+  --ink: #18251e;
+  --text-muted: #65736a;
+  --mut: #65736a;
+  --muted: #65736a;
+  --shell: #c58f2e;
+  --shell-dim: #8d641f;
+  --accent: #c58f2e;
+  --acc: #c58f2e;
+  --on: #18251e;
+  --on-accent: #18251e;
+  --ai: #775513;
+  --danger: #b3261e;
+  --bad: #b3261e;
+  --moss: #168451;
+  --moss-dim: #ddf1e6;
+  --ok: #168451;
+  --success: #168451;
+  --held: #9a6413;
+  --proc: #1f6fd1;
+  --card: #ffffff;
+  --panel: #ffffff;
+  --panel-2: #eef3ed;
+  --kobe-bg: #f5f7f4;
+  --kobe-surface: #ffffff;
+  --kobe-surface-2: #eef3ed;
+  --kobe-line: #dfe6df;
+  --kobe-ink: #18251e;
+  --kobe-muted: #65736a;
+  --kobe-accent: #c58f2e;
+  --kobe-accent-dim: #8d641f;
+  --kobe-on: #18251e;
+  --kobe-ai: #775513;
+  --kobe-moss: #168451;
+  --kobe-danger: #b3261e;
+  --kobe-held: #9a6413;
+  --kobe-ok: #168451;
+  --kobe-proc: #1f6fd1;
+}
+
+html,
+body {
+  background-color: var(--bg);
+  color: var(--text, var(--ink));
+}
+
+body {
+  background-image: none !important;
+  font-family: Manrope, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-color: var(--ai);
+}
+
+/* Landing page */
+body:has(.wrap) {
+  background-image: none !important;
+}
+
+body:has(.hero) .wrap {
+  max-width: 1180px;
+}
+
+body:has(.hero) .site-footer .footer-col a,
+body:has(.hero) .site-footer .legal-links a {
+  color: #fff;
+  opacity: 1;
+  transition: color .2s ease;
+}
+
+body:has(.hero) .site-footer .footer-col a:hover,
+body:has(.hero) .site-footer .footer-col a:focus-visible,
+body:has(.hero) .site-footer .legal-links a:hover,
+body:has(.hero) .site-footer .legal-links a:focus-visible {
+  color: var(--shell);
+}
+
+@media (max-width: 520px) {
+  body:has(.hero) header.top nav.tabs button {
+    min-height: 36px;
+    padding-inline: 10px;
+  }
+}
+
+header.top .brand-copy b,
+.footer-brand .brand-copy b {
+  color: var(--text) !important;
+}
+
+header.top .brand-copy strong,
+.footer-brand .brand-copy strong {
+  color: var(--ai) !important;
+}
+
+header.top .brand img,
+.footer-brand .brand img {
+  filter: none !important;
+}
+
+nav.tabs,
+.chip,
+.drawer,
+.role-card,
+.card,
+.page,
+.page details {
+  background-color: var(--surface);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+nav.tabs button.active,
+.btn-primary,
+.hero-cta .btn-primary {
+  background: var(--shell);
+  color: var(--on);
+}
+
+.btn-ghost {
+  color: var(--text);
+  border-color: var(--line);
+}
+
+.role-card:hover,
+.role-card:focus-visible {
+  background: var(--surface);
+  border-color: var(--shell);
+  box-shadow: 0 12px 30px rgba(23, 50, 36, .08);
+}
+
+.hero::before {
+  background: radial-gradient(55% 60% at 50% 30%, rgba(197, 143, 46, .10), transparent 70%);
+}
+
+.hero .chip {
+  background: rgba(255, 255, 255, .92);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.trust-row {
+  border-color: var(--line);
+}
+
+/* Buyer and seller app shells */
+body.km-page-shell {
+  background: var(--bg) !important;
+  background-image: none !important;
+  color: var(--text, var(--ink));
+}
+
+aside.sidebar,
+.side {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+header.top,
+.top {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--text, var(--ink));
+}
+
+main.content,
+.stage {
+  background: var(--bg);
+}
+
+nav.side-nav a,
+.side button.n {
+  color: var(--text, var(--ink));
+}
+
+nav.side-nav a.on,
+.side button.n.on {
+  background: color-mix(in srgb, var(--shell) 15%, var(--surface));
+  color: var(--ai);
+}
+
+header.page-head h1,
+#screen-account h1,
+#screen-account h2 {
+  color: var(--text) !important;
+}
+
+.card,
+.list,
+.list-wrap,
+.settings-card,
+.settings-row,
+.settings-hero,
+.account-profile-card,
+.account-summary-card,
+.notification-page-card,
+.empty-state,
+.pc,
+.session-card,
+.wallet:not(.km-surface) {
+  border-color: var(--line);
+  box-shadow: 0 8px 24px rgba(23, 50, 36, .045);
+}
+
+.settings-card:hover,
+.settings-row:hover,
+.row:hover,
+.pc:hover {
+  background-color: var(--surface-2);
+}
+
+input,
+select,
+textarea,
+.thread-input,
+.cin input {
+  background-color: var(--surface);
+  border-color: var(--line);
+  color: var(--text, var(--ink));
+}
+
+.km-live-hero {
+  background: linear-gradient(120deg, color-mix(in srgb, var(--shell) 12%, var(--surface)), var(--surface));
+  border-color: color-mix(in srgb, var(--shell) 25%, var(--line));
+}
+
+.km-live-card,
+.km-live-search,
+.km-live-tabs button,
+.km-live-empty {
+  background-color: var(--surface);
+  border-color: var(--line);
+  color: var(--text, var(--ink));
+}
+
+@media (max-width: 880px) {
+  aside.sidebar.mobile-open,
+  .side.o {
+    box-shadow: 12px 0 40px rgba(23, 50, 36, .16);
+  }
+}

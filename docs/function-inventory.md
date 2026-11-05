@@ -16,7 +16,10 @@ money-moving function is a definer and is revoked from `anon` and
 | `public.admin_overview()` | void | sql | invoker |
 | `public.agent_hub_snapshot(uuid, int4)` | void | sql | invoker |
 | `public.approve_payout(uuid, uuid, text)` | void | sql | invoker |
+| `public.assign_delivery_agent(uuid, uuid, uuid)` | void | sql | invoker |
 | `public.assign_registry_kobe_id(uuid)` | void | sql | invoker |
+| `public.audit_admin_payout_completion()` | void | sql | invoker |
+| `public.audit_log_page(int4, int4, text)` | void | sql | invoker |
 | `public.can_afford_order(uuid)` | void | sql | invoker |
 | `public.can_upload_kyc_document(uuid)` | void | sql | invoker |
 | `public.change_transaction_pin(uuid, text, text)` | void | sql | invoker |
@@ -51,8 +54,11 @@ money-moving function is a definer and is revoked from `anon` and
 | `public.record_verified_payment(text, text, text, int8, uuid, uuid, uuid, jsonb)` | void | sql | invoker |
 | `public.record_wallet_topup(text, text, text, int8, uuid, jsonb)` | void | sql | invoker |
 | `public.render_notification_email(uuid)` | void | sql | invoker |
+| `public.request_admin_approval(text, text, uuid, uuid, int8, jsonb)` | void | sql | invoker |
 | `public.request_seller_payout(uuid, int8, text, text, uuid, text)` | void | sql | invoker |
 | `public.request_wallet_topup(uuid, int8, text, text)` | void | sql | invoker |
+| `public.require_dispute_dual_approval()` | void | sql | invoker |
+| `public.require_payout_dual_approval()` | void | sql | invoker |
 | `public.reserve_stock(uuid, int4)` | void | sql | invoker |
 | `public.restore_expired_orders()` | void | sql | invoker |
 | `public.restore_stock(uuid, int4)` | void | sql | invoker |
@@ -60,11 +66,13 @@ money-moving function is a definer and is revoked from `anon` and
 | `public.sandbox_wallet_credit(uuid, int8, text)` | void | sql | invoker |
 | `public.seller_payout_capacity(uuid)` | void | sql | invoker |
 | `public.seller_stats(uuid)` | void | sql | invoker |
+| `public.set_agent_verification(uuid, bool, uuid)` | void | sql | invoker |
 | `public.set_agent_worker_identity(uuid, text, text, uuid)` | void | sql | invoker |
 | `public.set_transaction_pin(uuid, text)` | void | sql | invoker |
 | `public.set_updated_at()` | void | sql | invoker |
 | `public.suppress_email(text, text, text, text)` | void | sql | invoker |
 | `public.unsubscribe_token_for(uuid, text)` | void | sql | invoker |
+| `public.validate_dispute_decision_amounts()` | void | sql | invoker |
 | `public.validate_handoff_scan(text, uuid)` | void | sql | invoker |
 | `public.verify_transaction_pin(uuid, text)` | void | sql | invoker |
 | `public.wallet_available_balance(uuid)` | void | sql | invoker |
@@ -101,7 +109,6 @@ money-moving function is a definer and is revoked from `anon` and
 | `public.guard_order_changes()` | void | sql | invoker |
 | `public.on_chat_message_insert()` | void | sql | invoker |
 | `public.on_dispute_message_insert()` | void | sql | invoker |
-| `public.prevent_self_role_change()` | void | sql | invoker |
 | `public.prevent_self_verification()` | void | sql | invoker |
 | `public.protect_seller_locked_fields()` | void | sql | invoker |
 
@@ -172,13 +179,11 @@ money-moving function is a definer and is revoked from `anon` and
 
 | Function | Returns | Lang | Security |
 |---|---|---|---|
-| `public.assign_delivery_agent(uuid, uuid, uuid)` | void | sql | invoker |
 | `public.confirm_receipt(uuid)` | void | sql | invoker |
 | `public.escrow_policy(text, jsonb)` | void | sql | invoker |
 | `public.is_assigned_agent(uuid, uuid)` | void | sql | invoker |
 | `public.process_due_escrow_releases(int4)` | void | sql | invoker |
 | `public.release_escrow_funds(uuid, text)` | void | sql | invoker |
-| `public.set_agent_verification(uuid, bool, uuid)` | void | sql | invoker |
 | `public.start_escrow_release_window(uuid)` | void | sql | invoker |
 
 ## H. Disputes and resolution
@@ -225,7 +230,6 @@ money-moving function is a definer and is revoked from `anon` and
 |---|---|---|---|
 | `public.accept_invitation(text)` | void | sql | invoker |
 | `public.approve_admin_request(uuid, uuid, text)` | void | sql | invoker |
-| `public.audit_log_page(int4, int4, text)` | void | sql | invoker |
 | `public.grant_permission(text, text, uuid)` | void | sql | invoker |
 | `public.has_permission(uuid, text)` | void | sql | invoker |
 | `public.i_have_permission(text)` | void | sql | invoker |
@@ -233,7 +237,6 @@ money-moving function is a definer and is revoked from `anon` and
 | `public.log_audit(text, text, uuid, uuid, text, jsonb, uuid)` | void | sql | invoker |
 | `public.reject_admin_request(uuid, uuid, text)` | void | sql | invoker |
 | `public.remove_admin_role(uuid, text, text, uuid)` | void | sql | invoker |
-| `public.request_admin_approval(text, text, uuid, uuid, int8, jsonb)` | void | sql | invoker |
 | `public.revoke_permission(text, text, uuid)` | void | sql | invoker |
 | `public.set_admin_role(uuid, text, text, uuid)` | void | sql | invoker |
 

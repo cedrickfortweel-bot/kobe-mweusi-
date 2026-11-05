@@ -1,5 +1,5 @@
 import { json, ApiError, asApiError } from "../_shared/http.ts";
-import { verifyUser, serviceClient, isStaff } from "../_shared/auth.ts";
+import { verifyUser, serviceClient, requireStaffPermission } from "../_shared/auth.ts";
 import { consumeRateLimit, subjectHash } from "../_shared/rate.ts";
 import { sendNotifications } from "../_shared/push.ts";
 
@@ -9,14 +9,21 @@ export default async function handler(request: Request) {
 
   const auth = await verifyUser(request);
   const service = serviceClient(auth.url);
-  const staff = await isStaff(service, auth.user.id);
-  if (!staff) return json({ error: "Staff access required" }, 403);
 
   let body: Record<string, unknown> = {};
   if (request.method === "POST") {
     try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
   }
   const action = request.method === "GET" ? "list" : String(body.action || "");
+  const permission = action === "review"
+    ? body.decision === "approved" ? "kyc.approve" : "kyc.review"
+    : "kyc.view";
+  try {
+    await requireStaffPermission(request, auth, service, permission);
+  } catch (error) {
+    const api = error instanceof ApiError ? error : asApiError(error);
+    return json({ error: api.message, reason: api.reason || null }, api.status);
+  }
   const rule = action === "review" ? { scope: "kyc_review", limit: 10, window: 60 } : { scope: "kyc_queue", limit: 30, window: 60 };
   const { data: limits, error: limitError } = await service.rpc("consume_rate_limit", {
     p_scope: rule.scope,
@@ -57,12 +64,19 @@ export default async function handler(request: Request) {
     .in("status", ["pending", "under_review"]).order("submitted_at", { ascending: true }).limit(25);
   if (queueError) return json({ error: "Could not load the review queue" }, 500);
 
-  const submissions = await Promise.all((rows || []).map(async row => {
-    const { data: documents } = await service.storage.from("kyc-documents").createSignedUrls(row.document_paths, 120);
-    return {
+  const submissions = [];
+  for (const row of rows || []) {
+    const { data: documents, error: signedUrlError } = await service.storage
+      .from("kyc-documents")
+      .createSignedUrls(row.document_paths, 120);
+    if (signedUrlError) return json({ error: "Could not securely load KYC documents." }, 503);
+    if (!documents || documents.length !== row.document_paths.length || documents.some(document => !document.signedUrl)) {
+      return json({ error: "One or more KYC document links could not be created." }, 503);
+    }
+    submissions.push({
       ...row,
-      documents: (documents || []).map((document, index) => ({ path: row.document_paths[index], url: document.signedUrl })),
-    };
-  }));
+      documents: documents.map((document, index) => ({ path: row.document_paths[index], url: document.signedUrl })),
+    });
+  }
   return json({ submissions });
 }

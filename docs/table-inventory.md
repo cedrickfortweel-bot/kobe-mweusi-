@@ -3,7 +3,7 @@
 Generated from `supabase/migrations/` by `node supabase/tests/gen_inventory.mjs`.
 Do not edit by hand: regenerate instead.
 
-83 tables, 10 views, 183 functions.
+83 tables, 10 views, 186 functions.
 
 ## Baseline
 

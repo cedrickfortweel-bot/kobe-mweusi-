@@ -1,5 +1,5 @@
 import { json, ApiError, asApiError } from "../_shared/http.ts";
-import { verifyUser, serviceClient, isStaff } from "../_shared/auth.ts";
+import { verifyUser, serviceClient, requireStaffPermission } from "../_shared/auth.ts";
 
 /* Seller dashboard aggregation and the public
    verified-seller directory. */
@@ -10,7 +10,6 @@ export default async function handler(request: Request) {
 
   const auth = await verifyUser(request);
   const service = serviceClient(auth.url);
-  const staff = await isStaff(service, auth.user.id);
 
   let body: Record<string, unknown> = {};
   try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
@@ -160,24 +159,15 @@ export default async function handler(request: Request) {
        released from escrow. Staff approve it here. The money leaves the
        seller's ledger when the payout is approved. */
     if (action === "payouts") {
-      if (!staff) throw new ApiError(403, "Only staff can review payouts.");
+      await requireStaffPermission(request, auth, service, "payouts.view");
       const { data, error } = await service.rpc("list_pending_payout_requests");
       if (error) throw error;
       return json({ ok: true, payouts: data || [] });
     }
 
     if (action === "approve-payout") {
-      if (!staff) throw new ApiError(403, "Only staff can approve payouts.");
-      const payoutId = String(body.payout_id || "");
-      if (!payoutId) throw new ApiError(400, "A payout id is required");
-
-      const { data, error } = await service.rpc("approve_payout", {
-        p_payout_id: payoutId,
-        p_approver_id: auth.user.id,
-        p_provider_reference: body.provider_reference ? String(body.provider_reference) : null,
-      });
-      if (error) throw error;
-      return json({ ok: true, payout: Array.isArray(data) ? data[0] : data });
+      await requireStaffPermission(request, auth, service, "payouts.approve");
+      throw new ApiError(409, "Payout approvals require a separate administrator. Use the admin approval workflow.");
     }
 
     /* ---------------- the delivery agent network ----------------
@@ -186,7 +176,7 @@ export default async function handler(request: Request) {
        orders they carry are assigned here as well, and only a verified
        agent can be given one. */
     if (action === "agents") {
-      if (!staff) throw new ApiError(403, "Only staff can manage agents.");
+      await requireStaffPermission(request, auth, service, "agents.manage");
 
       const { data: agents, error } = await service
         .from("delivery_agents")
@@ -196,24 +186,40 @@ export default async function handler(request: Request) {
       if (error) throw error;
 
       const ids = (agents || []).map(agent => agent.user_id).filter(Boolean);
-      const people = ids.length
-        ? (await service.from("profiles").select("id,display_name,phone_e164").in("id", ids)).data || []
-        : [];
+      const { data: people, error: peopleError } = ids.length
+        ? await service.from("profiles").select("id,display_name,phone_e164").in("id", ids)
+        : { data: [], error: null };
+      if (peopleError) throw peopleError;
 
-      const { data: assignments } = await service
-        .from("delivery_assignments")
-        .select("order_id,agent_user_id,status,created_at")
-        .limit(500);
+      const assignments: { order_id: string; agent_user_id: string; status: string; created_at: string }[] = [];
+      for (let offset = 0; ids.length; offset += 500) {
+        const { data: page, error: assignmentsError } = await service
+          .from("delivery_assignments")
+          .select("order_id,agent_user_id,status,created_at")
+          .in("agent_user_id", ids)
+          .in("status", ["assigned", "accepted"])
+          .order("created_at", { ascending: false })
+          .range(offset, offset + 499);
+        if (assignmentsError) throw assignmentsError;
+        assignments.push(...(page || []));
+        if (!page || page.length < 500) break;
+      }
 
       const orderIds = [...new Set((assignments || []).map(row => row.order_id).filter(Boolean))];
-      const orders = orderIds.length
-        ? (await service.from("orders").select("id,ref,item_name,status").in("id", orderIds)).data || []
-        : [];
+      const orders: { id: string; ref: string; item_name: string; status: string }[] = [];
+      for (let offset = 0; offset < orderIds.length; offset += 100) {
+        const { data: page, error: ordersError } = await service
+          .from("orders")
+          .select("id,ref,item_name,status")
+          .in("id", orderIds.slice(offset, offset + 100));
+        if (ordersError) throw ordersError;
+        orders.push(...(page || []));
+      }
 
       const orderById = new Map(orders.map(order => [order.id, order]));
       const peopleById = new Map(people.map(person => [person.id, person]));
       const assignmentsByAgent = new Map<string, Record<string, unknown>[]>();
-      (assignments || []).forEach(row => {
+      assignments.forEach(row => {
         const list = assignmentsByAgent.get(row.agent_user_id) || [];
         const order = orderById.get(row.order_id);
         list.push({
@@ -242,7 +248,7 @@ export default async function handler(request: Request) {
     }
 
     if (action === "set-agent-identity") {
-      if (!staff) throw new ApiError(403, "Only staff can manage agents.");
+      await requireStaffPermission(request, auth, service, "agents.manage");
       const agentId = String(body.agent_id || "");
       if (!agentId) throw new ApiError(400, "An agent is required");
       const workerId = body.worker_id === null || body.worker_id === undefined
@@ -261,7 +267,7 @@ export default async function handler(request: Request) {
     }
 
     if (action === "set-agent-verification") {
-      if (!staff) throw new ApiError(403, "Only staff can manage agents.");
+      await requireStaffPermission(request, auth, service, "agents.manage");
       const agentId = String(body.agent_id || "");
       if (!agentId) throw new ApiError(400, "An agent is required");
       const verified = body.verified === true;
@@ -276,7 +282,7 @@ export default async function handler(request: Request) {
     }
 
     if (action === "assign-agent") {
-      if (!staff) throw new ApiError(403, "Only staff can assign agents.");
+      await requireStaffPermission(request, auth, service, "agents.manage");
       const orderRef = String(body.order_ref || "").trim().toUpperCase();
       const agentId = String(body.agent_id || "");
       if (!/^KM-\d{6}$/.test(orderRef)) throw new ApiError(400, "Enter a valid order reference");

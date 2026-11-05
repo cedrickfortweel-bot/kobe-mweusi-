@@ -482,8 +482,10 @@ check(
   /verification_status === 'verified'/.test(readFileSafe(path.join(root, "kobe-supabase.js")))
 );
 check(
-  "the buyer's live sessions come from the server, so a seller's session must too",
-  /listPublicLiveSessions/.test(readFileSafe(path.join(root, "kobe-app-workflows.js")))
+  "the buyer loads verified live sessions from the public server API",
+  /KobeApi\.listPublicLiveSessions\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /sellerVerified===true/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /listPublicLiveSessions/.test(readFileSafe(path.join(root, "kobe-supabase.js")))
 );
 check(
   "the seller app loads its disputes from the server",
@@ -555,12 +557,16 @@ check(
     && !/Withdrawals are disabled until the secure wallet API/.test(sellerAppSource)
 );
 check(
-  "the admin console can approve a payout",
-  /action: 'approve-payout'/.test(readFileSafe(path.join(root, "kobe-admin.js")))
+  "payout approval requires a second administrator",
+  /action: 'request-payout-approval'/.test(readFileSafe(path.join(root, "kobe-admin.js")))
+    && /action: 'approve-admin-request'/.test(readFileSafe(path.join(root, "kobe-admin.js")))
+    && /separate administrator/.test(
+      functionSource.get(path.join("supabase", "functions", "seller", "index.ts")) || ""
+    )
 );
 check(
   "the payout queue is staff only",
-  /Only staff can review payouts/.test(
+  /requireStaffPermission\(request, auth, service, "payouts\.view"\)/.test(
     functionSource.get(path.join("supabase", "functions", "seller", "index.ts")) || ""
   )
 );
@@ -771,14 +777,14 @@ check(
   /exception when others then[\s\S]{0,200}?null;/.test(signupTrigger)
 );
 check(
-  "the buyer loads the wallet as part of the first screen",
-  /walletSummary\(\)/.test(readFileSafe(path.join(root, "kobe-app-workflows.js")))
+  "the buyer loads the wallet summary from the backend",
+  /walletSummary\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /window\.kobeRefresh\s*=\s*async/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
-  "the wallet summary is fetched before the first screen renders",
-  /var wallet = await walletPromise/.test(
-    readFileSafe(path.join(root, "kobe-app-workflows.js"))
-  )
+  "wallet errors are surfaced instead of leaving a false zero balance",
+  /window\.kobeError\(error&&error\.message/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /Your wallet could not be loaded/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
   "accounts that signed up earlier are given a Wallet ID too",
@@ -839,13 +845,15 @@ check(
   /sandbox_available/.test(
     functionSource.get(path.join("supabase", "functions", "wallet", "index.ts")) || ""
   )
-    && /sandbox_available/.test(readFileSafe(path.join(root, "kobe-app-workflows.js")))
+    && /summary\.sandbox_available===true/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /sandboxTopUp/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 
 /* ------------------------------------------------- the release message */
 check(
-  "the seller's scan tells the truth about whether money was released",
-  /res\.released === true/.test(readFileSafe(path.join(root, "kobe-app-workflows.js")))
+  "the agent scan distinguishes a release from a scheduled release",
+  /heading\.textContent = res\.released/.test(readFileSafe(path.join(root, "agent.html")))
+    && /res\.release_scheduled_for/.test(readFileSafe(path.join(root, "agent.html")))
 );
 
 /* ------------------------------------------------- the notification flow */
@@ -887,7 +895,8 @@ check(
 );
 check(
   "the inbox is read from the server, not from local storage",
-  /from\('my_notifications'\)/.test(readFileSafe(path.join(root, "kobe-app-workflows.js")))
+  /from\('my_notifications'\)/.test(readFileSafe(path.join(root, "kobe-supabase.js")))
+    && /KobeApi\.listNotifications\(60\)/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
   "a new notification arrives live",
@@ -895,8 +904,9 @@ check(
 );
 check(
   "marking the bell as read reaches the server",
-  /kobeMarkServerNotificationsRead/.test(readFileSafe(path.join(root, "kobe-app-workflows.js")))
-    && /kobeMarkServerNotificationsRead/.test(readFileSafe(path.join(root, "buyer.html")))
+  /kobeMarkServerNotificationsRead/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /mark_notification_read/.test(readFileSafe(path.join(root, "kobe-supabase.js")))
+    && /mark_all_notifications_read/.test(readFileSafe(path.join(root, "kobe-supabase.js")))
 );
 
 /* --------------------------------------------------------- the email channel */
@@ -1091,7 +1101,9 @@ for (const [label, pattern] of [
 check(
   "the app shows the server's message, not a generic one",
   /check\.error \|\| check\.reason/.test(readFileSafe(path.join(root, "buyer.html")))
-    && /res\.error \|\| res\.reason/.test(readFileSafe(path.join(root, "kobe-app-workflows.js")))
+    && /if \(payload && payload\.error\) message = payload\.error/.test(
+      readFileSafe(path.join(root, "kobe-supabase.js"))
+    )
 );
 check(
   "the failure carries a machine-readable reason",
@@ -1175,7 +1187,6 @@ check(
 const chatFn = functionSource.get(path.join("supabase", "functions", "chat", "index.ts")) || "";
 const buyerApp = readFileSafe(path.join(root, "buyer.html"));
 const sellerApp = readFileSafe(path.join(root, "seller.html"));
-const sharedApp = readFileSafe(path.join(root, "kobe-app-workflows.js"));
 
 check(
   "the thread role is decided by the pair, not by the caller's account type",
@@ -1200,7 +1211,7 @@ check(
   "the message renderer reads the fields the server sends",
   /m\.body\s*!=\s*null\s*\?\s*m\.body/.test(buyerApp)
     && /m\.from\s*===\s*'me'\s*\?\s*'s'\s*:\s*'b'/.test(sellerApp)
-    && /m\.from\s*===\s*'me'/.test(sharedApp)
+    && /m\.from\s*===\s*'me'/.test(buyerApp)
 );
 check(
   "the seller passes the buyer's id when opening a conversation",
@@ -1328,7 +1339,10 @@ check(
 );
 check(
   "the console refuses a caller who is not staff",
-  /Only operations staff/.test(adminFunction) && /isStaff/.test(adminFunction)
+  /requireStaffPermission\(request, auth, service, permission\)/.test(adminFunction)
+    && /if \(!role\) throw new ApiError\(403, "Staff access required\."\)/.test(
+      readFileSafe(path.join(root, "supabase", "functions", "_shared", "auth.ts"))
+    )
 );
 check(
   "the console panels are filled from the server, not from placeholders",
