@@ -647,8 +647,11 @@
     /* The buyer's own Wallet ID. The server decides whether it may be
        revealed at all. */
     async myWalletId() {
-      const res = await guardedRead('escrow', { action: 'wallet' }, null);
-      return (res && res.wallet_id) || null;
+      const res = await invoke('escrow', { action: 'wallet' });
+      if (!res || typeof res.wallet_id !== 'string' || !res.wallet_id.trim()) {
+        throw new Error('Your Wallet ID is not available yet.');
+      }
+      return res.wallet_id;
     },
 
     /* -------- chat -------- */

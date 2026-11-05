@@ -3409,15 +3409,23 @@ async function populateAccountScreen(){
      const nameEl=document.querySelector('#screen-account h2');
      const subEl=document.querySelector('#screen-account p');
       const walletEl=document.getElementById('accountWalletId');
+      const homeWalletEl=document.getElementById('wId');
       const sinceEl=document.getElementById('accountMemberSince');
       const email = profile ? (profile.email || 'Email unavailable') : 'Email unavailable';
       if(nameEl) nameEl.textContent = displayName || 'Your Name';
       if(subEl) subEl.textContent = '@' + (displayName || 'yourusername').toLowerCase().replace(/\s+/g, '') + ' · Buyer';
-      if(walletEl) {
+      if(walletEl || homeWalletEl) {
         try {
-          const wid = (window.KobeApi && KobeApi.myWalletId) ? await KobeApi.myWalletId() : null;
-          walletEl.textContent = wid || '—';
-        } catch(e) { walletEl.textContent = '—'; }
+          if(!window.KobeApi || !KobeApi.myWalletId) throw new Error('Wallet ID service is unavailable.');
+          const walletId = await KobeApi.myWalletId();
+          if(walletEl) walletEl.textContent = walletId;
+          if(homeWalletEl) homeWalletEl.textContent = walletId;
+        } catch(e) {
+          if(walletEl) walletEl.textContent = 'Unavailable';
+          if(homeWalletEl) homeWalletEl.textContent = 'Unavailable';
+          console.error('Failed to load Wallet ID:', e);
+          if(typeof kobeToast === 'function') kobeToast('Wallet ID could not be loaded. Please try again.');
+        }
       }
       if(sinceEl && profile && profile.created_at){
         sinceEl.textContent = new Date(profile.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' });

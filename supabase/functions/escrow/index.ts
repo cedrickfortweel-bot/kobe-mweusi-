@@ -62,9 +62,11 @@ export default async function handler(request: Request): Promise<Response> {
   try {
     /* ---------------- wallet: the caller's own Wallet ID ---------------- */
     if (action === "wallet") {
-      /* ensure_my_wallet() creates the Wallet ID on first use. Creating one
-         never creates a balance, credits money or releases escrow. */
-      const { data, error } = await service.rpc("ensure_my_wallet");
+      /* This function uses the service-role client, which has no caller
+         auth.uid(). Pass the identity already verified by verifyUser. */
+      const { data, error } = await service.rpc("ensure_wallet_for", {
+        p_user: auth.user.id,
+      });
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : data;
       return json({ ok: true, wallet_id: row?.wallet_id ?? null });

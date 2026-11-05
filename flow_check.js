@@ -620,7 +620,24 @@ check(
 check(
   "the buyer app shows the buyer's own Wallet ID",
   /id="wId"/.test(readFileSafe(path.join(root, "buyer.html")))
-    && /wId/.test(readFileSafe(path.join(root, "kobe-app-workflows.js")))
+    && /KobeApi\.myWalletId\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
+);
+check(
+  "the escrow wallet endpoint resolves the verified user's wallet",
+  /service\.rpc\("ensure_wallet_for",\s*\{\s*p_user:\s*auth\.user\.id/.test(
+    readFileSafe(path.join(root, "supabase", "functions", "escrow", "index.ts"))
+  )
+);
+check(
+  "the buyer Wallet ID lookup surfaces backend failures",
+  /async myWalletId\(\)\s*\{\s*const res = await invoke\('escrow', \{ action: 'wallet' \}\);/.test(
+    readFileSafe(path.join(root, "kobe-supabase.js"))
+  )
+);
+check(
+  "the buyer app displays the Wallet ID on the home and account screens",
+  /walletEl\.textContent = walletId/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /homeWalletEl\.textContent = walletId/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
   "the wallet summary returns the Wallet ID to its owner",
@@ -653,7 +670,7 @@ check(
 check(
   "the buyer's account settings show the Wallet ID",
   /id="accountWalletId"/.test(readFileSafe(path.join(root, "buyer.html")))
-    && /accountWalletId/.test(readFileSafe(path.join(root, "kobe-app-workflows.js")))
+    && /KobeApi\.myWalletId\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
   "the seller's account settings show the Seller ID",
