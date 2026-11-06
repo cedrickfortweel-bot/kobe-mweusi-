@@ -1203,11 +1203,13 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;bor
 .wallet-card .wallet-brand-logo{width:40px!important;height:30px}
 .wallet-card .wallet-brand strong{font-size:var(--kobe-text-xs);letter-spacing:.05em;line-height:1.2}
 .wallet-card .wallet-brand small{font-size:var(--kobe-text-xs)}
-.wallet-card .wallet-id-row{grid-column:2;grid-row:1;margin-top:0!important;gap:6px;justify-self:end}
-.wallet-card .wallet-id{display:none}
+.wallet-card .wallet-id-row{grid-column:1/-1;grid-row:2;margin-top:10px!important;gap:6px;justify-self:start;flex-wrap:wrap}
+.wallet-card .wallet-id-label{font-size:var(--kobe-text-xs);font-weight:var(--kobe-weight-semibold);opacity:.75}
+.wallet-card .wallet-id{display:none;max-width:min(100%,220px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wallet-card.wallet-id-ready .wallet-id{display:inline-flex}
 .wallet-card .wallet-id-row .wallet-verified{margin-left:0;white-space:nowrap}
 .wallet-card .wallet-id-eye{width:30px;height:30px}
-.wallet-card .wallet-figures{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:1fr 1fr;column-gap:0;margin-top:12px}
+.wallet-card .wallet-figures{grid-column:1/-1;grid-row:3;display:grid;grid-template-columns:1fr 1fr;column-gap:0;margin-top:12px}
 .wallet-card .wallet-figures .fig:first-child{grid-column:1/-1}
 .wallet-card .wallet-figures .fig .amt{font-size:clamp(26px,7.4vw,32px)}
 .wallet-card .wallet-figures .fig.escrow,.wallet-card .wallet-figures .fig.deals{grid-column:auto;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:2px;margin-top:10px;padding-top:10px}
@@ -1328,6 +1330,7 @@ nav.side-nav .nav-group-label{margin:22px 12px 8px}
         <svg class="wallet-shell" viewBox="0 0 90 90"><path d="M45 5C25 5 12 22 12 45s13 40 33 40 33-17 33-40S65 5 45 5Z" stroke="var(--shell)" stroke-width="2" fill="none"/></svg>
         <div class="wallet-brand"><div class="wallet-brand-logo"></div><div><strong>Kobe Mweusi Wallet</strong><small>Secure funds & escrow</small></div></div>
         <div class="wallet-id-row" style="margin-top:13px;">
+          <span class="wallet-id-label">Wallet ID</span>
           <span class="wallet-id" id="wId">—</span>
           <span class="wallet-verified"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10l4 4 8-8"/></svg>Verified</span>
           <button class="balance-eye wallet-id-eye" onclick="toggleWalletBalances()" id="wallet-eye-btn" aria-label="Hide wallet balances" title="Hide wallet balances">
@@ -4768,13 +4771,21 @@ async function loadBuyerWallet(){
   escrowValue=Number(wallet.held);
   walletSummaryLoaded=true;
   const walletId=$('wId');
-  if(walletId)walletId.textContent=wallet.wallet_id||'Not assigned yet';
+  if(walletId){
+   const value=typeof wallet.wallet_id==='string'?wallet.wallet_id.trim():'';
+   walletId.textContent=value||'Not assigned yet';
+   const walletCard=walletId.closest('.wallet-card');
+   if(walletCard)walletCard.classList.toggle('wallet-id-ready',Boolean(value));
+  }
   const sandboxButton=$('sandbox-credit-btn'),sandboxHint=$('sandbox-credit-hint');
   if(sandboxButton)sandboxButton.style.display=summary.sandbox_available===true?'':'none';
   if(sandboxHint)sandboxHint.style.display=summary.sandbox_available===true?'':'none';
   renderBalances();
   return summary;
  }catch(error){
+  const walletId=$('wId');
+  const walletCard=walletId&&walletId.closest('.wallet-card');
+  if(walletCard)walletCard.classList.remove('wallet-id-ready');
   if(window.kobeError)window.kobeError(error&&error.message||'Your wallet could not be loaded.',loadBuyerWallet);
   throw error;
  }
