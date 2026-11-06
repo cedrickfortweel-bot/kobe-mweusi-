@@ -1158,6 +1158,8 @@ check(
   "PIN status errors are not mistaken for an unset PIN",
   /async pinStatus\(\)\s*\{\s*return invoke\('security', \{ action: 'pin-status' \}\);/.test(apiBoundary)
     && /function populateBuyerPinSettings\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /async function requestBuyerPinStatus\(\)[\s\S]{0,400}10000\)/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /onclick="populateTransactionPinSettings\(\)">Try again<\/button>/.test(readFileSafe(path.join(root, "buyer.html")))
     && /secSt\.pinLoaded=false/.test(readFileSafe(path.join(root, "seller.html")))
     && /if\(!st\|\|st\.ok===false\)throw/.test(readFileSafe(path.join(root, "seller.html")))
 );

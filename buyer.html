@@ -2477,13 +2477,27 @@ async function populateForgotPassword(){
   }
 }
 
+async function requestBuyerPinStatus(){
+  let timeoutId;
+  try{
+    return await Promise.race([
+      KobeApi.pinStatus(),
+      new Promise((resolve,reject)=>{
+        timeoutId=setTimeout(()=>reject(new Error('Transaction PIN status check timed out.')),10000);
+      })
+    ]);
+  }finally{
+    clearTimeout(timeoutId);
+  }
+}
+
 async function populateBuyerPinSettings(){
   const stateEl=document.getElementById('sec-pin-state');
   const subtitleEl=document.getElementById('sec-pin-sub');
   if(!stateEl||!subtitleEl) return;
   stateEl.textContent='Checking';
   try{
-    const status=await KobeApi.pinStatus();
+    const status=await requestBuyerPinStatus();
     if(!status||status.ok===false) throw new Error((status&&status.error)||'Transaction security is unavailable.');
     stateEl.textContent=status.hasPin?'Set':'Not set';
     subtitleEl.textContent=status.hasPin
@@ -2496,14 +2510,16 @@ async function populateBuyerPinSettings(){
   }
 }
 
+let buyerPinStatusRequestId=0;
 async function populateTransactionPinSettings(){
   const body=document.getElementById('settings-detail-body');
   const currentInput=body&&body.querySelector('#tpcur');
   const newInput=body&&body.querySelector('#tpnew');
   const saveButton=body&&body.querySelector('button[onclick*="transaction-pin"]');
   if(!body||!currentInput||!newInput||!saveButton) return;
+  const requestId=++buyerPinStatusRequestId;
   if(!body.querySelector('#tp-status')){
-    currentInput.insertAdjacentHTML('beforebegin','<p class="sr-sub" id="tp-status" role="status" style="margin:0 2px 12px">Checking PIN status…</p>');
+    currentInput.insertAdjacentHTML('beforebegin','<div class="sr-sub" id="tp-status" role="status" style="margin:0 2px 12px">Checking PIN status…</div>');
   }
   if(!body.querySelector('#tpconfirm')){
     newInput.insertAdjacentHTML('afterend','<label for="tpconfirm">Confirm new PIN</label><input id="tpconfirm" type="password" inputmode="numeric" autocomplete="off" maxlength="6">');
@@ -2512,7 +2528,8 @@ async function populateTransactionPinSettings(){
   if(statusEl) statusEl.textContent='Checking PIN status…';
   saveButton.disabled=true;
   try{
-    const status=await KobeApi.pinStatus();
+    const status=await requestBuyerPinStatus();
+    if(buyerPinStatusRequestId!==requestId||body.querySelector('#tpcur')!==currentInput) return;
     if(!status||status.ok===false) throw new Error((status&&status.error)||'Transaction security is unavailable.');
     const hasPin=!!status.hasPin;
     currentInput.required=hasPin;
@@ -2522,7 +2539,8 @@ async function populateTransactionPinSettings(){
     if(statusEl) statusEl.textContent=hasPin?'A transaction PIN is set. Enter it to make a change.':'No transaction PIN is set yet.';
     saveButton.disabled=false;
   }catch(error){
-    if(statusEl) statusEl.textContent='PIN status is unavailable. No changes can be made until it is verified.';
+    if(buyerPinStatusRequestId!==requestId||body.querySelector('#tpcur')!==currentInput) return;
+    if(statusEl) statusEl.innerHTML='PIN status is unavailable. No changes can be made until it is verified. <button class="kb-btn" type="button" style="margin:8px 0 0;padding:6px 10px" onclick="populateTransactionPinSettings()">Try again</button>';
     console.error('Failed to load buyer transaction PIN status:',error);
   }
 }
