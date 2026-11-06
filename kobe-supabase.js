@@ -1023,7 +1023,11 @@
          .eq('id', auth.user.id)
          .maybeSingle();
        fail(error);
-       if (data) return { ...data, email: auth.user.email || auth.user.primary_factors || null };
+       if (data) return {
+         ...data,
+         email: auth.user.email || auth.user.primary_factors || null,
+         created_at: data.created_at || auth.user.created_at || null,
+       };
        /* A row is created by the signup trigger; a missing one means the
           account predates it, so build it from the auth user instead of
           inventing data. */
@@ -1035,6 +1039,12 @@
          email: auth.user.email || null,
          created_at: auth.user.created_at,
        };
+    },
+    async getMyAccountCreatedAt() {
+      const { data, error } = await client.auth.getUser();
+      fail(error);
+      if (!data.user) throw new Error('Sign in to view your account details.');
+      return data.user.created_at || null;
     },
     async saveMyProfile({ displayName, phoneE164, avatarPath } = {}) {
       const { data: auth, error: authError } = await client.auth.getUser();

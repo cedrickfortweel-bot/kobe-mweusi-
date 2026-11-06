@@ -3337,46 +3337,75 @@ function loadSavedAvatar(initials='U'){
    })();
 }
 async function populateAccountScreen(){
-   try {
-     let profile = null;
-     if(window.KobeApi && KobeApi.getMyProfile){
-       profile = await KobeApi.getMyProfile();
-     }
-     const displayName = profile ? (profile.display_name || profile.email?.split('@')[0]) : null;
-     const initials = displayName ? displayName.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase() : 'U';
-     loadSavedAvatar(initials);
-     const nameEl=document.getElementById('accountDisplayName');
-     const subEl=document.getElementById('accountDisplaySummary');
-      const walletEl=document.getElementById('accountWalletId');
-      const homeWalletEl=document.getElementById('wId');
-      const sinceEl=document.getElementById('accountMemberSince');
-      if(nameEl) nameEl.textContent = displayName || 'Buyer account';
-      if(subEl) subEl.textContent = displayName
-        ? '@' + displayName.toLowerCase().replace(/\s+/g, '') + ' · Buyer'
-        : 'Account details';
-      if(walletEl || homeWalletEl) {
-        try {
-          if(!window.KobeApi || !KobeApi.myWalletId) throw new Error('Wallet ID service is unavailable.');
-          const walletId = await KobeApi.myWalletId();
-          if(walletEl) walletEl.textContent = walletId;
-          if(homeWalletEl) homeWalletEl.textContent = walletId;
-        } catch(e) {
-          if(walletEl) walletEl.textContent = 'Unavailable';
-          if(homeWalletEl) homeWalletEl.textContent = 'Unavailable';
-          console.error('Failed to load Wallet ID:', e);
-          if(typeof kobeToast === 'function') kobeToast('Wallet ID could not be loaded. Please try again.');
-        }
-      }
-      if(sinceEl && profile && profile.created_at){
-        sinceEl.textContent = new Date(profile.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' });
-      }
-   } catch(e){
-     loadSavedAvatar('U');
-     console.error('Failed to load profile:',e);
+   const nameEl=document.getElementById('accountDisplayName');
+   const subEl=document.getElementById('accountDisplaySummary');
+   const walletEl=document.getElementById('accountWalletId');
+   const sinceEl=document.getElementById('accountMemberSince');
+   const homeWalletEl=document.getElementById('wId');
+   if(walletEl) walletEl.textContent='Loading…';
+   if(sinceEl) sinceEl.textContent='Loading…';
+
+   const profileRequest=window.KobeApi && KobeApi.getMyProfile
+     ? KobeApi.getMyProfile()
+     : Promise.reject(new Error('Profile service is unavailable.'));
+   const walletRequest=window.KobeApi && KobeApi.walletSummary
+     ? KobeApi.walletSummary()
+     : Promise.reject(new Error('Wallet service is unavailable.'));
+   const createdAtRequest=window.KobeApi && KobeApi.getMyAccountCreatedAt
+     ? KobeApi.getMyAccountCreatedAt()
+     : Promise.reject(new Error('Account creation date is unavailable.'));
+   const [profileResult,walletResult,createdAtResult]=await Promise.allSettled([
+     profileRequest,walletRequest,createdAtRequest
+   ]);
+   const profile=profileResult.status==='fulfilled'?profileResult.value:null;
+   const displayName=profile?(profile.display_name||profile.email?.split('@')[0]):null;
+   const initials=displayName?displayName.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase():'U';
+   loadSavedAvatar(initials);
+   if(nameEl) nameEl.textContent = displayName || 'Buyer account';
+   if(subEl) subEl.textContent = displayName
+     ? '@' + displayName.toLowerCase().replace(/\s+/g, '') + ' · Buyer'
+     : 'Account details';
+   if(profileResult.status==='rejected') console.error('Failed to load buyer profile:',profileResult.reason);
+
+   const summary=walletResult.status==='fulfilled'?walletResult.value:null;
+   const walletId=await resolveBuyerWalletId(summary);
+   if(walletId){
+     if(walletEl) walletEl.textContent = walletId;
+     if(homeWalletEl) homeWalletEl.textContent = walletId;
+     const walletCard=homeWalletEl&&homeWalletEl.closest('.wallet-card');
+     if(walletCard) walletCard.classList.add('wallet-id-ready');
+   }else{
+     if(walletEl) walletEl.textContent='Unavailable';
+     if(homeWalletEl) homeWalletEl.textContent='Unavailable';
+     const walletCard=homeWalletEl&&homeWalletEl.closest('.wallet-card');
+     if(walletCard) walletCard.classList.remove('wallet-id-ready');
+     if(walletResult.status==='rejected') console.error('Failed to load buyer wallet:',walletResult.reason);
+   }
+
+   const createdAt=profile&&profile.created_at
+     ? profile.created_at
+     : createdAtResult.status==='fulfilled'?createdAtResult.value:null;
+   const createdAtTime=createdAt?Date.parse(createdAt):NaN;
+   if(sinceEl&&Number.isFinite(createdAtTime)){
+     sinceEl.textContent=new Date(createdAtTime).toLocaleDateString([], {month:'long',year:'numeric'});
+   }else{
+     if(sinceEl) sinceEl.textContent='Unavailable';
+     if(createdAtResult.status==='rejected') console.error('Failed to load buyer account creation date:',createdAtResult.reason);
    }
  }
 
-function initKobeHistory(){
+ async function resolveBuyerWalletId(summary){
+   let walletId=summary&&summary.wallet&&typeof summary.wallet.wallet_id==='string'
+     ? summary.wallet.wallet_id.trim()
+     : '';
+   if(!walletId&&window.KobeApi&&KobeApi.myWalletId){
+     try { walletId=String(await KobeApi.myWalletId()||'').trim(); }
+     catch(error) { console.error('Failed to ensure buyer Wallet ID:',error); }
+   }
+   return walletId;
+ }
+
+ function initKobeHistory(){
   const initial = history.state && history.state.kmScreen;
   if(!initial){
     history.replaceState({ kmScreen: 'home' }, '', location.href);
@@ -4772,7 +4801,7 @@ async function loadBuyerWallet(){
   walletSummaryLoaded=true;
   const walletId=$('wId');
   if(walletId){
-   const value=typeof wallet.wallet_id==='string'?wallet.wallet_id.trim():'';
+   const value=await resolveBuyerWalletId(summary);
    walletId.textContent=value||'Not assigned yet';
    const walletCard=walletId.closest('.wallet-card');
    if(walletCard)walletCard.classList.toggle('wallet-id-ready',Boolean(value));

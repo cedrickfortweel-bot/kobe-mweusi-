@@ -644,6 +644,16 @@ check(
   "the buyer app displays the Wallet ID on the home and account screens",
   /walletEl\.textContent = walletId/.test(readFileSafe(path.join(root, "buyer.html")))
     && /homeWalletEl\.textContent = walletId/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /KobeApi\.walletSummary\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /Promise\.allSettled\(\s*\[\s*profileRequest,\s*walletRequest,\s*createdAtRequest/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /async function resolveBuyerWalletId\(summary\)/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /const value\s*=\s*await resolveBuyerWalletId\(summary\)/.test(readFileSafe(path.join(root, "buyer.html")))
+);
+check(
+  "the buyer account creation date falls back to trusted auth user data",
+  /getMyAccountCreatedAt\(\)/.test(readFileSafe(path.join(root, "kobe-supabase.js")))
+    && /created_at:\s*data\.created_at\s*\|\|\s*auth\.user\.created_at/.test(readFileSafe(path.join(root, "kobe-supabase.js")))
+    && /createdAtResult\.status\s*===\s*'fulfilled'/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
   "the wallet summary returns the Wallet ID to its owner",
