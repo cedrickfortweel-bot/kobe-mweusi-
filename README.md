@@ -106,6 +106,9 @@ supabase db push        # the migrations that are not live yet
 supabase functions deploy agent admin handoff seller
 ```
 
+For automatic GitHub Actions deployment of the wallet and escrow functions,
+see [Wallet and escrow function deployment](docs/supabase-functions-deployment.md).
+
 **Cloudflare Pages** serves the static site:
 
 ```bash
