@@ -26,7 +26,7 @@
     if (error.code === '23505' && String(error.message).includes('seller_kyc_one_open_submission_idx')) {
       throw new Error('You already have a verification submission under review. Wait for the review or contact support.');
     }
-    if (error.code === '42501') throw new Error('This action is not allowed for your account.');
+    if (error.code === '42501') throw new Error('This action is not allowed.');
     throw new Error(error.message || 'Supabase request failed.');
   };
 

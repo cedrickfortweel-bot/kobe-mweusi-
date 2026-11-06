@@ -29,7 +29,7 @@ function asApiError(error: unknown, fallback = "Request failed"): ApiError {
     const seconds = Math.max(1, Number(e.details) || 60);
     return new ApiError(429, `Too many changes. Please wait ${seconds} seconds and try again.`);
   }
-  if (e.code === "42501") return new ApiError(403, "This action is not allowed for your account.");
+  if (e.code === "42501") return new ApiError(403, "This action is not allowed.");
   if (e.code === "23505") return new ApiError(409, "That already exists. Please reload and try again.");
   return new ApiError(500, e.message || fallback);
 }

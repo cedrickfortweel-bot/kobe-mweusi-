@@ -34,7 +34,7 @@ export function asApiError(error: unknown, fallback = "Request failed"): ApiErro
   if (e.code === "23505" && String(e.message).includes("seller_kyc_one_open_submission_idx")) {
     return new ApiError(409, "You already have a verification submission under review.");
   }
-  if (e.code === "42501") return new ApiError(403, "This action is not allowed for your account.");
+  if (e.code === "42501") return new ApiError(403, "This action is not allowed.");
   if (e.code === "23505") return new ApiError(409, "That already exists. Please reload and try again.");
   return new ApiError(500, e.message || fallback);
 }
