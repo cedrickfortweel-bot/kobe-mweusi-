@@ -718,7 +718,7 @@ function escHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<'
    The PIN, the password and the lockout are all the server's. The page
    used to hold the PIN in memory and count wrong guesses locally, so
    nothing was checked and nothing was stored. */
-let secSt={pin:false,bio:false,lockedUntil:0},_pin='';
+let secSt={pin:false,pinLoaded:false,bio:false,lockedUntil:0},_pin='';
 const secRow=(f,ic,t,sub)=>`<button class="row" onclick="${f}"><span class="ico">${ic}</span><span class="t"><b>${t}</b><small>${sub}</small></span><span class="chev">›</span></button>`;
 
 /* Read the real state from the server. */
@@ -726,9 +726,11 @@ async function secRefresh(){
  try{
   if(!window.KobeApi||!KobeApi.pinStatus)return;
   const st=await KobeApi.pinStatus();
+  if(!st||st.ok===false)throw new Error((st&&st.error)||'Transaction security is unavailable.');
   secSt.pin=!!(st&&st.hasPin);
   secSt.lockedUntil=st&&st.locked_until?new Date(st.locked_until).getTime():0;
- }catch(e){ console.warn('pin status', e); }
+  secSt.pinLoaded=true;
+ }catch(e){ secSt.pinLoaded=false; console.warn('pin status', e); }
 }
 /* The lock is the server's, so the page shows the server's time. */
 function secLockedMsg(){
@@ -737,9 +739,9 @@ function secLockedMsg(){
  const mins=Math.ceil(ms/60000);
  return 'Locked after too many wrong attempts. Try again in '+mins+' minute'+(mins===1?'':'s')+', or use Forgot PIN.';
 }
-function wdGo(){if(!secSt.pin){toast('Set your transaction PIN first. You cannot withdraw without it.');go('sec');return}go('wd')}
-function pinBanner(){const h=$('#hPin');if(h)h.innerHTML=secSt.pin?'':'<div class="backend-banner" style="cursor:pointer" onclick="go(\'sec\')">Set your transaction PIN to withdraw money. <b>Set up →</b></div>'}
-function secView(){const b=$('#secB');if(!b)return;const ok=secSt.pin;const locked=secLockedMsg();
+function wdGo(){if(!secSt.pinLoaded){toast('Transaction security could not be verified. Please try again later.');return}if(!secSt.pin){toast('Set your transaction PIN first. You cannot withdraw without it.');go('sec');return}go('wd')}
+function pinBanner(){const h=$('#hPin');if(h)h.innerHTML=!secSt.pinLoaded?'':secSt.pin?'':'<div class="backend-banner" style="cursor:pointer" onclick="go(\'sec\')">Set your transaction PIN to withdraw money. <b>Set up →</b></div>'}
+function secView(){const b=$('#secB');if(!b)return;if(!secSt.pinLoaded){b.innerHTML='<div class="list" style="padding:16px"><span class="pill held">Status unavailable</span><div class="note">Transaction security could not be verified. Your PIN was not changed.</div></div>';return}const ok=secSt.pin;const locked=secLockedMsg();
  b.innerHTML=`<div class="list" style="padding:16px"><span class="pill ${ok?'ok':'held'}">${ok?'✓ PIN set':'PIN required'}</span><div class="note">${locked||(ok?'Your transaction PIN protects withdrawals and changes to payout details.':'Set a 6-digit transaction PIN. You cannot withdraw until it is set. You can still receive orders.')}</div></div><div class="list">${secRow('secPin()','🔢',ok?'Change transaction PIN':'Set transaction PIN','6 digits, separate from your password')}${ok?secRow('secForgot()','↺','Forgot PIN','Reset with a phone code and your password'):''}<label class="row"><span class="t"><b>Fingerprint or face</b><small>${ok?'Unlocks your PIN on this phone only. Kobe never stores it.':'Set a PIN first'}</small></span><input type="checkbox" ${secSt.bio?'checked':''} ${ok?'':'disabled'} onchange="secBio(this.checked)" style="width:22px;height:22px;accent-color:var(--acc)"></label>${secRow('secPass()','🔑','Change password','Needs your current password')}<div class="row"><span class="ico">📱</span><span class="t"><b>Logged-in devices</b><small>This device · active now</small></span></div></div><p class="note">PIN checks, phone codes and password changes are handled securely by Kobe Mweusi.</p>`}
 function secPin(){const ch=secSt.pin;const locked=secLockedMsg();if(locked)return toast(locked);
  gform(ch?'Change transaction PIN':'Set transaction PIN',(ch?[{k:'old',l:'Current PIN',t:'password',p:'Current PIN'}]:[]).concat([{k:'a',l:'New PIN (6 digits)',t:'password',p:'6 digits'},{k:'b',l:'Confirm new PIN',t:'password',p:'Repeat PIN'},{note:'Avoid 123456 or repeated digits like 111111.'}]),async o=>{

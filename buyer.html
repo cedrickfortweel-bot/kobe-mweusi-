@@ -2348,6 +2348,8 @@ function openSettingsDetail(key){
   document.getElementById('settings-detail-body').innerHTML=d.html;
   document.getElementById('settings-detail-modal').classList.add('show');
   if(key==='payments') payList();
+  if(key==='security') populateBuyerPinSettings();
+  if(key==='transaction-pin') populateTransactionPinSettings();
   if(key==='profile'){ populateProfileSettings(); }
   if(key==='verification'){ populateVerificationSettings(); }
   if(key==='forgot-password'){ populateForgotPassword(); }
@@ -2475,6 +2477,56 @@ async function populateForgotPassword(){
   }
 }
 
+async function populateBuyerPinSettings(){
+  const stateEl=document.getElementById('sec-pin-state');
+  const subtitleEl=document.getElementById('sec-pin-sub');
+  if(!stateEl||!subtitleEl) return;
+  stateEl.textContent='Checking';
+  try{
+    const status=await KobeApi.pinStatus();
+    if(!status||status.ok===false) throw new Error((status&&status.error)||'Transaction security is unavailable.');
+    stateEl.textContent=status.hasPin?'Set':'Not set';
+    subtitleEl.textContent=status.hasPin
+      ? 'A transaction PIN is protecting your account'
+      : 'Set a six-digit PIN to protect money movement';
+  }catch(error){
+    stateEl.textContent='Unavailable';
+    subtitleEl.textContent='Transaction PIN status could not be verified';
+    console.error('Failed to load buyer transaction PIN status:',error);
+  }
+}
+
+async function populateTransactionPinSettings(){
+  const body=document.getElementById('settings-detail-body');
+  const currentInput=body&&body.querySelector('#tpcur');
+  const newInput=body&&body.querySelector('#tpnew');
+  const saveButton=body&&body.querySelector('button[onclick*="transaction-pin"]');
+  if(!body||!currentInput||!newInput||!saveButton) return;
+  if(!body.querySelector('#tp-status')){
+    currentInput.insertAdjacentHTML('beforebegin','<p class="sr-sub" id="tp-status" role="status" style="margin:0 2px 12px">Checking PIN status…</p>');
+  }
+  if(!body.querySelector('#tpconfirm')){
+    newInput.insertAdjacentHTML('afterend','<label for="tpconfirm">Confirm new PIN</label><input id="tpconfirm" type="password" inputmode="numeric" autocomplete="off" maxlength="6">');
+  }
+  const statusEl=body.querySelector('#tp-status');
+  if(statusEl) statusEl.textContent='Checking PIN status…';
+  saveButton.disabled=true;
+  try{
+    const status=await KobeApi.pinStatus();
+    if(!status||status.ok===false) throw new Error((status&&status.error)||'Transaction security is unavailable.');
+    const hasPin=!!status.hasPin;
+    currentInput.required=hasPin;
+    currentInput.placeholder=hasPin?'Enter your current 6-digit PIN':'Not required when setting your first PIN';
+    const currentLabel=body.querySelector('label[for="tpcur"]');
+    if(currentLabel) currentLabel.textContent=hasPin?'Current PIN':'Current PIN (only needed to change it)';
+    if(statusEl) statusEl.textContent=hasPin?'A transaction PIN is set. Enter it to make a change.':'No transaction PIN is set yet.';
+    saveButton.disabled=false;
+  }catch(error){
+    if(statusEl) statusEl.textContent='PIN status is unavailable. No changes can be made until it is verified.';
+    console.error('Failed to load buyer transaction PIN status:',error);
+  }
+}
+
 async function kobeSettingAction(action, btn, detailKey){
   const body = document.getElementById('settings-detail-body');
   const errId = ({ 'save-profile':'pferr','change-password':'cperr','transaction-pin':'tperr','forgot-password':'fperr','support-request':'scerr','export-data':'scerr','signout-all':'scerr'})[action];
@@ -2511,11 +2563,21 @@ async function kobeSettingAction(action, btn, detailKey){
    } else if(action === 'transaction-pin'){
    const cur = body.querySelector('#tpcur')?.value || '';
    const nw = body.querySelector('#tpnew')?.value || '';
+   const confirmPin = body.querySelector('#tpconfirm')?.value || '';
+   const pinStatus = await KobeApi.pinStatus();
+   if(!pinStatus || pinStatus.ok === false) throw new Error((pinStatus && pinStatus.error) || 'Transaction security is unavailable.');
+   if(pinStatus.hasPin && !cur) throw new Error('Enter your current transaction PIN.');
    if(!/^\d{6}$/.test(nw)) throw new Error('New PIN must be exactly 6 digits.');
+   if(nw !== confirmPin) throw new Error('The new PINs do not match.');
    /* The weak list lives in the database, so the page and the server
       cannot drift apart. The server's own message comes back here. */
    const res = await KobeApi.setTransactionPin({ current: cur, pin: nw });
    if(!res || res.ok === false) throw new Error((res && (res.error || res.reason)) || 'The PIN could not be saved.');
+   if(body.querySelector('#tpcur')) body.querySelector('#tpcur').value = '';
+   if(body.querySelector('#tpnew')) body.querySelector('#tpnew').value = '';
+   if(body.querySelector('#tpconfirm')) body.querySelector('#tpconfirm').value = '';
+   await populateTransactionPinSettings();
+   await populateBuyerPinSettings();
    kobeToast('Transaction PIN saved');
    } else if(action === 'support-request'){
       const topic = body.querySelector('#sc1')?.value || body.querySelector('#rp1')?.value || '';
@@ -2588,9 +2650,27 @@ function payList(){
   const n=payLoad(), df=payDef();
   document.getElementById('settings-detail-title').textContent='Payments';
   document.getElementById('settings-detail-body').innerHTML =
-   '<div class="settings-group"><h3>Wallet</h3><div class="settings-row" style="cursor:default"><div class="sr-left"><span class="sr-label">Kobe Mweusi Wallet</span></div><div class="sr-right">Active</div></div></div>'+
+   '<div class="settings-group"><h3>Wallet</h3><div class="settings-row" id="payment-wallet-status" role="status" style="cursor:default"><div class="sr-left"><span class="sr-label">Kobe Mweusi Wallet</span><span class="sr-sub">Loading account wallet…</span></div><div class="sr-right">Checking</div></div></div>'+
    '<div class="settings-group"><h3>Mobile money numbers</h3><p class="sr-sub" style="margin:0 0 10px">Optional. Save a number and it is filled in for you when you top up.</p>'+
    topupOperators.map((o,i)=>'<div class="settings-row" onclick="payEdit('+i+')"><div class="sr-left"><span class="sr-label">'+o.name+'</span><span class="sr-sub">'+(n[o.code]||o.sub)+'</span></div><div class="sr-right">'+(n[o.code]?(df===o.code?'Default ›':'Saved ›'):'Add ›')+'</div></div>').join('')+'</div>';
+  populatePaymentWalletStatus();
+}
+async function populatePaymentWalletStatus(){
+  const row=document.getElementById('payment-wallet-status');
+  if(!row) return;
+  try{
+    const summary=await KobeApi.walletSummary();
+    if(!summary||summary.ok===false||!summary.wallet) throw new Error((summary&&(summary.error||summary.reason))||'Wallet details are unavailable.');
+    const walletId=await resolveBuyerWalletId(summary);
+    if(!walletId) throw new Error('The wallet service did not return a Wallet ID.');
+    const amount=Number(summary.wallet.balance);
+    row.querySelector('.sr-sub').textContent='Wallet ID: '+walletId+' · Balance: '+(Number.isFinite(amount)?fmtBal(amount):'Unavailable');
+    row.querySelector('.sr-right').textContent='Ready';
+  }catch(error){
+    row.querySelector('.sr-sub').textContent='Wallet details could not be loaded.';
+    row.querySelector('.sr-right').textContent='Unavailable';
+    console.error('Failed to load payment settings wallet:',error);
+  }
 }
 function payEdit(i){
   const o=topupOperators[i], n=payLoad(), df=payDef(), has=!!n[o.code];
@@ -3915,6 +3995,7 @@ async function releaseEscrow(){
 let balanceVisible = true;
 try{ balanceVisible = localStorage.getItem('km_balance_hidden') !== '1'; }catch(e){}
 let walletSummaryLoaded = false;
+let walletSummaryFailed = false;
 let balanceValue = 0;
 let escrowValue = 0;
 function formatTZS(n){ return 'TSh ' + n.toLocaleString(); }
@@ -3923,8 +4004,8 @@ function fmtBal(n){ return balanceVisible ? formatTZS(n) : 'TSh •••••�
 // Redraws every place a balance is shown.
 function renderBalances(){
   const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-  const balanceText=walletSummaryLoaded?fmtBal(balanceValue):'Loading…';
-  const escrowText=walletSummaryLoaded?fmtBal(escrowValue):'Loading…';
+  const balanceText=walletSummaryLoaded?fmtBal(balanceValue):walletSummaryFailed?'Unavailable':'Loading…';
+  const escrowText=walletSummaryLoaded?fmtBal(escrowValue):walletSummaryFailed?'Unavailable':'Loading…';
   set('balance-amt', balanceText);
   set('escrow-balance-amt', escrowText);
   set('topup-wallet-balance', balanceText);
@@ -4799,6 +4880,7 @@ async function loadBuyerWallet(){
   balanceValue=Number(wallet.balance);
   escrowValue=Number(wallet.held);
   walletSummaryLoaded=true;
+  walletSummaryFailed=false;
   const walletId=$('wId');
   if(walletId){
    const value=await resolveBuyerWalletId(summary);
@@ -4812,11 +4894,15 @@ async function loadBuyerWallet(){
   renderBalances();
   return summary;
  }catch(error){
+  walletSummaryLoaded=false;
+  walletSummaryFailed=true;
+  renderBalances();
   const walletId=$('wId');
   const walletCard=walletId&&walletId.closest('.wallet-card');
   if(walletCard)walletCard.classList.remove('wallet-id-ready');
-  if(window.kobeError)window.kobeError(error&&error.message||'Your wallet could not be loaded.',loadBuyerWallet);
-  throw error;
+  if(walletId)walletId.textContent='Unavailable';
+  console.error('Failed to load buyer wallet:',error);
+  return null;
  }
 }
 const wrap=document.querySelector('.notif-wrap');

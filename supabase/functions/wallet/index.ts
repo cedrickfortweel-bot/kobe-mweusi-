@@ -20,17 +20,16 @@ export default async function handler(request: Request) {
 
   try {
     if (action === "summary") {
+      const { data: walletRow, error: walletError } = await service.rpc("ensure_wallet_for", {
+        p_user: auth.user.id,
+      });
+      if (walletError) throw walletError;
+      const wallet = Array.isArray(walletRow) ? walletRow[0] : walletRow;
       const balance = await service.rpc("wallet_balance", { p_user: auth.user.id });
       const held = await service.rpc("held_escrow", { p_user: auth.user.id });
       const capacity = await service.rpc("seller_payout_capacity", { p_seller: auth.user.id });
       /* The buyer's own Wallet ID. It is their identifier, so it is
          returned to them and to nobody else. */
-      const { data: walletRow, error: walletError } = await service
-        .from("wallets")
-        .select("wallet_id")
-        .eq("user_id", auth.user.id)
-        .maybeSingle();
-      if (walletError) throw walletError;
       /* Whether a sandbox credit is possible. The app uses this to hide
          the test-credit button entirely when it is not. */
       const { data: providerConfig } = await service
@@ -65,7 +64,7 @@ export default async function handler(request: Request) {
         wallet: {
           balance: Number(balance.data || 0),
           held: Number(held.data || 0),
-          wallet_id: walletRow?.wallet_id || null,
+          wallet_id: wallet?.wallet_id || null,
           currency: "TZS",
         },
         /* A seller can only withdraw money that has been released from

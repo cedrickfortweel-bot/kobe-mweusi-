@@ -914,8 +914,7 @@
       return guardedWrite('security', { action: 'pin-verify', pin });
     },
     async pinStatus() {
-      const res = await guardedWrite('security', { action: 'pin-status' });
-      return res && res.ok ? res : { ok: true, hasPin: false, locked_until: null };
+      return invoke('security', { action: 'pin-status' });
     },
     async passwordChange(oldPassword, newPassword) {
       return guardedWrite('security', { action: 'password-change', old_password: oldPassword, new_password: newPassword });

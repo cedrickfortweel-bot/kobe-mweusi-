@@ -227,6 +227,10 @@ export default async function handler(request: Request) {
 
       /* The buyer's wallet funds the purchase. Check the balance before
          touching the stock, so a short balance never reserves stock. */
+      const { error: walletSetupError } = await service.rpc("ensure_wallet_for", {
+        p_user: auth.user.id,
+      });
+      if (walletSetupError) throw walletSetupError;
       const { data: wallet, error: walletError } = await service.rpc("wallet_available_balance", {
         p_user: auth.user.id,
       });

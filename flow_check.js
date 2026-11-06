@@ -657,9 +657,13 @@ check(
 );
 check(
   "the wallet summary returns the Wallet ID to its owner",
-  /wallet_id: walletRow/.test(
-    functionSource.get(path.join("supabase", "functions", "wallet", "index.ts")) || ""
-  )
+  /ensure_wallet_for/.test(functionSource.get(path.join("supabase", "functions", "wallet", "index.ts")) || "")
+    && /wallet_id: wallet\?\.wallet_id/.test(functionSource.get(path.join("supabase", "functions", "wallet", "index.ts")) || "")
+);
+check(
+  "buyer checkout ensures a wallet exists before checking its balance",
+  /ensure_wallet_for/.test(functionSource.get(path.join("supabase", "functions", "orders", "index.ts")) || "")
+    && /wallet_available_balance/.test(functionSource.get(path.join("supabase", "functions", "orders", "index.ts")) || "")
 );
 check(
   "the buyer app shows the seller's Seller ID on the seller page",
@@ -790,6 +794,12 @@ check(
   "the buyer loads the wallet summary from the backend",
   /walletSummary\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
     && /window\.kobeRefresh\s*=\s*async/.test(readFileSafe(path.join(root, "buyer.html")))
+);
+check(
+  "a wallet load problem stays in the wallet UI instead of showing a page-level retry banner",
+  /walletSummaryFailed=true/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /walletId\.textContent='Unavailable'/.test(readFileSafe(path.join(root, "buyer.html")))
+    && !/window\.kobeError\(error&&error\.message\|\|'Your wallet could not be loaded\./.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
   "wallet errors are surfaced instead of leaving a false zero balance",
@@ -1132,6 +1142,25 @@ check(
   "the action the page sends is one the server handles",
   /action: 'set-pin'/.test(apiBoundary)
     && /action === "set-pin"/.test(securityFn)
+);
+check(
+  "PIN status errors are not mistaken for an unset PIN",
+  /async pinStatus\(\)\s*\{\s*return invoke\('security', \{ action: 'pin-status' \}\);/.test(apiBoundary)
+    && /function populateBuyerPinSettings\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /secSt\.pinLoaded=false/.test(readFileSafe(path.join(root, "seller.html")))
+    && /if\(!st\|\|st\.ok===false\)throw/.test(readFileSafe(path.join(root, "seller.html")))
+);
+check(
+  "buyer transaction PIN changes require the current PIN and confirmation",
+  /pinStatus\.hasPin && !cur/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /nw !== confirmPin/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /id="tpconfirm"/.test(readFileSafe(path.join(root, "buyer.html")))
+);
+check(
+  "buyer payment settings report real wallet status instead of a hardcoded ready state",
+  /populatePaymentWalletStatus\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /KobeApi\.walletSummary\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
+    && !/Kobe Mweusi Wallet<\/span><\/div><div class="sr-right">Active/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
   "a PIN check goes through the locked path, not the raw one",
