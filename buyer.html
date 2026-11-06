@@ -3418,7 +3418,7 @@ function removeAvatar(){
   const input=document.getElementById('avatar-input'); if(input) input.value='';
   applyAvatarToUI('');
 }
-function loadSavedAvatar(initials='U'){
+function loadSavedAvatar(initials='U', profile=null){
    let saved=''; try{ saved=localStorage.getItem('km_profile_avatar'); }catch(e){}
    applyAvatarToUI(saved, initials);
    /* The stored photo wins, so it follows the account to another device.
@@ -3426,21 +3426,22 @@ function loadSavedAvatar(initials='U'){
       loaded. */
    (async()=>{
      try{
-       if(!window.KobeApi||!KobeApi.getMyProfile) return;
-       const profile=await KobeApi.getMyProfile();
        if(!profile||!profile.avatar_path) return;
        const url=await KobeApi.avatarUrl(profile.avatar_path);
        if(url) applyAvatarToUI(url, initials);
      }catch(e){ console.warn('avatar', e); }
    })();
 }
+let buyerAccountLoadId=0;
 async function populateAccountScreen(){
+   const loadId=++buyerAccountLoadId;
    const nameEl=document.getElementById('accountDisplayName');
    const subEl=document.getElementById('accountDisplaySummary');
    const walletEl=document.getElementById('accountWalletId');
    const sinceEl=document.getElementById('accountMemberSince');
    const homeWalletEl=document.getElementById('wId');
-   if(walletEl) walletEl.textContent='Loading…';
+   if(walletEl&&['—','Unavailable'].includes(walletEl.textContent.trim())) walletEl.textContent='Loading…';
+   if(homeWalletEl&&!homeWalletEl.classList.contains('wallet-id-ready')) homeWalletEl.textContent='Loading…';
    if(sinceEl) sinceEl.textContent='Loading…';
 
    const profileRequest=window.KobeApi && KobeApi.getMyProfile
@@ -3449,47 +3450,49 @@ async function populateAccountScreen(){
    const walletRequest=window.KobeApi && KobeApi.walletSummary
      ? KobeApi.walletSummary()
      : Promise.reject(new Error('Wallet service is unavailable.'));
-   const createdAtRequest=window.KobeApi && KobeApi.getMyAccountCreatedAt
-     ? KobeApi.getMyAccountCreatedAt()
-     : Promise.reject(new Error('Account creation date is unavailable.'));
-   const [profileResult,walletResult,createdAtResult]=await Promise.allSettled([
-     profileRequest,walletRequest,createdAtRequest
-   ]);
-   const profile=profileResult.status==='fulfilled'?profileResult.value:null;
-   const displayName=profile?(profile.display_name||profile.email?.split('@')[0]):null;
-   const initials=displayName?displayName.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase():'U';
-   loadSavedAvatar(initials);
-   if(nameEl) nameEl.textContent = displayName || 'Buyer account';
-   if(subEl) subEl.textContent = displayName
-     ? '@' + displayName.toLowerCase().replace(/\s+/g, '') + ' · Buyer'
-     : 'Account details';
-   if(profileResult.status==='rejected') console.error('Failed to load buyer profile:',profileResult.reason);
-
-   const summary=walletResult.status==='fulfilled'?walletResult.value:null;
-   const walletId=await resolveBuyerWalletId(summary);
-   if(walletId){
-     if(walletEl) walletEl.textContent = walletId;
-     if(homeWalletEl) homeWalletEl.textContent = walletId;
-     const walletCard=homeWalletEl&&homeWalletEl.closest('.wallet-card');
-     if(walletCard) walletCard.classList.add('wallet-id-ready');
-   }else{
+   const profileTask=profileRequest.then(profile=>{
+     if(loadId!==buyerAccountLoadId)return;
+     const displayName=profile?(profile.display_name||profile.email?.split('@')[0]):null;
+     const initials=displayName?displayName.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase():'U';
+     loadSavedAvatar(initials,profile);
+     if(nameEl) nameEl.textContent=displayName||'Buyer account';
+     if(subEl) subEl.textContent=displayName
+       ? '@'+displayName.toLowerCase().replace(/\s+/g,'')+' · Buyer'
+       : 'Account details';
+     const createdAtTime=profile&&profile.created_at?Date.parse(profile.created_at):NaN;
+     if(sinceEl) sinceEl.textContent=Number.isFinite(createdAtTime)
+       ? new Date(createdAtTime).toLocaleDateString([],{month:'long',year:'numeric'})
+       : 'Unavailable';
+   }).catch(error=>{
+     if(loadId!==buyerAccountLoadId)return;
+     if(nameEl) nameEl.textContent='Buyer account';
+     if(subEl) subEl.textContent='Account details';
+     if(sinceEl) sinceEl.textContent='Unavailable';
+     console.error('Failed to load buyer profile:',error);
+   });
+   const walletTask=walletRequest.then(async summary=>{
+     const walletId=await resolveBuyerWalletId(summary);
+     if(loadId!==buyerAccountLoadId)return;
+     if(walletId){
+       if(walletEl) walletEl.textContent=walletId;
+       if(homeWalletEl) homeWalletEl.textContent=walletId;
+       const walletCard=homeWalletEl&&homeWalletEl.closest('.wallet-card');
+       if(walletCard) walletCard.classList.add('wallet-id-ready');
+     }else{
+       if(walletEl) walletEl.textContent='Unavailable';
+       if(homeWalletEl) homeWalletEl.textContent='Unavailable';
+       const walletCard=homeWalletEl&&homeWalletEl.closest('.wallet-card');
+       if(walletCard) walletCard.classList.remove('wallet-id-ready');
+     }
+   }).catch(error=>{
+     if(loadId!==buyerAccountLoadId)return;
      if(walletEl) walletEl.textContent='Unavailable';
      if(homeWalletEl) homeWalletEl.textContent='Unavailable';
      const walletCard=homeWalletEl&&homeWalletEl.closest('.wallet-card');
      if(walletCard) walletCard.classList.remove('wallet-id-ready');
-     if(walletResult.status==='rejected') console.error('Failed to load buyer wallet:',walletResult.reason);
-   }
-
-   const createdAt=profile&&profile.created_at
-     ? profile.created_at
-     : createdAtResult.status==='fulfilled'?createdAtResult.value:null;
-   const createdAtTime=createdAt?Date.parse(createdAt):NaN;
-   if(sinceEl&&Number.isFinite(createdAtTime)){
-     sinceEl.textContent=new Date(createdAtTime).toLocaleDateString([], {month:'long',year:'numeric'});
-   }else{
-     if(sinceEl) sinceEl.textContent='Unavailable';
-     if(createdAtResult.status==='rejected') console.error('Failed to load buyer account creation date:',createdAtResult.reason);
-   }
+     console.error('Failed to load buyer wallet:',error);
+   });
+   await Promise.all([profileTask,walletTask]);
  }
 
  async function resolveBuyerWalletId(summary){
@@ -4900,6 +4903,7 @@ async function loadBuyerWallet(){
   escrowValue=Number(wallet.held);
   walletSummaryLoaded=true;
   walletSummaryFailed=false;
+  renderBalances();
   const walletId=$('wId');
   if(walletId){
    const value=await resolveBuyerWalletId(summary);

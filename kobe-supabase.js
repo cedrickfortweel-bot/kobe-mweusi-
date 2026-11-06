@@ -9,6 +9,7 @@
 
   /* Handoff codes the server issued, keyed by order reference. */
   const handoffTokens = {};
+  let walletSummaryInFlight = null;
   const cleanPhone = value => {
     const digits = String(value || '').replace(/[^0-9+]/g, '');
     if (!digits) return null;
@@ -681,7 +682,11 @@
 
     /* -------- wallet / seller -------- */
     async walletSummary() {
-      return invoke('wallet', { action: 'summary' });
+      if (!walletSummaryInFlight) {
+        walletSummaryInFlight = invoke('wallet', { action: 'summary' })
+          .finally(() => { walletSummaryInFlight = null; });
+      }
+      return walletSummaryInFlight;
     },
 
     /* Request a withdrawal of money that has already been released from
@@ -1018,7 +1023,7 @@
        if (!auth.user) throw new Error('Sign in to view your profile.');
        const { data, error } = await client
          .from('profiles')
-    .select('id, account_type, display_name, phone_e164, phone_verified_at, created_at')
+    .select('id, account_type, display_name, phone_e164, phone_verified_at, avatar_path, created_at')
          .eq('id', auth.user.id)
          .maybeSingle();
        fail(error);

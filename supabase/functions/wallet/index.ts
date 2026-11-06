@@ -25,38 +25,38 @@ export default async function handler(request: Request) {
       });
       if (walletError) throw walletError;
       const wallet = Array.isArray(walletRow) ? walletRow[0] : walletRow;
-      const balance = await service.rpc("wallet_balance", { p_user: auth.user.id });
-      const held = await service.rpc("held_escrow", { p_user: auth.user.id });
-      const capacity = await service.rpc("seller_payout_capacity", { p_seller: auth.user.id });
       /* The buyer's own Wallet ID. It is their identifier, so it is
          returned to them and to nobody else. */
       /* Whether a sandbox credit is possible. The app uses this to hide
          the test-credit button entirely when it is not. */
-      const { data: providerConfig } = await service
-        .from("payment_provider_config")
-        .select("environment")
-        .eq("provider", "azampay")
-        .maybeSingle();
+      const [balance, held, capacity, providerResult, ledgerResult, pendingResult] = await Promise.all([
+        service.rpc("wallet_balance", { p_user: auth.user.id }),
+        service.rpc("held_escrow", { p_user: auth.user.id }),
+        service.rpc("seller_payout_capacity", { p_seller: auth.user.id }),
+        service.from("payment_provider_config")
+          .select("environment")
+          .eq("provider", "azampay")
+          .maybeSingle(),
+        service.from("wallet_ledger_entries")
+          .select("*")
+          .eq("user_id", auth.user.id)
+          .order("created_at", { ascending: false })
+          .limit(50),
+        service.from("payment_intents")
+          .select("id, amount_tzs, status, created_at")
+          .eq("buyer_id", auth.user.id)
+          .eq("status", "pending")
+          .order("created_at", { ascending: false })
+          .limit(20),
+      ]);
+      const { data: providerConfig } = providerResult;
+      const { data: ledger, error: ledgerError } = ledgerResult;
+      const { data: pending, error: pendingError } = pendingResult;
       const sandboxAvailable = providerConfig?.environment === "sandbox";
       if (balance.error) throw balance.error;
       if (held.error) throw held.error;
       if (capacity.error) throw capacity.error;
-
-      const { data: ledger, error: ledgerError } = await service
-        .from("wallet_ledger_entries")
-        .select("*")
-        .eq("user_id", auth.user.id)
-        .order("created_at", { ascending: false })
-        .limit(50);
       if (ledgerError) throw ledgerError;
-
-      const { data: pending, error: pendingError } = await service
-        .from("payment_intents")
-        .select("id, amount_tzs, status, created_at")
-        .eq("buyer_id", auth.user.id)
-        .eq("status", "pending")
-        .order("created_at", { ascending: false })
-        .limit(20);
       if (pendingError) throw pendingError;
 
       return json({

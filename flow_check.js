@@ -642,23 +642,35 @@ check(
 );
 check(
   "the buyer app displays the Wallet ID on the home and account screens",
-  /walletEl\.textContent = walletId/.test(readFileSafe(path.join(root, "buyer.html")))
-    && /homeWalletEl\.textContent = walletId/.test(readFileSafe(path.join(root, "buyer.html")))
+  /walletEl\.textContent\s*=\s*walletId/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /homeWalletEl\.textContent\s*=\s*walletId/.test(readFileSafe(path.join(root, "buyer.html")))
     && /KobeApi\.walletSummary\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
-    && /Promise\.allSettled\(\s*\[\s*profileRequest,\s*walletRequest,\s*createdAtRequest/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /Promise\.all\(\[profileTask,walletTask\]\)/.test(readFileSafe(path.join(root, "buyer.html")))
     && /async function resolveBuyerWalletId\(summary\)/.test(readFileSafe(path.join(root, "buyer.html")))
     && /const value\s*=\s*await resolveBuyerWalletId\(summary\)/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
-  "the buyer account creation date falls back to trusted auth user data",
+  "the buyer account uses profile creation time without a duplicate auth request",
   /getMyAccountCreatedAt\(\)/.test(readFileSafe(path.join(root, "kobe-supabase.js")))
     && /created_at:\s*data\.created_at\s*\|\|\s*auth\.user\.created_at/.test(readFileSafe(path.join(root, "kobe-supabase.js")))
-    && /createdAtResult\.status\s*===\s*'fulfilled'/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /const createdAtTime=profile&&profile\.created_at\?Date\.parse\(profile\.created_at\):NaN/.test(readFileSafe(path.join(root, "buyer.html")))
+    && !/getMyAccountCreatedAt\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
   "the wallet summary returns the Wallet ID to its owner",
   /ensure_wallet_for/.test(functionSource.get(path.join("supabase", "functions", "wallet", "index.ts")) || "")
     && /wallet_id: wallet\?\.wallet_id/.test(functionSource.get(path.join("supabase", "functions", "wallet", "index.ts")) || "")
+);
+check(
+  "the wallet summary runs independent backend reads concurrently",
+  /Promise\.all\(\[\s*service\.rpc\("wallet_balance"[\s\S]{0,800}service\.rpc\("held_escrow"[\s\S]{0,800}wallet_ledger_entries[\s\S]{0,800}payment_intents/.test(
+    functionSource.get(path.join("supabase", "functions", "wallet", "index.ts")) || ""
+  )
+);
+check(
+  "simultaneous wallet summary requests share one backend request",
+  /let walletSummaryInFlight = null/.test(readFileSafe(path.join(root, "kobe-supabase.js")))
+    && /if \(!walletSummaryInFlight\)[\s\S]{0,200}invoke\('wallet', \{ action: 'summary' \}\)/.test(readFileSafe(path.join(root, "kobe-supabase.js")))
 );
 check(
   "buyer checkout ensures a wallet exists before checking its balance",
