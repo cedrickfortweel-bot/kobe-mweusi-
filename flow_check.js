@@ -807,6 +807,17 @@ check(
     && /Your wallet could not be loaded/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
+  "global error messages are dismissible and preserve their request error on retry",
+  /aria-label="Dismiss error message"/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /window\.kobeErrorDismiss=/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /message!==dismissedError/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /aria-label="Dismiss error message"/.test(readFileSafe(path.join(root, "seller.html")))
+    && /function kErrDismiss\(\)/.test(readFileSafe(path.join(root, "seller.html")))
+    && /message!==kErrDismissed/.test(readFileSafe(path.join(root, "seller.html")))
+    && /e\.userMessage\|\|e\.message/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /e\.userMessage\|\|e\.message/.test(readFileSafe(path.join(root, "seller.html")))
+);
+check(
   "accounts that signed up earlier are given a Wallet ID too",
   /Created % missing wallet rows/.test(sql)
 );

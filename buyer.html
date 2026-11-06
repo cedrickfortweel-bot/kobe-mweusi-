@@ -4772,7 +4772,7 @@ const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.par
 const msgOf=e=>{const c=e&&e.code;return c==='offline'?'You are offline. Check your connection and try again.':c==='timeout'?'This is taking too long. Check your connection and try again.':(e&&e.userMessage)||'Something went wrong. Please try again.'};
 const st=document.createElement('style');st.textContent=`
 #kb-net{position:fixed;top:0;left:0;right:0;z-index:10000;display:none;align-items:center;justify-content:center;gap:12px;padding:calc(8px + env(safe-area-inset-top,0px)) 14px 8px;font-size:13px;font-weight:600;color:#fff;background:#3a3f3b}
-#kb-net.err{background:var(--danger)}#kb-net button{border:1px solid #fff8;background:transparent;color:#fff;border-radius:999px;padding:4px 12px;font:inherit;cursor:pointer}
+#kb-net.err{background:var(--danger)}#kb-net button{border:1px solid #fff8;background:transparent;color:#fff;border-radius:999px;padding:4px 12px;font:inherit;cursor:pointer}#kb-net .kb-net-close{padding:2px 8px;font-size:18px;line-height:1}
 .kb-sk{height:64px;border-radius:14px;margin:10px 0;background:linear-gradient(90deg,var(--surface-2),var(--line),var(--surface-2));background-size:200% 100%;animation:kbsk 1.2s linear infinite}@keyframes kbsk{to{background-position:-200% 0}}
 .kb-err{padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);text-align:center}.kb-err p{color:var(--text-muted);font-size:13px;margin:6px 0 12px}
 .kb-btn{border:1px solid var(--line);background:var(--surface-2);color:var(--text);border-radius:10px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer}
@@ -4787,15 +4787,16 @@ const st=document.createElement('style');st.textContent=`
 #kb-unk h2{margin:8px 0}#kb-unk p{color:var(--text-muted);font-size:13.5px;line-height:1.5}#kb-unk .kb-btn{width:100%;margin-top:10px}`;document.head.appendChild(st);
 
 /* offline banner + error banner */
-let off=navigator.onLine===false,err=null,retrying=false;
+let off=navigator.onLine===false,err=null,retrying=false,dismissedError=null;
 const bar=document.createElement('div');bar.id='kb-net';bar.setAttribute('role','status');document.body.appendChild(bar);
 function paintBar(){let h='',c='';
- if(err){c='err';h='<span>'+esc(err.msg)+'</span><button '+(retrying?'disabled':'')+' onclick="kobeErrorRetry()">'+(retrying?'Trying…':'Retry')+'</button>'}
+ if(err){c='err';h='<span>'+esc(err.msg)+'</span><button '+(retrying?'disabled':'')+' onclick="kobeErrorRetry()">'+(retrying?'Trying…':'Retry')+'</button><button class="kb-net-close" type="button" aria-label="Dismiss error message" onclick="kobeErrorDismiss()">&times;</button>'}
  else if(off){h='<span>You are offline. Changes cannot be saved until you reconnect.</span>'}
  bar.className=c;bar.style.display=h?'flex':'none';bar.innerHTML=h}
-window.kobeError=(m,r)=>{err=m?{msg:String(m),retry:r||null}:null;retrying=false;paintBar()};
+window.kobeError=(m,r)=>{const message=m?String(m):null;err=message&&message!==dismissedError?{msg:message,retry:r||null}:null;retrying=false;paintBar()};
+window.kobeErrorDismiss=()=>{if(err)dismissedError=err.msg;err=null;retrying=false;paintBar()};
 window.kobeErrorRetry=async()=>{if(retrying||!err)return;const r=err.retry;retrying=true;paintBar();
- try{if(r)await r();else dispatchEvent(new CustomEvent('kobe:retry'));err=null}catch(e){err={msg:'Still could not load. Check your connection and try again.',retry:r}}
+ try{if(r)await r();else dispatchEvent(new CustomEvent('kobe:retry'));err=null;dismissedError=null}catch(e){err={msg:(e&&(e.userMessage||e.message))||'Could not complete that request. Please try again later.',retry:r}}
  retrying=false;paintBar()};
 addEventListener('offline',()=>{off=true;paintBar()});
 addEventListener('online',()=>{off=false;paintBar();refresh('reconnect',true);dispatchEvent(new CustomEvent('kobe:online'))});

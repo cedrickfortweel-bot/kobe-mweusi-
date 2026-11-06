@@ -506,7 +506,7 @@ window.KobeSellerScanner={
  start(){window.KobeCamera.start({frameId:'seller-scan-frame',statusId:'seller-scan-status',buttonId:'seller-scan-btn',onCode(code){const result=$('#seller-scan-result');result.textContent='QR detected, not verified: '+String(code).slice(0,240);result.style.display='block';toast('QR detected. Sign-in and order verification are unavailable in this preview.')}})}
 };
 function paint(){const root=document.documentElement;const body=document.body;root.setAttribute('data-theme','light');body.classList.add('light');body.style.setProperty('--acc','#c58f2e');body.style.setProperty('--on','#18251e');body.style.setProperty('--ai','#775513');}
-const UA=navigator.userAgent,isIOS=/iphone|ipad|ipod/i.test(UA),isAnd=/android/i.test(UA),inApp=/FBAN|FBAV|Instagram|TikTok|musical_ly|Snapchat|WhatsApp|; wv\)/i.test(UA);let kLoad=false,kErr=null,kRetrying=false,kOff=!navigator.onLine,kUpd=null,kInst=null;const kPush={on:false,cfg:null};const notifs=[];let prods=[],live=null,ci=0,ap='7 days',kyc=0,gsv=null,
+const UA=navigator.userAgent,isIOS=/iphone|ipad|ipod/i.test(UA),isAnd=/android/i.test(UA),inApp=/FBAN|FBAV|Instagram|TikTok|musical_ly|Snapchat|WhatsApp|; wv\)/i.test(UA);let kLoad=false,kErr=null,kRetrying=false,kErrDismissed=null,kOff=!navigator.onLine,kUpd=null,kInst=null;const kPush={on:false,cfg:null};const notifs=[];let prods=[],live=null,ci=0,ap='7 days',kyc=0,gsv=null,
 chats=[];let liveHistory=[];try{liveHistory=JSON.parse(localStorage.getItem('km-live-history-preview')||'[]')}catch(e){liveHistory=[]}let chatFilter='';let chatLoaded=false;
 paint();
 async function loadChatThreads(){
@@ -1086,13 +1086,14 @@ await c.onSubscribe(sub.toJSON());kPush.on=true;toast('Phone alerts are on')}
 catch(e){try{sub&&await sub.unsubscribe()}catch(_){}kPush.on=false;toast('Could not turn on alerts. Try again.')}render()}
 async function pushOff(){try{const r=await navigator.serviceWorker.ready,s=await r.pushManager.getSubscription();if(s){const j=s.toJSON();await s.unsubscribe();if(kPush.cfg&&kPush.cfg.onUnsubscribe)await kPush.cfg.onUnsubscribe(j)}kPush.on=false;toast('Phone alerts are off')}catch(e){toast('Could not turn off alerts. Try again.')}render()}
 function netBar(){const b=$('#netBar');if(!b)return;let h='',c='';
-if(kErr){c='err';h=`<span>${escHtml(kErr.msg)}</span><button class="chip" ${kRetrying?'disabled':''} onclick="kErrRetry()">${kRetrying?'Trying…':'Retry'}</button>`}
+if(kErr){c='err';h=`<span>${escHtml(kErr.msg)}</span><button class="chip" ${kRetrying?'disabled':''} onclick="kErrRetry()">${kRetrying?'Trying…':'Retry'}</button><button class="chip" type="button" aria-label="Dismiss error message" onclick="kErrDismiss()">&times;</button>`}
 else if(kUpd){c='upd';h='<span>A new version is ready.</span><button class="chip" onclick="appUpdate()">Update</button>'}
 else if(kOff){c='off';h='<span>You are offline. Changes cannot be saved until you reconnect.</span>'}
-b.className='netbar '+c;b.style.display=h?'flex':'none';b.innerHTML=h}
-window.kobeError=(m,r)=>{kErr=m?{msg:String(m),retry:r||null}:null;kRetrying=false;kLoad=false;render()};
+ b.className='netbar '+c;b.style.display=h?'flex':'none';b.innerHTML=h}
+window.kobeError=(m,r)=>{const message=m?String(m):null;kErr=message&&message!==kErrDismissed?{msg:message,retry:r||null}:null;kRetrying=false;kLoad=false;render()};
+function kErrDismiss(){if(kErr)kErrDismissed=kErr.msg;kErr=null;kRetrying=false;render()}
 async function kErrRetry(){if(kRetrying||!kErr)return;const r=kErr.retry;kRetrying=true;kLoad=true;render();
-try{if(r)await r();else dispatchEvent(new CustomEvent('kobe:retry'));kErr=null}catch(e){kErr={msg:'Still could not load. Check your connection and try again.',retry:r}}
+try{if(r)await r();else dispatchEvent(new CustomEvent('kobe:retry'));kErr=null;kErrDismissed=null}catch(e){kErr={msg:(e&&(e.userMessage||e.message))||'Could not complete that request. Please try again later.',retry:r}}
 kRetrying=false;kLoad=false;render()}
 addEventListener('offline',()=>{kOff=true;render()});
 addEventListener('online',()=>{kOff=false;render();dispatchEvent(new CustomEvent('kobe:online'))});
