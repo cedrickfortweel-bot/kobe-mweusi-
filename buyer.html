@@ -2677,7 +2677,7 @@ async function populatePaymentWalletStatus(){
   const row=document.getElementById('payment-wallet-status');
   if(!row) return;
   try{
-    const summary=await KobeApi.walletSummary();
+    const summary=await KobeApi.walletOverview();
     if(!summary||summary.ok===false||!summary.wallet) throw new Error((summary&&(summary.error||summary.reason))||'Wallet details are unavailable.');
     const walletId=await resolveBuyerWalletId(summary);
     if(!walletId) throw new Error('The wallet service did not return a Wallet ID.');
@@ -3447,8 +3447,8 @@ async function populateAccountScreen(){
    const profileRequest=window.KobeApi && KobeApi.getMyProfile
      ? KobeApi.getMyProfile()
      : Promise.reject(new Error('Profile service is unavailable.'));
-   const walletRequest=window.KobeApi && KobeApi.walletSummary
-     ? KobeApi.walletSummary()
+   const walletRequest=window.KobeApi && KobeApi.walletOverview
+     ? KobeApi.walletOverview()
      : Promise.reject(new Error('Wallet service is unavailable.'));
    const profileTask=profileRequest.then(profile=>{
      if(loadId!==buyerAccountLoadId)return;
@@ -4895,7 +4895,7 @@ function refresh(why,force){if(refP)return refP;if(!force&&Date.now()-last<15000
  .then(()=>{if(loud)kobeToast('Up to date')},e=>{if(loud)kobeToast(msgOf(e))}).finally(()=>{refP=null;const x=$('kb-ref');if(x)x.classList.remove('sp')});return refP}
 async function loadBuyerWallet(){
  try{
-  const summary=await KobeApi.walletSummary();
+  const summary=await KobeApi.walletOverview();
   if(!summary||summary.ok===false||!summary.wallet)throw new Error((summary&&(summary.error||summary.reason))||'Your wallet could not be loaded.');
   const wallet=summary.wallet;
   if(wallet.balance==null||wallet.held==null||!Number.isFinite(Number(wallet.balance))||!Number.isFinite(Number(wallet.held)))throw new Error('The wallet service returned an invalid balance.');

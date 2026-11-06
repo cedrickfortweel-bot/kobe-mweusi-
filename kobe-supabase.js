@@ -10,6 +10,7 @@
   /* Handoff codes the server issued, keyed by order reference. */
   const handoffTokens = {};
   let walletSummaryInFlight = null;
+  let walletOverviewInFlight = null;
   const cleanPhone = value => {
     const digits = String(value || '').replace(/[^0-9+]/g, '');
     if (!digits) return null;
@@ -687,6 +688,13 @@
           .finally(() => { walletSummaryInFlight = null; });
       }
       return walletSummaryInFlight;
+    },
+    async walletOverview() {
+      if (!walletOverviewInFlight) {
+        walletOverviewInFlight = invoke('wallet', { action: 'overview' })
+          .finally(() => { walletOverviewInFlight = null; });
+      }
+      return walletOverviewInFlight;
     },
 
     /* Request a withdrawal of money that has already been released from

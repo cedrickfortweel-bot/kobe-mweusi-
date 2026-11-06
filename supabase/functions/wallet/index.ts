@@ -19,6 +19,35 @@ export default async function handler(request: Request) {
   const action = String(body.action || "summary");
 
   try {
+    if (action === "overview") {
+      const { data: walletRow, error: walletError } = await service.rpc("ensure_wallet_for", {
+        p_user: auth.user.id,
+      });
+      if (walletError) throw walletError;
+      const wallet = Array.isArray(walletRow) ? walletRow[0] : walletRow;
+      const [balance, held, providerResult] = await Promise.all([
+        service.rpc("wallet_balance", { p_user: auth.user.id }),
+        service.rpc("held_escrow", { p_user: auth.user.id }),
+        service.from("payment_provider_config")
+          .select("environment")
+          .eq("provider", "azampay")
+          .maybeSingle(),
+      ]);
+      if (balance.error) throw balance.error;
+      if (held.error) throw held.error;
+
+      return json({
+        ok: true,
+        wallet: {
+          balance: Number(balance.data || 0),
+          held: Number(held.data || 0),
+          wallet_id: wallet?.wallet_id || null,
+          currency: "TZS",
+        },
+        sandbox_available: !providerResult.error && providerResult.data?.environment === "sandbox",
+      });
+    }
+
     if (action === "summary") {
       const { data: walletRow, error: walletError } = await service.rpc("ensure_wallet_for", {
         p_user: auth.user.id,

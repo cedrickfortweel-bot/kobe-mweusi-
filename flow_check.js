@@ -644,7 +644,7 @@ check(
   "the buyer app displays the Wallet ID on the home and account screens",
   /walletEl\.textContent\s*=\s*walletId/.test(readFileSafe(path.join(root, "buyer.html")))
     && /homeWalletEl\.textContent\s*=\s*walletId/.test(readFileSafe(path.join(root, "buyer.html")))
-    && /KobeApi\.walletSummary\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /KobeApi\.walletOverview\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
     && /Promise\.all\(\[profileTask,walletTask\]\)/.test(readFileSafe(path.join(root, "buyer.html")))
     && /async function resolveBuyerWalletId\(summary\)/.test(readFileSafe(path.join(root, "buyer.html")))
     && /const value\s*=\s*await resolveBuyerWalletId\(summary\)/.test(readFileSafe(path.join(root, "buyer.html")))
@@ -666,6 +666,16 @@ check(
   /Promise\.all\(\[\s*service\.rpc\("wallet_balance"[\s\S]{0,800}service\.rpc\("held_escrow"[\s\S]{0,800}wallet_ledger_entries[\s\S]{0,800}payment_intents/.test(
     functionSource.get(path.join("supabase", "functions", "wallet", "index.ts")) || ""
   )
+);
+check(
+  "the buyer wallet overview skips seller payout and transaction-history reads",
+  /if \(action === "overview"\)[\s\S]{0,2500}service\.rpc\("wallet_balance"[\s\S]{0,500}service\.rpc\("held_escrow"[\s\S]{0,1200}sandbox_available:[\s\S]{0,500}if \(action === "summary"\)/.test(
+    functionSource.get(path.join("supabase", "functions", "wallet", "index.ts")) || ""
+  )
+    && /async walletOverview\(\)[\s\S]{0,200}invoke\('wallet', \{ action: 'overview' \}\)/.test(
+      readFileSafe(path.join(root, "kobe-supabase.js"))
+    )
+    && /KobeApi\.walletOverview\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
   "simultaneous wallet summary requests share one backend request",
@@ -803,8 +813,8 @@ check(
   /exception when others then[\s\S]{0,200}?null;/.test(signupTrigger)
 );
 check(
-  "the buyer loads the wallet summary from the backend",
-  /walletSummary\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
+  "the buyer loads the wallet overview from the backend",
+  /walletOverview\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
     && /window\.kobeRefresh\s*=\s*async/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
@@ -1184,7 +1194,7 @@ check(
 check(
   "buyer payment settings report real wallet status instead of a hardcoded ready state",
   /populatePaymentWalletStatus\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
-    && /KobeApi\.walletSummary\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
+    && /KobeApi\.walletOverview\(\)/.test(readFileSafe(path.join(root, "buyer.html")))
     && !/Kobe Mweusi Wallet<\/span><\/div><div class="sr-right">Active/.test(readFileSafe(path.join(root, "buyer.html")))
 );
 check(
